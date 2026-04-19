@@ -151,7 +151,7 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(SRCROOT)/readtap/SecretsBootstrap.swift",
+				"$(SRCROOT)/readtap/Platform/Infrastructure/SecretsBootstrap.swift",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
