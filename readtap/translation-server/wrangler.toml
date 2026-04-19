@@ -1,0 +1,106 @@
+name = "readtap-translation-worker"
+main = "index.js"
+compatibility_date = "2026-02-14"
+
+# Smart Placement: run worker near backend (OpenAI US) instead of user edge
+# Fixes OpenAI 403 "unsupported_country_region_territory" from Korean edge nodes
+[placement]
+mode = "smart"
+
+[vars]
+REQUEST_TIMEOUT_MS = "14000"
+TRANSLATION_PROVIDER = "deepl"
+CACHE_TTL_SECONDS = "43200"
+# 브라우저에서 호출할 실제 origin만 설정하세요.
+# (예: https://app.readtap.com, https://staging.app.readtap.com)
+ALLOWED_ORIGINS = ""
+REQUIRE_SIGNING = "true"
+DEBUG = "false"
+MAX_REQUEST_BYTES = "12000"
+RATE_LIMIT_ENABLED = "true"
+RATE_LIMIT_WINDOW_SECONDS = "60"
+RATE_LIMIT_MAX_REQUESTS = "120"
+# 보호된 엔드포인트는 Bearer token + HMAC 서명을 요구합니다.
+# 이 값은 "인증"이 아니라, 인증 후 허용할 앱 식별자 allowlist 입니다.
+ALLOWED_CLIENT_IDS = "readtap-ios-prod,readtap-ios-staging"
+# LLM for /premium-lookup (OpenAI only).
+# Set OPENAI_BASE_URL secret to use a proxy if region-blocked.
+OPENAI_MODEL = "gpt-4.1-nano"
+
+[[kv_namespaces]]
+binding = "TRANSLATION_CACHE"
+id = "a1f641a5e9de4e08abff6d57e161074f"
+preview_id = "d635ad426477407ea18c270d6d233551"
+
+[[d1_databases]]
+binding = "DICTIONARY_DB"
+database_name = "readtap-dictionary"
+database_id = "ab84fe65-7a82-4406-a7c8-27ba5b1489f1"
+
+[env.production]
+name = "readtap-translation-worker"
+
+[env.production.placement]
+mode = "smart"
+
+[env.production.vars]
+REQUEST_TIMEOUT_MS = "14000"
+TRANSLATION_PROVIDER = "deepl"
+CACHE_TTL_SECONDS = "43200"
+# 브라우저에서 호출할 실제 origin만 설정하세요.
+# (예: https://app.readtap.com)
+ALLOWED_ORIGINS = ""
+REQUIRE_SIGNING = "true"
+DEBUG = "false"
+MAX_REQUEST_BYTES = "12000"
+RATE_LIMIT_ENABLED = "true"
+RATE_LIMIT_WINDOW_SECONDS = "60"
+RATE_LIMIT_MAX_REQUESTS = "120"
+ALLOWED_CLIENT_IDS = "readtap-ios-prod"
+OPENAI_MODEL = "gpt-4.1-nano"
+# Premium/ban 서버측 검증을 위한 Supabase 설정.
+# 실제 값은 `wrangler secret put` 으로 설정하세요:
+#   wrangler secret put SUPABASE_URL --env production
+#   wrangler secret put SUPABASE_SERVICE_ROLE_KEY --env production
+
+[[env.production.kv_namespaces]]
+binding = "TRANSLATION_CACHE"
+id = "a1f641a5e9de4e08abff6d57e161074f"
+preview_id = "d635ad426477407ea18c270d6d233551"
+
+[[env.production.d1_databases]]
+binding = "DICTIONARY_DB"
+database_name = "readtap-dictionary"
+database_id = "ab84fe65-7a82-4406-a7c8-27ba5b1489f1"
+
+[env.staging]
+name = "readtap-translation-worker-staging"
+
+[env.staging.placement]
+mode = "smart"
+
+[env.staging.vars]
+REQUEST_TIMEOUT_MS = "14000"
+TRANSLATION_PROVIDER = "deepl"
+CACHE_TTL_SECONDS = "43200"
+# 브라우저에서 호출할 실제 origin만 설정하세요.
+# (예: https://staging.app.readtap.com)
+ALLOWED_ORIGINS = ""
+REQUIRE_SIGNING = "true"
+DEBUG = "false"
+MAX_REQUEST_BYTES = "12000"
+RATE_LIMIT_ENABLED = "true"
+RATE_LIMIT_WINDOW_SECONDS = "60"
+RATE_LIMIT_MAX_REQUESTS = "240"
+ALLOWED_CLIENT_IDS = "readtap-ios-staging"
+OPENAI_MODEL = "gpt-4.1-nano"
+
+[[env.staging.kv_namespaces]]
+binding = "TRANSLATION_CACHE"
+id = "a1f641a5e9de4e08abff6d57e161074f"
+preview_id = "d635ad426477407ea18c270d6d233551"
+
+[[env.staging.d1_databases]]
+binding = "DICTIONARY_DB"
+database_name = "readtap-dictionary"
+database_id = "ab84fe65-7a82-4406-a7c8-27ba5b1489f1"

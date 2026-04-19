@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReadTap Premium Comparison Concepts</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    background: #0a0a0a;
+    color: #fff;
+    min-height: 100vh;
+    padding: 40px 20px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: #666;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 40px;
+  }
+
+  .concept-label {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #555;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin: 60px 0 24px;
+    padding-top: 40px;
+    border-top: 1px solid #1a1a1a;
+  }
+  .concept-label:first-of-type { border-top: none; margin-top: 20px; }
+
+  .concept-title {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 700;
+    color: #eee;
+    margin-bottom: 8px;
+  }
+  .concept-desc {
+    text-align: center;
+    font-size: 13px;
+    color: #777;
+    margin-bottom: 32px;
+    max-width: 380px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.5;
+  }
+
+  /* Phone frame */
+  .phone {
+    width: 375px;
+    height: 720px;
+    margin: 0 auto;
+    border-radius: 44px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .phone-screen {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ==================== CONCEPT A ==================== */
+  .concept-a .phone-screen {
+    background: linear-gradient(180deg, #F8F7F4 0%, #F2F0EC 100%);
+  }
+  .concept-a .status-bar {
+    height: 54px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+
+  /* Close button */
+  .close-btn {
+    position: absolute;
+    top: 56px;
+    right: 20px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #999;
+    z-index: 10;
+  }
+
+  /* Header section */
+  .promo-header {
+    text-align: center;
+    padding: 20px 24px 0;
+  }
+  .promo-header .badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #1FAD61, #17935A);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 20px;
+    margin-bottom: 14px;
+  }
+  .promo-header h2 {
+    font-size: 24px;
+    font-weight: 800;
+    color: #1a1a1a;
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+  .promo-header h2 em {
+    font-style: normal;
+    color: #1FAD61;
+  }
+  .promo-header p {
+    font-size: 13px;
+    color: #888;
+    line-height: 1.4;
+  }
+
+  /* Comparison section */
+  .comparison {
+    padding: 20px 20px 0;
+  }
+  .comparison-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .comparison-card {
+    flex: 1;
+    border-radius: 16px;
+    padding: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .comparison-card.free {
+    background: #fff;
+    border: 1px solid #e8e5e0;
+  }
+  .comparison-card.premium {
+    background: linear-gradient(135deg, rgba(31,173,97,0.06), rgba(31,173,97,0.02));
+    border: 1.5px solid rgba(31,173,97,0.25);
+  }
+
+  .card-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .card-label.free-label { color: #aaa; }
+  .card-label.premium-label { color: #1FAD61; }
+
+  /* Mini popup mock */
+  .mini-popup {
+    border-radius: 12px;
+    padding: 10px;
+    position: relative;
+  }
+  .mini-popup.free-popup {
+    background: #fafaf8;
+    border: 1px solid #eee;
+  }
+  .mini-popup.premium-popup {
+    background: #fff;
+    border: 1px solid rgba(31,173,97,0.15);
+    box-shadow: 0 2px 12px rgba(31,173,97,0.08);
+  }
+
+  .mini-word {
+    font-size: 14px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 6px;
+  }
+  .mini-meaning {
+    font-size: 10px;
+    color: #888;
+    line-height: 1.5;
+    margin-bottom: 4px;
+  }
+  .mini-meaning.premium-meaning {
+    color: #555;
+  }
+
+  .pos-badge {
+    display: inline-block;
+    font-size: 8px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-right: 3px;
+    margin-bottom: 4px;
+  }
+  .pos-badge.noun { background: rgba(31,173,97,0.1); color: #1FAD61; }
+  .pos-badge.verb { background: rgba(64,168,222,0.1); color: #40A8DE; }
+  .pos-badge.adj { background: rgba(180,109,72,0.1); color: #B46D48; }
+
+  .mini-divider {
+    height: 1px;
+    background: #eee;
+    margin: 6px 0;
+  }
+  .mini-action-row {
+    display: flex;
+    gap: 4px;
+  }
+  .mini-btn {
+    font-size: 8px;
+    font-weight: 600;
+    padding: 3px 6px;
+    border-radius: 4px;
+    color: #999;
+    background: #f5f5f3;
+  }
+  .mini-btn.accent {
+    background: rgba(31,173,97,0.1);
+    color: #1FAD61;
+  }
+
+  .synonym-row {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+  .syn-chip {
+    font-size: 7px;
+    font-weight: 600;
+    padding: 2px 5px;
+    border-radius: 3px;
+    background: rgba(31,173,97,0.06);
+    color: #1FAD61;
+    border: 0.5px solid rgba(31,173,97,0.15);
+  }
+  .ant-chip {
+    font-size: 7px;
+    font-weight: 600;
+    padding: 2px 5px;
+    border-radius: 3px;
+    background: rgba(222,100,64,0.06);
+    color: #c45a30;
+    border: 0.5px solid rgba(222,100,64,0.15);
+  }
+
+  .sentence-box {
+    background: rgba(31,173,97,0.04);
+    border: 0.5px solid rgba(31,173,97,0.12);
+    border-radius: 6px;
+    padding: 5px 7px;
+    margin-top: 5px;
+  }
+  .sentence-label {
+    font-size: 7px;
+    font-weight: 700;
+    color: #1FAD61;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .sentence-text {
+    font-size: 8px;
+    color: #666;
+    line-height: 1.4;
+  }
+  .sentence-text b { color: #1FAD61; font-weight: 700; }
+
+  /* Arrow between cards */
+  .arrow-col {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 24px;
+  }
+  .arrow-icon {
+    font-size: 16px;
+    color: #1FAD61;
+    font-weight: 300;
+  }
+
+  /* Feature bullets */
+  .features-list {
+    padding: 8px 24px 0;
+  }
+  .feature-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 0;
+  }
+  .feature-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  .feature-icon.green { background: rgba(31,173,97,0.1); }
+  .feature-text .ft-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a1a1a;
+  }
+  .feature-text .ft-sub {
+    font-size: 10px;
+    color: #999;
+    margin-top: 1px;
+  }
+
+  /* CTA */
+  .cta-section {
+    padding: 16px 24px;
+    text-align: center;
+  }
+  .cta-primary {
+    width: 100%;
+    padding: 14px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #1FAD61, #17935A);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    margin-bottom: 8px;
+    box-shadow: 0 4px 16px rgba(31,173,97,0.3);
+  }
+  .cta-secondary {
+    font-size: 12px;
+    color: #1FAD61;
+    font-weight: 600;
+  }
+  .cta-hint {
+    font-size: 10px;
+    color: #bbb;
+    margin-top: 8px;
+  }
+
+  /* ==================== CONCEPT B ==================== */
+  .concept-b .phone-screen {
+    background: linear-gradient(180deg, #F8F7F4 0%, #F2F0EC 100%);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Swipe comparison */
+  .swipe-comparison {
+    padding: 0 20px;
+    position: relative;
+  }
+  .swipe-container {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    height: 300px;
+    background: #fff;
+    border: 1px solid #e8e5e0;
+  }
+  .swipe-side {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+  }
+  .swipe-side.left {
+    left: 0;
+    width: 50%;
+    background: #fafaf8;
+    border-right: 2px dashed rgba(31,173,97,0.3);
+    z-index: 1;
+  }
+  .swipe-side.right {
+    right: 0;
+    width: 100%;
+    background: linear-gradient(135deg, rgba(31,173,97,0.03), #fff);
+    padding-left: calc(50% + 20px);
+  }
+  .swipe-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .swipe-label.free-l { color: #bbb; }
+  .swipe-label.prem-l { color: #1FAD61; }
+
+  .swipe-word {
+    font-size: 18px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+  }
+  .swipe-def {
+    font-size: 11px;
+    color: #999;
+    line-height: 1.6;
+  }
+  .swipe-def.premium-def {
+    color: #555;
+  }
+  .swipe-pos {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+  }
+
+  .swipe-handle {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #1FAD61;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 12px rgba(31,173,97,0.4);
+  }
+  .swipe-handle::before {
+    content: '◂ ▸';
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+  }
+
+  .swipe-divider-line {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(180deg, transparent, #1FAD61, transparent);
+    z-index: 4;
+  }
+
+  /* ==================== CONCEPT C ==================== */
+  .concept-c .phone-screen {
+    background: linear-gradient(180deg, #F8F7F4 0%, #F0EDE8 100%);
+  }
+
+  .journey-section {
+    padding: 0 20px;
+  }
+  .journey-step {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 4px;
+  }
+  .journey-timeline {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 24px;
+    flex-shrink: 0;
+  }
+  .journey-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ddd;
+    flex-shrink: 0;
+  }
+  .journey-dot.active { background: #1FAD61; }
+  .journey-line {
+    width: 1.5px;
+    flex: 1;
+    background: #e0e0e0;
+    min-height: 8px;
+  }
+  .journey-line.active { background: rgba(31,173,97,0.3); }
+
+  .journey-content {
+    flex: 1;
+    padding-bottom: 10px;
+  }
+  .journey-content .jc-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .journey-content .jc-label.free-jl { color: #bbb; }
+  .journey-content .jc-label.prem-jl { color: #1FAD61; }
+
+  .journey-popup {
+    border-radius: 14px;
+    padding: 12px;
+    position: relative;
+  }
+  .journey-popup.free-jp {
+    background: #fff;
+    border: 1px solid #e8e5e0;
+  }
+  .journey-popup.premium-jp {
+    background: linear-gradient(135deg, rgba(31,173,97,0.04), #fff);
+    border: 1.5px solid rgba(31,173,97,0.2);
+    box-shadow: 0 4px 20px rgba(31,173,97,0.08);
+  }
+
+  .jp-word {
+    font-size: 16px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+  }
+  .jp-pronunciation {
+    font-size: 10px;
+    color: #bbb;
+    margin-bottom: 8px;
+  }
+  .jp-meaning {
+    font-size: 11px;
+    color: #888;
+    line-height: 1.5;
+  }
+  .jp-meaning.rich {
+    color: #555;
+  }
+
+  .jp-section-label {
+    font-size: 8px;
+    font-weight: 700;
+    color: #1FAD61;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 8px;
+    margin-bottom: 4px;
+  }
+
+  .jp-chips {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .upgrade-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 0;
+  }
+  .upgrade-arrow-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(31,173,97,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #1FAD61;
+  }
+
+  /* Page dots */
+  .page-dots {
+    display: flex;
+    gap: 4px;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+  }
+  .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #ddd;
+  }
+  .dot.active { background: #1FAD61; }
+
+  /* Dimmed overlay text */
+  .lock-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 8px;
+    font-weight: 700;
+    color: #ccc;
+    background: #f5f5f3;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 6px;
+  }
+
+  /* ==================== CONCEPT D — Full-screen animated ==================== */
+  .concept-d .phone-screen {
+    background: linear-gradient(180deg, #111 0%, #0a0a0a 100%);
+  }
+  .concept-d .status-bar {
+    color: #fff;
+  }
+  .concept-d .close-btn {
+    background: rgba(255,255,255,0.1);
+    color: #666;
+  }
+
+  .dark-header {
+    text-align: center;
+    padding: 20px 24px 16px;
+  }
+  .dark-header .glow-text {
+    font-size: 28px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #1FAD61, #4AE68A);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 6px;
+  }
+  .dark-header p {
+    font-size: 12px;
+    color: #666;
+    line-height: 1.5;
+  }
+
+  .dark-comparison {
+    padding: 0 16px;
+  }
+  .dark-card {
+    border-radius: 18px;
+    padding: 16px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+  .dark-card.free-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .dark-card.premium-card {
+    background: linear-gradient(135deg, rgba(31,173,97,0.12), rgba(31,173,97,0.04));
+    border: 1px solid rgba(31,173,97,0.25);
+  }
+
+  .dark-card-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .dark-card-label.free-dl { color: #555; }
+  .dark-card-label.prem-dl { color: #1FAD61; }
+
+  .dark-word {
+    font-size: 20px;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+
+  .dark-meaning {
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .dark-meaning.free-dm { color: #555; }
+  .dark-meaning.prem-dm { color: #ccc; }
+
+  .dark-pos-badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 5px;
+    margin-right: 4px;
+    margin-bottom: 6px;
+  }
+  .dark-pos-badge.noun { background: rgba(31,173,97,0.15); color: #4AE68A; }
+  .dark-pos-badge.verb { background: rgba(64,168,222,0.15); color: #7FC2F0; }
+
+  .dark-syn-section {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .dark-syn-label {
+    font-size: 8px;
+    font-weight: 700;
+    color: #555;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .dark-syn-chips {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .dark-syn-chip {
+    font-size: 9px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 5px;
+    background: rgba(31,173,97,0.08);
+    color: #4AE68A;
+    border: 0.5px solid rgba(31,173,97,0.2);
+  }
+  .dark-ant-chip {
+    font-size: 9px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 5px;
+    background: rgba(222,100,64,0.08);
+    color: #e88a5a;
+    border: 0.5px solid rgba(222,100,64,0.2);
+  }
+
+  .dark-sentence {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: rgba(31,173,97,0.06);
+    border-radius: 8px;
+    border: 0.5px solid rgba(31,173,97,0.15);
+  }
+  .dark-sentence-label {
+    font-size: 7px;
+    font-weight: 700;
+    color: #1FAD61;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+  .dark-sentence-text {
+    font-size: 10px;
+    color: #888;
+    line-height: 1.5;
+  }
+  .dark-sentence-text b { color: #4AE68A; }
+
+  .versus {
+    text-align: center;
+    padding: 4px 0;
+  }
+  .versus-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(31,173,97,0.1);
+    font-size: 10px;
+    font-weight: 800;
+    color: #1FAD61;
+  }
+
+  .dark-cta {
+    padding: 16px 20px;
+    text-align: center;
+  }
+  .dark-cta-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #1FAD61, #17935A);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    box-shadow: 0 4px 24px rgba(31,173,97,0.35);
+    margin-bottom: 8px;
+  }
+  .dark-cta-sub {
+    font-size: 11px;
+    color: #444;
+  }
+
+  /* Glow effects on premium card */
+  .premium-card::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    border-radius: 19px;
+    background: linear-gradient(135deg, rgba(31,173,97,0.3), transparent, rgba(31,173,97,0.15));
+    z-index: -1;
+    filter: blur(1px);
+  }
+
+  .blur-placeholder {
+    filter: blur(3px);
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  .locked-overlay {
+    position: relative;
+  }
+  .locked-overlay::after {
+    content: '🔒 Premium';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 10px;
+    font-weight: 700;
+    color: #ccc;
+    background: rgba(0,0,0,0.6);
+    padding: 4px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<h1>ReadTap Premium — Upgrade Page Concepts</h1>
+
+<!-- ===================== CONCEPT A ===================== -->
+<div class="concept-label">CONCEPT A</div>
+<div class="concept-title">Side-by-Side Cards</div>
+<div class="concept-desc">Free 팝업과 Premium 팝업을 나란히 배치해서 직접 비교. 가장 직관적인 before/after 방식</div>
+
+<div class="phone concept-a">
+  <div class="phone-screen">
+    <div class="status-bar">9:41</div>
+    <div class="close-btn">✕</div>
+
+    <div class="promo-header">
+      <div class="badge">✦ PREMIUM</div>
+      <h2>더 깊이 읽는<br><em>Premium</em> 경험</h2>
+      <p>단어를 탭하면 이렇게 달라져요</p>
+    </div>
+
+    <div class="comparison">
+      <!-- Row 1: Basic meaning -->
+      <div class="comparison-row">
+        <div class="comparison-card free">
+          <div class="card-label free-label">지금</div>
+          <div class="mini-popup free-popup">
+            <div class="mini-word">ephemeral</div>
+            <div class="mini-meaning">일시적인, 순간적인</div>
+            <div class="mini-divider"></div>
+            <div class="mini-action-row">
+              <div class="mini-btn">📖 저장</div>
+            </div>
+          </div>
+        </div>
+        <div class="arrow-col">
+          <div class="arrow-icon">→</div>
+        </div>
+        <div class="comparison-card premium">
+          <div class="card-label premium-label">✦ Premium</div>
+          <div class="mini-popup premium-popup">
+            <div class="mini-word">ephemeral</div>
+            <div class="page-dots">
+              <div class="dot active"></div>
+              <div class="dot"></div>
+            </div>
+            <div style="margin-bottom:4px">
+              <span class="pos-badge adj">Adj</span>
+            </div>
+            <div class="mini-meaning premium-meaning">오래가지 않는, 짧은 시간 동안만 존재하는</div>
+            <div class="sentence-box">
+              <div class="sentence-label">문장 번역</div>
+              <div class="sentence-text">The <b>ephemeral</b> beauty of cherry blossoms → 벚꽃의 <b>일시적인</b> 아름다움</div>
+            </div>
+            <div class="mini-divider"></div>
+            <div class="mini-action-row">
+              <div class="mini-btn accent">📖 저장</div>
+              <div class="mini-btn accent">→ 유의어</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2: Synonym page peek -->
+      <div class="comparison-row">
+        <div class="comparison-card free" style="opacity:0.5">
+          <div class="card-label free-label">유의어 없음</div>
+          <div class="mini-popup free-popup" style="min-height:60px;display:flex;align-items:center;justify-content:center">
+            <div class="lock-badge">🔒 Premium 전용</div>
+          </div>
+        </div>
+        <div class="arrow-col">
+          <div class="arrow-icon">→</div>
+        </div>
+        <div class="comparison-card premium">
+          <div class="card-label premium-label">✦ 유의어 · 반의어</div>
+          <div class="mini-popup premium-popup">
+            <div style="font-size:10px;font-weight:700;color:#1a1a1a;margin-bottom:6px">Synonyms</div>
+            <div class="synonym-row">
+              <div class="syn-chip">transient</div>
+              <div class="syn-chip">fleeting</div>
+              <div class="syn-chip">brief</div>
+            </div>
+            <div style="font-size:10px;font-weight:700;color:#1a1a1a;margin:6px 0 4px">Antonyms</div>
+            <div class="synonym-row">
+              <div class="ant-chip">permanent</div>
+              <div class="ant-chip">eternal</div>
+              <div class="ant-chip">enduring</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="features-list">
+      <div class="feature-item">
+        <div class="feature-icon green">✨</div>
+        <div class="feature-text">
+          <div class="ft-title">정확한 뜻풀이</div>
+          <div class="ft-sub">AI 기반 맥락 맞춤 번역</div>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon green">🏷</div>
+        <div class="feature-text">
+          <div class="ft-title">품사 분류</div>
+          <div class="ft-sub">명사·동사·형용사 구분</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cta-section">
+      <button class="cta-primary">7일 무료 체험 시작</button>
+      <div class="cta-hint">7일 후 자동 결제 없음 · 언제든 취소</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================== CONCEPT B ===================== -->
+<div class="concept-label">CONCEPT B</div>
+<div class="concept-title">Swipe Reveal</div>
+<div class="concept-desc">스와이프 슬라이더로 Free/Premium 영역을 드래그해서 비교하는 인터랙티브 방식</div>
+
+<div class="phone concept-b">
+  <div class="phone-screen">
+    <div class="status-bar">9:41</div>
+    <div class="close-btn">✕</div>
+
+    <div class="promo-header">
+      <div class="badge">✦ PREMIUM</div>
+      <h2>직접 비교해 보세요</h2>
+      <p>슬라이더를 드래그해서 차이를 확인하세요</p>
+    </div>
+
+    <div class="swipe-comparison">
+      <div class="swipe-container">
+        <div class="swipe-side right">
+          <div class="swipe-label prem-l">✦ Premium</div>
+          <div class="swipe-word">serendipity</div>
+          <div class="swipe-pos">
+            <span class="pos-badge noun">Noun</span>
+          </div>
+          <div class="swipe-def premium-def">
+            우연히 좋은 것을 발견하는 능력이나 행운; 예기치 않은 기쁜 발견
+          </div>
+          <div class="sentence-box" style="margin-top:12px">
+            <div class="sentence-label">문장 번역</div>
+            <div class="sentence-text">It was pure <b>serendipity</b> that they met → 그들이 만난 것은 순전한 <b>우연</b>이었다</div>
+          </div>
+          <div style="margin-top:12px">
+            <div style="font-size:9px;font-weight:700;color:#1FAD61;letter-spacing:1px;margin-bottom:6px">SYNONYMS</div>
+            <div class="synonym-row">
+              <div class="syn-chip">fortune</div>
+              <div class="syn-chip">luck</div>
+              <div class="syn-chip">chance</div>
+              <div class="syn-chip">fate</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="swipe-side left">
+          <div class="swipe-label free-l">현재</div>
+          <div class="swipe-word">serendipity</div>
+          <div class="swipe-def" style="margin-top:8px">
+            우연한 발견, 행운
+          </div>
+          <div style="flex:1"></div>
+          <div style="text-align:center;padding:8px 0">
+            <div class="lock-badge">🔒 유의어·문장번역은 Premium</div>
+          </div>
+        </div>
+
+        <div class="swipe-divider-line"></div>
+        <div class="swipe-handle"></div>
+      </div>
+    </div>
+
+    <div class="features-list" style="padding-top:16px">
+      <div class="feature-item">
+        <div class="feature-icon green">✨</div>
+        <div class="feature-text">
+          <div class="ft-title">AI 정확 번역</div>
+          <div class="ft-sub">문맥에 맞는 자연스러운 뜻</div>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon green">🔄</div>
+        <div class="feature-text">
+          <div class="ft-title">유의어 · 반의어</div>
+          <div class="ft-sub">관련 어휘를 함께 학습</div>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon green">📝</div>
+        <div class="feature-text">
+          <div class="ft-title">문장 번역</div>
+          <div class="ft-sub">선택한 단어가 포함된 문장도 번역</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cta-section">
+      <button class="cta-primary">7일 무료 체험 시작</button>
+      <div class="cta-secondary">요금제 보기</div>
+      <div class="cta-hint">무료 체험 후 자동 결제 없음</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================== CONCEPT C ===================== -->
+<div class="concept-label">CONCEPT C</div>
+<div class="concept-title">Before → After Journey</div>
+<div class="concept-desc">타임라인 형태로 Free 팝업에서 Premium 팝업으로의 변화를 위→아래로 보여줌</div>
+
+<div class="phone concept-c">
+  <div class="phone-screen">
+    <div class="status-bar">9:41</div>
+    <div class="close-btn">✕</div>
+
+    <div class="promo-header">
+      <div class="badge">✦ PREMIUM</div>
+      <h2>단어 팝업이<br><em>이렇게</em> 바뀝니다</h2>
+      <p>같은 단어, 완전히 다른 경험</p>
+    </div>
+
+    <div class="journey-section">
+      <!-- Step 1: Free popup -->
+      <div class="journey-step">
+        <div class="journey-timeline">
+          <div class="journey-dot"></div>
+          <div class="journey-line"></div>
+        </div>
+        <div class="journey-content">
+          <div class="jc-label free-jl">현재 팝업</div>
+          <div class="journey-popup free-jp">
+            <div class="jp-word">resilient</div>
+            <div class="jp-meaning">회복력 있는, 탄력 있는</div>
+            <div style="margin-top:8px">
+              <div class="mini-divider"></div>
+              <div class="mini-action-row" style="margin-top:6px">
+                <div class="mini-btn">📖 저장</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div class="journey-step">
+        <div class="journey-timeline">
+          <div class="upgrade-arrow-icon" style="width:10px;height:10px;font-size:0">
+            <div style="width:8px;height:8px;border-radius:50%;background:#1FAD61"></div>
+          </div>
+          <div class="journey-line active"></div>
+        </div>
+        <div class="journey-content" style="padding:0">
+          <div style="font-size:10px;font-weight:700;color:#1FAD61;padding:0 0 4px">↓ Premium으로 업그레이드하면</div>
+        </div>
+      </div>
+
+      <!-- Step 2: Premium popup -->
+      <div class="journey-step">
+        <div class="journey-timeline">
+          <div class="journey-dot active"></div>
+          <div class="journey-line active" style="min-height:0;flex:0"></div>
+        </div>
+        <div class="journey-content">
+          <div class="jc-label prem-jl">✦ Premium 팝업</div>
+          <div class="journey-popup premium-jp">
+            <div class="jp-word">resilient</div>
+            <div class="page-dots" style="position:static;display:flex;margin-bottom:8px">
+              <div class="dot active"></div>
+              <div class="dot"></div>
+            </div>
+            <div style="margin-bottom:6px">
+              <span class="pos-badge adj">Adjective</span>
+            </div>
+            <div class="jp-meaning rich">
+              어려움이나 역경으로부터 빠르게 회복할 수 있는; 원래 형태로 되돌아가는 탄성이 있는
+            </div>
+            <div class="sentence-box" style="margin-top:8px">
+              <div class="sentence-label">문장 번역</div>
+              <div class="sentence-text">Children are remarkably <b>resilient</b> → 아이들은 놀랍도록 <b>회복력이 강하다</b></div>
+            </div>
+            <div class="jp-section-label" style="margin-top:10px">유의어</div>
+            <div class="jp-chips">
+              <div class="syn-chip">tough</div>
+              <div class="syn-chip">strong</div>
+              <div class="syn-chip">adaptable</div>
+              <div class="syn-chip">hardy</div>
+            </div>
+            <div style="margin-top:6px">
+              <div class="mini-divider"></div>
+              <div class="mini-action-row" style="margin-top:6px">
+                <div class="mini-btn accent">📖 저장</div>
+                <div class="mini-btn accent">→ 유의어</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cta-section" style="padding-top:12px">
+      <button class="cta-primary">7일 무료 체험 시작</button>
+      <div class="cta-hint">무료 체험 · 자동 결제 없음 · 언제든 취소</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================== CONCEPT D ===================== -->
+<div class="concept-label">CONCEPT D</div>
+<div class="concept-title">Dark Comparison</div>
+<div class="concept-desc">다크 배경 위에 Free/Premium 카드를 세로로 배치. 프리미엄 카드에 글로우 효과를 줘서 시각적 임팩트 극대화</div>
+
+<div class="phone concept-d">
+  <div class="phone-screen">
+    <div class="status-bar" style="color:#fff">9:41</div>
+    <div class="close-btn">✕</div>
+
+    <div class="dark-header">
+      <div class="glow-text">Premium Popup</div>
+      <p>같은 단어를 탭해도<br>받는 정보가 완전히 다릅니다</p>
+    </div>
+
+    <div class="dark-comparison">
+      <!-- Free card -->
+      <div class="dark-card free-card">
+        <div class="dark-card-label free-dl">현재</div>
+        <div class="dark-word">ubiquitous</div>
+        <div class="dark-meaning free-dm">어디에나 있는, 아주 흔한</div>
+      </div>
+
+      <div class="versus">
+        <div class="versus-icon">↓</div>
+      </div>
+
+      <!-- Premium card -->
+      <div class="dark-card premium-card">
+        <div class="dark-card-label prem-dl">✦ Premium</div>
+        <div class="dark-word">ubiquitous</div>
+        <div style="margin-bottom:6px">
+          <span class="dark-pos-badge adj">Adjective</span>
+        </div>
+        <div class="dark-meaning prem-dm">
+          동시에 어디에서나 존재하거나 발견되는; 매우 널리 퍼진
+        </div>
+        <div class="dark-sentence">
+          <div class="dark-sentence-label">문장 번역</div>
+          <div class="dark-sentence-text">Smartphones have become <b>ubiquitous</b> → 스마트폰은 <b>어디에서나</b> 볼 수 있게 되었다</div>
+        </div>
+        <div class="dark-syn-section">
+          <div class="dark-syn-label">Synonyms</div>
+          <div class="dark-syn-chips">
+            <div class="dark-syn-chip">omnipresent</div>
+            <div class="dark-syn-chip">pervasive</div>
+            <div class="dark-syn-chip">universal</div>
+          </div>
+        </div>
+        <div class="dark-syn-section" style="border-top:1px solid rgba(255,255,255,0.04)">
+          <div class="dark-syn-label">Antonyms</div>
+          <div class="dark-syn-chips">
+            <div class="dark-ant-chip">rare</div>
+            <div class="dark-ant-chip">scarce</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dark-cta">
+      <button class="dark-cta-btn">7일 무료 체험 시작</button>
+      <div class="dark-cta-sub">무료 체험 후 자동 결제 없음</div>
+    </div>
+  </div>
+</div>
+
+<div style="height:80px"></div>
+
+</body>
+</html>

@@ -1,0 +1,547 @@
+openapi: 3.1.0
+info:
+  title: ReadTap Backend API
+  version: "1.0.0"
+  description: ReadTap MVP backend API for user data sync, study tracking, subscriptions and translation proxy.
+servers:
+  - url: https://api.realtap.example.com
+    description: Production
+  - url: https://api-dev.realtap.example.com
+    description: Staging
+
+paths:
+  /v1/auth/apple:
+    post:
+      summary: Sign in with Apple
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppleSignInRequest"
+      responses:
+        "200":
+          description: JWT issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /v1/auth/refresh:
+    post:
+      summary: Refresh JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "200":
+          description: New tokens
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /v1/sync:
+    get:
+      summary: Incremental sync pull
+      parameters:
+        - in: query
+          name: since
+          schema:
+            type: string
+            format: date-time
+          required: false
+          description: Last sync cursor for incremental pull
+      responses:
+        "200":
+          description: Changes since cursor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncResponse"
+    post:
+      summary: Push local changes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncBatchRequest"
+      responses:
+        "202":
+          description: Accepted and applied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncBatchResponse"
+
+  /v1/books:
+    get:
+      summary: List books
+      responses:
+        "200":
+          description: Book list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BooksResponse"
+    post:
+      summary: Upsert book metadata
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookRequest"
+      responses:
+        "200":
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookResponse"
+
+  /v1/books/{bookId}/words:
+    get:
+      summary: Get words for book
+      parameters:
+        - in: path
+          name: bookId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Words in book
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WordListResponse"
+    post:
+      summary: Batch upsert words
+      parameters:
+        - in: path
+          name: bookId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WordBatchRequest"
+      responses:
+        "200":
+          description: Upserted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WordListResponse"
+
+  /v1/words/{wordId}:
+    delete:
+      summary: Delete word
+      parameters:
+        - in: path
+          name: wordId
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /v1/study/session:
+    post:
+      summary: Record study session batch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudySessionRequest"
+      responses:
+        "200":
+          description: Saved
+
+  /v1/study/stats:
+    get:
+      summary: Get study statistics
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudyStatsResponse"
+
+  /v1/subscription/ios/verify:
+    post:
+      summary: Verify App Store receipt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscriptionVerifyRequest"
+      responses:
+        "200":
+          description: Subscription state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionState"
+
+  /v1/me/subscription:
+    get:
+      summary: Current subscription status
+      responses:
+        "200":
+          description: Subscription state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionState"
+
+  /v1/translate:
+    post:
+      summary: Translation proxy (server policy + cache + fallback)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TranslateRequest"
+      responses:
+        "200":
+          description: Translated text
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranslateResponse"
+        "429":
+          description: Rate limit
+        "502":
+          description: External translator error
+
+components:
+  schemas:
+    AppleSignInRequest:
+      type: object
+      required: [identityToken]
+      properties:
+        identityToken:
+          type: string
+        authorizationCode:
+          type: string
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+          example: Bearer
+        expiresIn:
+          type: integer
+          example: 900
+        userId:
+          type: string
+    SyncChange:
+      type: object
+      required: [entityType, operation, entityId, payload, operationId]
+      properties:
+        entityType:
+          type: string
+          enum: [book, folder, folder_item, word, reading_day, book_status]
+        operation:
+          type: string
+          enum: [upsert, delete]
+        entityId:
+          type: string
+        operationId:
+          type: string
+        operationAt:
+          type: string
+          format: date-time
+        payload:
+          type: object
+    SyncBatchRequest:
+      type: object
+      properties:
+        since:
+          type: string
+          format: date-time
+          nullable: true
+        client:
+          type: string
+        deviceId:
+          type: string
+        changes:
+          type: array
+          items:
+            $ref: "#/components/schemas/SyncChange"
+    SyncResponse:
+      type: object
+      properties:
+        nextSync:
+          type: string
+          format: date-time
+        books:
+          type: array
+          items:
+            $ref: "#/components/schemas/BookResponse"
+        words:
+          type: array
+          items:
+            $ref: "#/components/schemas/WordResponse"
+        folders:
+          type: array
+          items:
+            $ref: "#/components/schemas/FolderResponse"
+        folderItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/FolderItemResponse"
+        readingStatus:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReadingStatusResponse"
+    SyncBatchResponse:
+      type: object
+      properties:
+        accepted:
+          type: integer
+        rejected:
+          type: integer
+        conflicts:
+          type: integer
+        nextSync:
+          type: string
+          format: date-time
+    BookRequest:
+      type: object
+      required: [title]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        author:
+          type: string
+        pageCount:
+          type: integer
+        sourceType:
+          type: string
+          enum: [pdf, image]
+        sourceRef:
+          type: string
+        storagePath:
+          type: string
+    BookResponse:
+      allOf:
+        - $ref: "#/components/schemas/BookRequest"
+      type: object
+      properties:
+        updatedAt:
+          type: string
+          format: date-time
+        deleted:
+          type: boolean
+    BooksResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BookResponse"
+        nextSync:
+          type: string
+          format: date-time
+    WordRequest:
+      type: object
+      required: [term]
+      properties:
+        id:
+          type: string
+        bookId:
+          type: string
+        folderId:
+          type: string
+        term:
+          type: string
+        context:
+          type: string
+        meaning:
+          type: string
+        page:
+          type: integer
+        position:
+          type: string
+          description: JSON string or encoded coordinates
+    WordResponse:
+      allOf:
+        - $ref: "#/components/schemas/WordRequest"
+      type: object
+      properties:
+        sourceLanguage:
+          type: string
+        targetLanguage:
+          type: string
+        known:
+          type: boolean
+        updatedAt:
+          type: string
+          format: date-time
+        deleted:
+          type: boolean
+    WordBatchRequest:
+      type: object
+      properties:
+        changes:
+          type: array
+          items:
+            $ref: "#/components/schemas/SyncChange"
+    WordListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/WordResponse"
+        nextCursor:
+          type: string
+    FolderResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        name:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+    FolderItemResponse:
+      type: object
+      properties:
+        folderId:
+          type: string
+        bookId:
+          type: string
+        userId:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+    ReadingStatusResponse:
+      type: object
+      properties:
+        bookId:
+          type: string
+        userId:
+          type: string
+        page:
+          type: integer
+        progress:
+          type: number
+          format: float
+        updatedAt:
+          type: string
+          format: date-time
+    StudySessionRequest:
+      type: object
+      required: [events]
+      properties:
+        events:
+          type: array
+          items:
+            type: object
+            required: [wordId, action, at]
+            properties:
+              wordId:
+                type: string
+              action:
+                type: string
+                enum: [reviewed, known, unknown]
+              at:
+                type: string
+                format: date-time
+    StudyStatsResponse:
+      type: object
+      properties:
+        totalReviews:
+          type: integer
+        correctRate:
+          type: number
+          format: float
+        activeDays:
+          type: integer
+        streak:
+          type: integer
+    SubscriptionVerifyRequest:
+      type: object
+      required: [receiptData]
+      properties:
+        receiptData:
+          type: string
+        productId:
+          type: string
+        environment:
+          type: string
+          enum: [sandbox, production]
+    SubscriptionState:
+      type: object
+      properties:
+        plan:
+          type: string
+        status:
+          type: string
+          enum: [active, expired, cancelled, trial]
+        startsAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+    TranslateRequest:
+      type: object
+      required: [text, source, target]
+      properties:
+        text:
+          type: string
+        source:
+          type: string
+        target:
+          type: string
+        context:
+          type: string
+        task:
+          type: string
+          enum: [translate, meaning]
+    TranslateResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        translatedText:
+          type: string
+        source:
+          type: string
+        target:
+          type: string
+        cached:
+          type: boolean

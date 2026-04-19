@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReadTap Words Page — More Concepts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700;9..40,800&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+  body{background:#08080c;min-height:100vh;font-family:'DM Sans','Noto Sans KR',sans-serif;color:#fff}
+  .hdr{text-align:center;padding:60px 20px 10px}
+  .hdr h1{font-size:28px;font-weight:800;letter-spacing:-.5px}
+  .hdr p{font-size:13px;color:#555;margin-top:6px;letter-spacing:3px;text-transform:uppercase}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(375px,1fr));gap:48px;max-width:1680px;margin:0 auto;padding:40px 40px 80px}
+  .wrap{display:flex;flex-direction:column;align-items:center;gap:18px}
+  .lbl{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#555;text-align:center}
+  .lbl span{display:block;font-size:18px;font-weight:800;color:#999;letter-spacing:-.3px;text-transform:none;margin-top:4px}
+  .lbl .desc{display:block;font-size:11px;font-weight:400;color:#444;letter-spacing:0;text-transform:none;margin-top:6px;line-height:1.5;max-width:340px}
+  .dev{width:375px;height:812px;border-radius:44px;overflow:hidden;position:relative;box-shadow:0 0 0 1px rgba(255,255,255,0.05),0 40px 80px rgba(0,0,0,0.5)}
+  .sb{height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 8px;position:relative;z-index:20}
+  .sb-t{font-size:15px;font-weight:600}
+  .sb-r{display:flex;gap:5px;align-items:center}
+  .sb-d{width:3px;height:3px;border-radius:50%;background:currentColor}
+  .sb-pill{width:25px;height:12px;border-radius:3px;border:1.5px solid currentColor;position:relative}
+  .sb-pill::after{content:'';position:absolute;right:1px;top:1.5px;bottom:1.5px;left:4px;border-radius:1px;background:currentColor}
+  .sc{position:absolute;top:0;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .sc::-webkit-scrollbar{display:none}
+  @keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .ani>*{animation:fu .35s ease both}
+  .ani>*:nth-child(1){animation-delay:.04s}.ani>*:nth-child(2){animation-delay:.08s}.ani>*:nth-child(3){animation-delay:.12s}.ani>*:nth-child(4){animation-delay:.16s}.ani>*:nth-child(5){animation-delay:.20s}.ani>*:nth-child(6){animation-delay:.24s}.ani>*:nth-child(7){animation-delay:.28s}.ani>*:nth-child(8){animation-delay:.32s}
+  :root{--ink:#1F2733;--muted:#6A7482;--eyebrow:#808D9B;--accent:#1a8a4a;--bg-top:#F7F8FA;--bg-bottom:#EAEFF3;--card:#fff;--border:rgba(31,39,51,0.06);--fill:#EBF0F2}
+
+  .btabs{position:absolute;bottom:0;left:0;right:0;height:84px;display:flex;align-items:flex-start;justify-content:space-around;padding-top:10px;z-index:20;background:linear-gradient(0deg,#eaeff3 60%,transparent)}
+  .bt{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:600;color:#b0b8c4}.bt.on{color:var(--accent)}.bt svg{width:20px;height:20px;fill:currentColor}
+
+  .mode-tabs{display:flex;align-items:center;gap:6px}
+  .mtab{padding:7px 16px;border-radius:10px;font-size:12px;font-weight:700;color:var(--muted);background:var(--card);border:1px solid var(--border)}.mtab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .mtab-spacer{flex:1}
+  .today-btn{display:flex;align-items:center;gap:5px;padding:7px 14px;border-radius:10px;font-size:11px;font-weight:700;color:var(--accent);background:rgba(26,138,74,0.06);border:1px solid rgba(26,138,74,0.1)}
+  .today-btn .dot{width:5px;height:5px;border-radius:50%;background:var(--accent)}
+
+  /* Underline bar calendar */
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .cal-title{font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.2px}
+  .cal-nav{display:flex;gap:4px}
+  .cal-btn{width:28px;height:28px;border-radius:8px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted);cursor:pointer}
+  .wk-row{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:6px}
+  .wk-cell{text-align:center;font-size:10px;font-weight:600;color:var(--muted);opacity:.5;padding:4px 0}
+  .day-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+  .dc{text-align:center;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;border-radius:10px;padding:8px 0 4px}
+  .dc.empty{visibility:hidden}.dc.today{color:var(--accent);font-weight:800}.dc.sel{background:var(--accent);color:#fff;font-weight:800}
+  .dc .bar{width:16px;height:3px;border-radius:2px;background:transparent;margin:3px auto 0}
+  .dc.has .bar{background:rgba(26,138,74,0.25)}.dc.today .bar{background:var(--accent)}.dc.sel .bar{background:rgba(255,255,255,.4)}
+
+  /* ═══ E — Collapsible Calendar ═══ */
+  .e{background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom))}.e .sb{color:var(--ink)}
+  .e .top{padding:64px 20px 0;margin-bottom:14px}
+  .e .cal-wrap{padding:0 20px;margin-bottom:4px}
+  .e .collapse-btn{display:flex;align-items:center;justify-content:center;padding:6px 0;margin:0 20px 12px}
+  .e .collapse-bar{width:32px;height:4px;border-radius:2px;background:#d4d8de}
+  .e .day-row{display:flex;align-items:center;gap:10px;padding:0 20px;margin-bottom:14px}
+  .e .day-row .dd{font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-.3px}
+  .e .day-row .dcnt{font-size:12px;font-weight:600;color:var(--accent)}
+  .e .day-row .dspc{flex:1}
+  .e .day-row .open-btn{font-size:11px;font-weight:700;color:var(--accent);padding:6px 12px;border-radius:8px;background:rgba(26,138,74,0.06)}
+
+  .e .word-cards{padding:0 20px 100px;display:flex;flex-direction:column;gap:8px}
+  .e .wcard{padding:14px;background:var(--card);border-radius:16px;border:1px solid var(--border);box-shadow:0 1px 6px rgba(0,0,0,0.03)}
+  .e .wcard .ww{font-size:16px;font-weight:800;color:var(--ink);letter-spacing:-.2px}
+  .e .wcard .wm{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.4}
+  .e .wcard .wf{display:flex;align-items:center;gap:6px;margin-top:8px}
+  .e .wcard .wf .cover{width:24px;height:32px;border-radius:4px;background:linear-gradient(135deg,#3a356a,#1e1b4a);flex-shrink:0}
+  .e .wcard .wf .fname{font-size:10px;font-weight:600;color:var(--eyebrow)}
+  .e .wcard .wf .fpage{font-size:10px;color:var(--muted)}
+
+  /* ═══ F — Split View ═══ */
+  .f{background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom))}.f .sb{color:var(--ink)}
+  .f .top{padding:64px 20px 0;margin-bottom:14px}
+  .f .split{display:flex;flex-direction:column;height:calc(100% - 170px)}
+  .f .cal-section{padding:0 20px;flex-shrink:0}
+  .f .divider{height:1px;background:var(--border);margin:12px 20px}
+  .f .words-section{flex:1;overflow-y:auto;padding:0 20px 100px}
+  .f .words-section::-webkit-scrollbar{display:none}
+  .f .ws-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .f .ws-date{font-size:14px;font-weight:800;color:var(--ink)}
+  .f .ws-cnt{font-size:11px;font-weight:700;color:var(--accent);padding:3px 8px;border-radius:6px;background:rgba(26,138,74,0.06)}
+  .f .ws-spc{flex:1}
+  .f .ws-btn{font-size:10px;font-weight:700;color:var(--muted);padding:5px 10px;border-radius:6px;background:var(--fill)}
+  .f .wline{display:flex;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--border);gap:10px}
+  .f .wline .ww{font-size:15px;font-weight:700;color:var(--ink);flex:1}
+  .f .wline .wm{font-size:11px;color:var(--muted);max-width:140px;text-align:right}
+
+  /* ═══ G — Tabs Inside Card ═══ */
+  .g{background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom))}.g .sb{color:var(--ink)}
+  .g .top{padding:64px 20px 0;margin-bottom:14px}
+  .g .big-card{margin:0 20px 14px;background:var(--card);border-radius:20px;border:1px solid var(--border);box-shadow:0 4px 16px rgba(0,0,0,0.04);overflow:hidden}
+  .g .inner-tabs{display:flex;border-bottom:1px solid var(--border)}
+  .g .itab{flex:1;text-align:center;padding:10px 0;font-size:12px;font-weight:600;color:var(--muted);position:relative;cursor:pointer}
+  .g .itab.on{color:var(--ink);font-weight:700}
+  .g .itab.on::after{content:'';position:absolute;bottom:-1px;left:20%;right:20%;height:2px;background:var(--accent);border-radius:1px}
+  .g .cal-in{padding:14px 16px 10px}
+  .g .detail-in{padding:12px 16px}
+  .g .di-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .g .di-date{font-size:13px;font-weight:800;color:var(--ink)}
+  .g .di-spc{flex:1}
+  .g .di-cnt{font-size:10px;font-weight:700;color:var(--accent);padding:3px 7px;border-radius:5px;background:rgba(26,138,74,0.06)}
+  .g .di-book{display:flex;gap:10px;align-items:center;padding:10px;background:var(--fill);border-radius:12px}
+  .g .di-cover{width:32px;height:42px;border-radius:6px;background:linear-gradient(135deg,#3a356a,#1e1b4a);flex-shrink:0}
+  .g .di-name{font-size:12px;font-weight:700;color:var(--ink);flex:1}
+  .g .di-bcnt{font-size:11px;font-weight:700;color:var(--accent)}
+
+  .g .word-list{padding:0 20px 100px}
+  .g .wl-head{font-size:10px;font-weight:700;color:var(--eyebrow);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+  .g .wl-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card);border-radius:12px;border:1px solid var(--border);margin-bottom:6px}
+  .g .wl-word{font-size:14px;font-weight:700;color:var(--ink);flex:1}
+  .g .wl-mean{font-size:11px;color:var(--muted);max-width:130px;text-align:right}
+
+  /* ═══ H — Horizontal Day Scroll ═══ */
+  .h{background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom))}.h .sb{color:var(--ink)}
+  .h .top{padding:64px 20px 0;margin-bottom:14px}
+  .h .month-label{padding:0 20px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .h .month-label .ml{font-size:14px;font-weight:800;color:var(--ink)}
+  .h .month-label .mn{font-size:13px;color:var(--muted);cursor:pointer}
+  .h .day-scroll{display:flex;gap:4px;padding:0 20px;margin-bottom:18px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .h .day-scroll::-webkit-scrollbar{display:none}
+  .h .ds-item{flex-shrink:0;width:48px;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0 10px;border-radius:14px;cursor:pointer}
+  .h .ds-item.sel{background:var(--accent)}
+  .h .ds-wd{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase}
+  .h .ds-item.sel .ds-wd{color:rgba(255,255,255,.5)}
+  .h .ds-num{font-size:16px;font-weight:800;color:var(--ink);letter-spacing:-.3px}
+  .h .ds-item.sel .ds-num{color:#fff}
+  .h .ds-item.today .ds-num{color:var(--accent)}
+  .h .ds-bar{width:16px;height:3px;border-radius:2px;background:var(--fill)}
+  .h .ds-bar.has{background:rgba(26,138,74,0.3)}
+  .h .ds-item.sel .ds-bar{background:rgba(255,255,255,.3)}
+  .h .ds-item.sel .ds-bar.has{background:rgba(255,255,255,.6)}
+
+  .h .detail-card{margin:0 20px 14px;padding:14px;background:var(--card);border-radius:16px;border:1px solid var(--border);box-shadow:0 2px 10px rgba(0,0,0,0.04)}
+  .h .det-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .h .det-date{font-size:15px;font-weight:800;color:var(--ink)}
+  .h .det-spc{flex:1}
+  .h .det-cnt{font-size:11px;font-weight:700;color:var(--accent);padding:3px 8px;border-radius:6px;background:rgba(26,138,74,0.06)}
+  .h .det-book{display:flex;gap:12px;align-items:center}
+  .h .det-cover{width:44px;height:58px;border-radius:8px;background:linear-gradient(135deg,#3a356a,#1e1b4a);flex-shrink:0;box-shadow:0 3px 8px rgba(0,0,0,0.08)}
+  .h .det-info{flex:1}
+  .h .det-title{font-size:14px;font-weight:700;color:var(--ink)}
+  .h .det-sub{font-size:11px;color:var(--muted);margin-top:2px}
+  .h .det-badge{font-size:11px;font-weight:700;color:var(--accent);flex-shrink:0}
+
+  .h .word-list{padding:0 20px 100px}
+  .h .wl-label{font-size:10px;font-weight:700;color:var(--eyebrow);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+  .h .wl-row{padding:12px 0;border-bottom:1px solid var(--border)}
+  .h .wl-word{font-size:15px;font-weight:700;color:var(--ink)}
+  .h .wl-mean{font-size:12px;color:var(--muted);margin-top:2px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>Words · By Date</h1>
+  <p>More Page Layouts</p>
+</div>
+
+<div class="grid">
+
+<!-- ═══ E — Collapsible Calendar ═══ -->
+<div class="wrap">
+  <div class="lbl">Option E<span>Collapsible</span>
+    <span class="desc">캘린더를 접을 수 있음. 핸들 바로 축소/확대. 접으면 단어 카드에 집중. 각 단어가 커버+출처 포함 카드.</span>
+  </div>
+  <div class="dev e">
+    <div class="sc">
+      <div class="sb"><span class="sb-t">8:39</span><div class="sb-r"><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div>&nbsp;&nbsp;<div class="sb-pill"></div></div></div>
+      <div class="ani">
+        <div class="top"><div class="mode-tabs"><div class="mtab on">By Date</div><div class="mtab">By Book</div><div class="mtab-spacer"></div><div class="today-btn"><span class="dot"></span>Today</div></div></div>
+        <div class="cal-wrap">
+          <div class="cal-head"><div class="cal-title">March 2026</div><div class="cal-nav"><div class="cal-btn">‹</div><div class="cal-btn">›</div></div></div>
+          <div class="wk-row"><div class="wk-cell">S</div><div class="wk-cell">M</div><div class="wk-cell">T</div><div class="wk-cell">W</div><div class="wk-cell">T</div><div class="wk-cell">F</div><div class="wk-cell">S</div></div>
+          <div class="day-grid">
+            <div class="dc">1<div class="bar"></div></div><div class="dc">2<div class="bar"></div></div><div class="dc has">3<div class="bar"></div></div><div class="dc">4<div class="bar"></div></div><div class="dc">5<div class="bar"></div></div><div class="dc has">6<div class="bar"></div></div><div class="dc">7<div class="bar"></div></div>
+            <div class="dc">8<div class="bar"></div></div><div class="dc">9<div class="bar"></div></div><div class="dc">10<div class="bar"></div></div><div class="dc has">11<div class="bar"></div></div><div class="dc has">12<div class="bar"></div></div><div class="dc">13<div class="bar"></div></div><div class="dc">14<div class="bar"></div></div>
+            <div class="dc">15<div class="bar"></div></div><div class="dc">16<div class="bar"></div></div><div class="dc has">17<div class="bar"></div></div><div class="dc has">18<div class="bar"></div></div><div class="dc has">19<div class="bar"></div></div><div class="dc has">20<div class="bar"></div></div><div class="dc">21<div class="bar"></div></div>
+            <div class="dc">22<div class="bar"></div></div><div class="dc has">23<div class="bar"></div></div><div class="dc">24<div class="bar"></div></div><div class="dc sel today">25<div class="bar"></div></div><div class="dc">26<div class="bar"></div></div><div class="dc">27<div class="bar"></div></div><div class="dc">28<div class="bar"></div></div>
+            <div class="dc">29<div class="bar"></div></div><div class="dc">30<div class="bar"></div></div><div class="dc">31<div class="bar"></div></div><div class="dc empty"></div><div class="dc empty"></div><div class="dc empty"></div><div class="dc empty"></div>
+          </div>
+        </div>
+        <div class="collapse-btn"><div class="collapse-bar"></div></div>
+        <div class="day-row"><span class="dd">Wed 25</span><span class="dcnt">2 words</span><span class="dspc"></span><span class="open-btn">Open in reader</span></div>
+        <div class="word-cards">
+          <div class="wcard"><div class="ww">ephemeral</div><div class="wm">lasting for a very short time; transitory</div><div class="wf"><div class="cover"></div><div><div class="fname">Course Overview</div><div class="fpage">page 4</div></div></div></div>
+          <div class="wcard"><div class="ww">paradigm</div><div class="wm">a typical example or pattern of something</div><div class="wf"><div class="cover"></div><div><div class="fname">Course Overview</div><div class="fpage">page 4</div></div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="btabs"><div class="bt"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z"/></svg><span>Home</span></div><div class="bt"><svg viewBox="0 0 24 24"><path d="M4 4h4v16H4zm6 0h4v16h-4zm6 0h4v16h-4z"/></svg><span>Library</span></div><div class="bt on"><svg viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg><span>Words</span></div><div class="bt"><svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 018.5 12a3.5 3.5 0 013.5-3.5 3.5 3.5 0 013.5 3.5 3.5 3.5 0 01-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97s-.03-.66-.07-1l2.11-1.63a.5.5 0 00.12-.64l-2-3.46a.5.5 0 00-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98L14.5 2.42a.5.5 0 00-.5-.42h-4a.5.5 0 00-.5.42l-.37 2.65c-.61.25-1.17.58-1.69.98l-2.49-1a.5.5 0 00-.61.22l-2 3.46a.5.5 0 00.12.64l2.11 1.63a8.14 8.14 0 000 1.94l-2.11 1.66a.5.5 0 00-.12.64l2 3.46a.5.5 0 00.61.22l2.49-1c.52.4 1.08.73 1.69.98l.37 2.65a.5.5 0 00.5.42h4a.5.5 0 00.5-.42l.37-2.65c.61-.25 1.17-.58 1.69-.98l2.49 1a.5.5 0 00.61-.22l2-3.46a.5.5 0 00-.12-.64l-2.11-1.66z"/></svg><span>Settings</span></div></div>
+  </div>
+</div>
+
+<!-- ═══ F — Split View ═══ -->
+<div class="wrap">
+  <div class="lbl">Option F<span>Split View</span>
+    <span class="desc">상단 캘린더 / 구분선 / 하단 단어 리스트. 하단만 스크롤. 캘린더 항상 보임.</span>
+  </div>
+  <div class="dev f">
+    <div class="sc">
+      <div class="sb"><span class="sb-t">8:39</span><div class="sb-r"><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div>&nbsp;&nbsp;<div class="sb-pill"></div></div></div>
+      <div class="ani">
+        <div class="top"><div class="mode-tabs"><div class="mtab on">By Date</div><div class="mtab">By Book</div><div class="mtab-spacer"></div><div class="today-btn"><span class="dot"></span>Today</div></div></div>
+        <div class="split">
+          <div class="cal-section">
+            <div class="cal-head"><div class="cal-title">March 2026</div><div class="cal-nav"><div class="cal-btn">‹</div><div class="cal-btn">›</div></div></div>
+            <div class="wk-row"><div class="wk-cell">S</div><div class="wk-cell">M</div><div class="wk-cell">T</div><div class="wk-cell">W</div><div class="wk-cell">T</div><div class="wk-cell">F</div><div class="wk-cell">S</div></div>
+            <div class="day-grid">
+              <div class="dc">1<div class="bar"></div></div><div class="dc">2<div class="bar"></div></div><div class="dc has">3<div class="bar"></div></div><div class="dc">4<div class="bar"></div></div><div class="dc">5<div class="bar"></div></div><div class="dc has">6<div class="bar"></div></div><div class="dc">7<div class="bar"></div></div>
+              <div class="dc">8<div class="bar"></div></div><div class="dc">9<div class="bar"></div></div><div class="dc">10<div class="bar"></div></div><div class="dc has">11<div class="bar"></div></div><div class="dc has">12<div class="bar"></div></div><div class="dc">13<div class="bar"></div></div><div class="dc">14<div class="bar"></div></div>
+              <div class="dc">15<div class="bar"></div></div><div class="dc">16<div class="bar"></div></div><div class="dc has">17<div class="bar"></div></div><div class="dc has">18<div class="bar"></div></div><div class="dc has">19<div class="bar"></div></div><div class="dc has">20<div class="bar"></div></div><div class="dc">21<div class="bar"></div></div>
+              <div class="dc">22<div class="bar"></div></div><div class="dc has">23<div class="bar"></div></div><div class="dc">24<div class="bar"></div></div><div class="dc sel today">25<div class="bar"></div></div><div class="dc">26<div class="bar"></div></div><div class="dc">27<div class="bar"></div></div><div class="dc">28<div class="bar"></div></div>
+              <div class="dc">29<div class="bar"></div></div><div class="dc">30<div class="bar"></div></div><div class="dc">31<div class="bar"></div></div><div class="dc empty"></div><div class="dc empty"></div><div class="dc empty"></div><div class="dc empty"></div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="words-section">
+            <div class="ws-head"><span class="ws-date">Wed 25</span><span class="ws-cnt">2 words</span><span class="ws-spc"></span><span class="ws-btn">Select</span></div>
+            <div class="wline"><span class="ww">ephemeral</span><span class="wm">lasting for a very short time</span></div>
+            <div class="wline"><span class="ww">paradigm</span><span class="wm">a typical example or pattern</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="btabs"><div class="bt"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z"/></svg><span>Home</span></div><div class="bt"><svg viewBox="0 0 24 24"><path d="M4 4h4v16H4zm6 0h4v16h-4zm6 0h4v16h-4z"/></svg><span>Library</span></div><div class="bt on"><svg viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg><span>Words</span></div><div class="bt"><svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 018.5 12a3.5 3.5 0 013.5-3.5 3.5 3.5 0 013.5 3.5 3.5 3.5 0 01-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97s-.03-.66-.07-1l2.11-1.63a.5.5 0 00.12-.64l-2-3.46a.5.5 0 00-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98L14.5 2.42a.5.5 0 00-.5-.42h-4a.5.5 0 00-.5.42l-.37 2.65c-.61.25-1.17.58-1.69.98l-2.49-1a.5.5 0 00-.61.22l-2 3.46a.5.5 0 00.12.64l2.11 1.63a8.14 8.14 0 000 1.94l-2.11 1.66a.5.5 0 00-.12.64l2 3.46a.5.5 0 00.61.22l2.49-1c.52.4 1.08.73 1.69.98l.37 2.65a.5.5 0 00.5.42h4a.5.5 0 00.5-.42l.37-2.65c.61-.25 1.17-.58 1.69-.98l2.49 1a.5.5 0 00.61-.22l2-3.46a.5.5 0 00-.12-.64l-2.11-1.66z"/></svg><span>Settings</span></div></div>
+  </div>
+</div>
+
+<!-- ═══ G — Tabs Inside Card ═══ -->
+<div class="wrap">
+  <div class="lbl">Option G<span>Tabbed Card</span>
+    <span class="desc">큰 카드 안에 Calendar / Words 탭. 캘린더와 단어를 탭으로 전환. 책 요약 + 개별 단어 카드.</span>
+  </div>
+  <div class="dev g">
+    <div class="sc">
+      <div class="sb"><span class="sb-t">8:39</span><div class="sb-r"><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div>&nbsp;&nbsp;<div class="sb-pill"></div></div></div>
+      <div class="ani">
+        <div class="top"><div class="mode-tabs"><div class="mtab on">By Date</div><div class="mtab">By Book</div><div class="mtab-spacer"></div><div class="today-btn"><span class="dot"></span>Today</div></div></div>
+        <div class="big-card">
+          <div class="inner-tabs"><div class="itab on">Calendar</div><div class="itab">Words</div></div>
+          <div class="cal-in">
+            <div class="cal-head"><div class="cal-title">March 2026</div><div class="cal-nav"><div class="cal-btn">‹</div><div class="cal-btn">›</div></div></div>
+            <div class="wk-row"><div class="wk-cell">S</div><div class="wk-cell">M</div><div class="wk-cell">T</div><div class="wk-cell">W</div><div class="wk-cell">T</div><div class="wk-cell">F</div><div class="wk-cell">S</div></div>
+            <div class="day-grid">
+              <div class="dc">1<div class="bar"></div></div><div class="dc">2<div class="bar"></div></div><div class="dc has">3<div class="bar"></div></div><div class="dc">4<div class="bar"></div></div><div class="dc">5<div class="bar"></div></div><div class="dc has">6<div class="bar"></div></div><div class="dc">7<div class="bar"></div></div>
+              <div class="dc">8<div class="bar"></div></div><div class="dc">9<div class="bar"></div></div><div class="dc">10<div class="bar"></div></div><div class="dc has">11<div class="bar"></div></div><div class="dc has">12<div class="bar"></div></div><div class="dc">13<div class="bar"></div></div><div class="dc">14<div class="bar"></div></div>
+              <div class="dc">15<div class="bar"></div></div><div class="dc">16<div class="bar"></div></div><div class="dc has">17<div class="bar"></div></div><div class="dc has">18<div class="bar"></div></div><div class="dc has">19<div class="bar"></div></div><div class="dc has">20<div class="bar"></div></div><div class="dc">21<div class="bar"></div></div>
+              <div class="dc">22<div class="bar"></div></div><div class="dc has">23<div class="bar"></div></div><div class="dc">24<div class="bar"></div></div><div class="dc sel today">25<div class="bar"></div></div><div class="dc">26<div class="bar"></div></div><div class="dc">27<div class="bar"></div></div><div class="dc">28<div class="bar"></div></div>
+              <div class="dc">29<div class="bar"></div></div><div class="dc">30<div class="bar"></div></div><div class="dc">31<div class="bar"></div></div><div class="dc empty"></div><div class="dc empty"></div><div class="dc empty"></div><div class="dc empty"></div>
+            </div>
+          </div>
+          <div style="height:1px;background:var(--border);margin:0 16px"></div>
+          <div class="detail-in">
+            <div class="di-head"><span class="di-date">Wed 25</span><span class="di-spc"></span><span class="di-cnt">2 words</span></div>
+            <div class="di-book"><div class="di-cover"></div><div class="di-name">1 Course Overview</div><div class="di-bcnt">2</div></div>
+          </div>
+        </div>
+        <div class="word-list">
+          <div class="wl-head">Words</div>
+          <div class="wl-item"><span class="wl-word">ephemeral</span><span class="wl-mean">very short time</span></div>
+          <div class="wl-item"><span class="wl-word">paradigm</span><span class="wl-mean">typical pattern</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="btabs"><div class="bt"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z"/></svg><span>Home</span></div><div class="bt"><svg viewBox="0 0 24 24"><path d="M4 4h4v16H4zm6 0h4v16h-4zm6 0h4v16h-4z"/></svg><span>Library</span></div><div class="bt on"><svg viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg><span>Words</span></div><div class="bt"><svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 018.5 12a3.5 3.5 0 013.5-3.5 3.5 3.5 0 013.5 3.5 3.5 3.5 0 01-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97s-.03-.66-.07-1l2.11-1.63a.5.5 0 00.12-.64l-2-3.46a.5.5 0 00-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98L14.5 2.42a.5.5 0 00-.5-.42h-4a.5.5 0 00-.5.42l-.37 2.65c-.61.25-1.17.58-1.69.98l-2.49-1a.5.5 0 00-.61.22l-2 3.46a.5.5 0 00.12.64l2.11 1.63a8.14 8.14 0 000 1.94l-2.11 1.66a.5.5 0 00-.12.64l2 3.46a.5.5 0 00.61.22l2.49-1c.52.4 1.08.73 1.69.98l.37 2.65a.5.5 0 00.5.42h4a.5.5 0 00.5-.42l.37-2.65c.61-.25 1.17-.58 1.69-.98l2.49 1a.5.5 0 00.61-.22l2-3.46a.5.5 0 00-.12-.64l-2.11-1.66z"/></svg><span>Settings</span></div></div>
+  </div>
+</div>
+
+<!-- ═══ H — Horizontal Day Scroll ═══ -->
+<div class="wrap">
+  <div class="lbl">Option H<span>Day Scroll</span>
+    <span class="desc">가로 스크롤 날짜 타임라인 + 아래 선택일 카드 + 단어 리스트. 월간/주간 구분 없이 스크롤 하나.</span>
+  </div>
+  <div class="dev h">
+    <div class="sc">
+      <div class="sb"><span class="sb-t">8:39</span><div class="sb-r"><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div>&nbsp;&nbsp;<div class="sb-pill"></div></div></div>
+      <div class="ani">
+        <div class="top"><div class="mode-tabs"><div class="mtab on">By Date</div><div class="mtab">By Book</div><div class="mtab-spacer"></div><div class="today-btn"><span class="dot"></span>Today</div></div></div>
+        <div class="month-label"><span class="mn">‹</span><span class="ml">March 2026</span><span class="mn">›</span></div>
+        <div class="day-scroll">
+          <div class="ds-item"><span class="ds-wd">Mon</span><span class="ds-num">17</span><div class="ds-bar has"></div></div>
+          <div class="ds-item"><span class="ds-wd">Tue</span><span class="ds-num">18</span><div class="ds-bar has"></div></div>
+          <div class="ds-item"><span class="ds-wd">Wed</span><span class="ds-num">19</span><div class="ds-bar has"></div></div>
+          <div class="ds-item"><span class="ds-wd">Thu</span><span class="ds-num">20</span><div class="ds-bar has"></div></div>
+          <div class="ds-item"><span class="ds-wd">Fri</span><span class="ds-num">21</span><div class="ds-bar"></div></div>
+          <div class="ds-item"><span class="ds-wd">Sat</span><span class="ds-num">22</span><div class="ds-bar"></div></div>
+          <div class="ds-item"><span class="ds-wd">Sun</span><span class="ds-num">23</span><div class="ds-bar has"></div></div>
+          <div class="ds-item"><span class="ds-wd">Mon</span><span class="ds-num">24</span><div class="ds-bar"></div></div>
+          <div class="ds-item sel"><span class="ds-wd">Tue</span><span class="ds-num">25</span><div class="ds-bar has"></div></div>
+          <div class="ds-item"><span class="ds-wd">Wed</span><span class="ds-num">26</span><div class="ds-bar"></div></div>
+          <div class="ds-item"><span class="ds-wd">Thu</span><span class="ds-num">27</span><div class="ds-bar"></div></div>
+          <div class="ds-item"><span class="ds-wd">Fri</span><span class="ds-num">28</span><div class="ds-bar"></div></div>
+        </div>
+
+        <div class="detail-card">
+          <div class="det-head"><span class="det-date">Tue 25</span><span class="det-spc"></span><span class="det-cnt">2 words</span></div>
+          <div class="det-book">
+            <div class="det-cover"></div>
+            <div class="det-info"><div class="det-title">1 Course Overview</div><div class="det-sub">2 words · page 4</div></div>
+            <div class="det-badge">2</div>
+          </div>
+        </div>
+
+        <div class="word-list">
+          <div class="wl-label">Saved words</div>
+          <div class="wl-row"><div class="wl-word">ephemeral</div><div class="wl-mean">lasting for a very short time</div></div>
+          <div class="wl-row"><div class="wl-word">paradigm</div><div class="wl-mean">a typical example or pattern</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="btabs"><div class="bt"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z"/></svg><span>Home</span></div><div class="bt"><svg viewBox="0 0 24 24"><path d="M4 4h4v16H4zm6 0h4v16h-4zm6 0h4v16h-4z"/></svg><span>Library</span></div><div class="bt on"><svg viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg><span>Words</span></div><div class="bt"><svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 018.5 12a3.5 3.5 0 013.5-3.5 3.5 3.5 0 013.5 3.5 3.5 3.5 0 01-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97s-.03-.66-.07-1l2.11-1.63a.5.5 0 00.12-.64l-2-3.46a.5.5 0 00-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98L14.5 2.42a.5.5 0 00-.5-.42h-4a.5.5 0 00-.5.42l-.37 2.65c-.61.25-1.17.58-1.69.98l-2.49-1a.5.5 0 00-.61.22l-2 3.46a.5.5 0 00.12.64l2.11 1.63a8.14 8.14 0 000 1.94l-2.11 1.66a.5.5 0 00-.12.64l2 3.46a.5.5 0 00.61.22l2.49-1c.52.4 1.08.73 1.69.98l.37 2.65a.5.5 0 00.5.42h4a.5.5 0 00.5-.42l.37-2.65c.61-.25 1.17-.58 1.69-.98l2.49 1a.5.5 0 00.61-.22l2-3.46a.5.5 0 00-.12-.64l-2.11-1.66z"/></svg><span>Settings</span></div></div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

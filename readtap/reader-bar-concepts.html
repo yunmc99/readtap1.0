@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reader Bar Concepts v3</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0D0E10;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;color:#fff;padding:28px}
+  h1{font-size:22px;font-weight:800;margin-bottom:4px;letter-spacing:-0.5px}
+  .sub{color:#555;font-size:11px;margin-bottom:36px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:24px;max-width:1600px}
+  .card{background:#161719;border-radius:18px;border:1px solid #252729;overflow:hidden}
+  .card-head{padding:14px 18px 12px}
+  .tag{font-size:9px;font-weight:700;color:#10B981;letter-spacing:2px;text-transform:uppercase;margin-bottom:3px}
+  .card-title{font-size:15px;font-weight:700;margin-bottom:2px}
+  .card-desc{font-size:10px;color:#555;line-height:1.5}
+  .phone{width:280px;height:500px;margin:0 auto 16px;border-radius:32px;position:relative;overflow:hidden;background:#E8ECF0}
+  .pdf{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:190px;height:260px;background:#fff;border-radius:3px;box-shadow:0 2px 10px rgba(0,0,0,0.06);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+  .pdf-n{font-size:28px;font-weight:800;color:#333}
+  .pdf-t{font-size:11px;font-weight:600;color:#444}
+  .pdf-s{font-size:7px;color:#999}
+  .pdf-blob{width:80px;height:50px;background:rgba(16,185,129,0.07);border-radius:50% 40% 60% 50%;margin-bottom:2px}
+  svg.i{width:14px;height:14px;flex-shrink:0}
+  svg.is{width:12px;height:12px;flex-shrink:0}
+  .sd{stroke:#555;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .sg{stroke:#10B981;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .sgf{fill:rgba(16,185,129,0.15);stroke:#10B981;stroke-width:1.5}
+  .sk{stroke:#333;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+  /* shared */
+  .glass{background:rgba(255,255,255,0.9);backdrop-filter:blur(20px);border:1px solid rgba(0,0,0,0.04);box-shadow:0 2px 12px rgba(0,0,0,0.06)}
+  .glass-s{background:rgba(255,255,255,0.85);backdrop-filter:blur(14px);border:1px solid rgba(0,0,0,0.04);box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+  .on-bg{background:rgba(16,185,129,0.08)}
+  .pg{font-size:11px;font-weight:700;color:#333}
+  .lg{font-size:10px;font-weight:700;color:#10B981}
+
+  /* ═══ G: Corner Clusters ═══ */
+  .g-tl{position:absolute;top:10px;left:10px;display:flex;gap:4px;z-index:10}
+  .g-tr{position:absolute;top:10px;right:10px;display:flex;gap:4px;z-index:10}
+  .g-bl{position:absolute;bottom:10px;left:10px;display:flex;align-items:center;gap:6px;z-index:10}
+  .g-br{position:absolute;bottom:10px;right:10px;display:flex;gap:4px;z-index:10}
+  .g-c{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+  .g-chip{border-radius:12px;padding:7px 12px;display:flex;align-items:center;gap:5px}
+
+  /* ═══ H: Single Bottom Tray ═══ */
+  .h-close{position:absolute;top:10px;left:10px;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:10}
+  .h-tray{position:absolute;bottom:8px;left:8px;right:8px;border-radius:22px;padding:8px;z-index:10}
+  .h-row{display:flex;align-items:center;gap:4px}
+  .h-btn{width:34px;height:34px;border-radius:12px;display:flex;align-items:center;justify-content:center}
+  .h-sep{width:1px;height:18px;background:rgba(0,0,0,0.06);margin:0 2px;flex-shrink:0}
+  .h-spacer{flex:1}
+  .h-label{padding:6px 10px;border-radius:10px;background:rgba(0,0,0,0.03)}
+
+  /* ═══ I: Split Top + Inline Bottom ═══ */
+  .i-bar{position:absolute;top:10px;left:10px;right:10px;display:flex;gap:4px;z-index:10}
+  .i-pill{border-radius:16px;padding:4px;display:flex;gap:2px}
+  .i-btn{width:32px;height:32px;border-radius:11px;display:flex;align-items:center;justify-content:center}
+  .i-bottom{position:absolute;bottom:0;left:0;right:0;padding:10px 16px;display:flex;align-items:center;z-index:10;background:linear-gradient(to top,rgba(232,236,240,0.95),rgba(232,236,240,0))}
+  .i-nav-c{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+
+  /* ═══ J: Notch Style ═══ */
+  .j-notch{position:absolute;top:0;left:50%;transform:translateX(-50%);border-radius:0 0 20px 20px;padding:8px 10px 6px;display:flex;gap:3px;z-index:10}
+  .j-btn{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+  .j-bottom{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);border-radius:18px;padding:6px 10px;display:flex;align-items:center;gap:6px;z-index:10}
+  .j-nav{width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center}
+
+  /* ═══ K: L-Shape ═══ */
+  .k-left{position:absolute;top:10px;left:8px;display:flex;flex-direction:column;gap:3px;border-radius:16px;padding:4px;z-index:10}
+  .k-btn{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+  .k-bottom{position:absolute;bottom:10px;left:8px;right:8px;display:flex;align-items:center;gap:6px;border-radius:16px;padding:6px 10px;z-index:10}
+  .k-nav{width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center}
+
+  /* ═══ L: Arc / Curve ═══ */
+  .l-arc{position:absolute;top:8px;left:50%;transform:translateX(-50%);display:flex;gap:3px;border-radius:24px;padding:5px;z-index:10}
+  .l-btn{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+  .l-bottom{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;border-radius:20px;padding:6px 14px;z-index:10}
+
+  /* ═══ M: Floating Island ═══ */
+  .m-island{position:absolute;top:10px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:3px;border-radius:20px;padding:5px;z-index:10}
+  .m-btn{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+  .m-close-pill{border-radius:10px;padding:5px 10px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.04)}
+  .m-close-text{font-size:10px;font-weight:700;color:#555}
+  .m-bottom-l{position:absolute;bottom:10px;left:12px;display:flex;align-items:center;gap:6px;z-index:10}
+  .m-bottom-r{position:absolute;bottom:10px;right:12px;display:flex;gap:4px;z-index:10}
+  .m-page-float{border-radius:14px;padding:7px 14px}
+  .m-nav-float{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+
+  /* ═══ N: Minimal Edge ═══ */
+  .n-top{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;padding:10px 12px;background:linear-gradient(to bottom,rgba(232,236,240,0.98) 0%,rgba(232,236,240,0) 100%);z-index:10}
+  .n-btn{width:28px;height:28px;display:flex;align-items:center;justify-content:center;opacity:0.7}
+  .n-btn.on{opacity:1}
+  .n-spacer{flex:1}
+  .n-bottom{position:absolute;bottom:0;left:0;right:0;display:flex;align-items:center;padding:10px 14px;background:linear-gradient(to top,rgba(232,236,240,0.98) 0%,rgba(232,236,240,0) 100%);z-index:10}
+
+  @media(max-width:700px){.grid{grid-template-columns:1fr}body{padding:14px}}
+</style>
+</head>
+<body>
+<h1>Reader Bar v3 — New Layouts</h1>
+<p class="sub">Completely different structures. ReadTap green + glass + SVG icons.</p>
+
+<div class="grid">
+
+<!-- ═══ G: Corner Clusters ═══ -->
+<div class="card">
+  <div class="card-head">
+    <div class="tag">Option G</div>
+    <div class="card-title">Corner Clusters</div>
+    <div class="card-desc">4 corners, 4 clusters. Top-left = close. Top-right = toggles. Bottom-left = page+lang. Bottom-right = nav.</div>
+  </div>
+  <div class="phone">
+    <div class="g-tl">
+      <div class="g-c glass-s"><svg class="i" viewBox="0 0 24 24"><line class="sk" x1="18" y1="6" x2="6" y2="18"/><line class="sk" x1="6" y1="6" x2="18" y2="18"/></svg></div>
+    </div>
+    <div class="g-tr">
+      <div class="g-c glass-s"><svg class="i" viewBox="0 0 24 24"><rect class="sd" x="3" y="3" width="7" height="18" rx="1"/><rect class="sd" x="14" y="3" width="7" height="18" rx="1"/></svg></div>
+      <div class="g-c glass-s on-bg"><svg class="i" viewBox="0 0 24 24"><path class="sg" d="M12 3v12M12 15l-4-4M12 15l4-4"/><line class="sg" x1="5" y1="21" x2="19" y2="21"/></svg></div>
+      <div class="g-c glass-s"><svg class="i" viewBox="0 0 24 24"><circle class="sd" cx="12" cy="8" r="3"/><path class="sd" d="M12 14v4"/></svg></div>
+      <div class="g-c glass-s"><svg class="i" viewBox="0 0 24 24"><path class="sd" d="M4 19.5A2.5 2.5 0 016.5 17H20M4 19.5V5a2 2 0 012-2h14v14H6.5A2.5 2.5 0 004 19.5z"/></svg></div>
+      <div class="g-c glass-s on-bg"><svg class="i" viewBox="0 0 24 24"><path class="sgf" d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></div>
+      <div class="g-c glass-s"><svg class="i" viewBox="0 0 24 24"><circle class="sd" cx="12" cy="12" r="9"/><path class="sd" d="M9 12l2 2 4-4"/></svg></div>
+    </div>
+    <div class="pdf"><div class="pdf-blob"></div><div class="pdf-n">01</div><div class="pdf-t">Finding Primes</div><div class="pdf-s">A warm-up example</div></div>
+    <div class="g-bl">
+      <div class="g-chip glass-s"><span class="pg">4 / 40</span><span style="color:#ccc">·</span><span class="lg">EN → KO</span></div>
+    </div>
+    <div class="g-br">
+      <div class="g-c glass-s"><svg class="i" viewBox="0 0 24 24"><polyline class="sd" points="15 18 9 12 15 6"/></svg></div>
+      <div class="g-c glass-s"><svg class="i" viewBox="0 0 24 24"><polyline class="sd" points="9 18 15 12 9 6"/></svg></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ H: Single Bottom Tray ═══ -->
+<div class="card">
+  <div class="card-head">
+    <div class="tag">Option H</div>
+    <div class="card-title">Bottom Tray Only</div>
+    <div class="card-desc">Top has only close. Everything else in one bottom tray: toggles + divider + page/lang + nav.</div>
+  </div>
+  <div class="phone">
+    <div class="h-close glass-s"><svg class="is" viewBox="0 0 24 24"><line class="sk" x1="18" y1="6" x2="6" y2="18"/><line class="sk" x1="6" y1="6" x2="18" y2="18"/></svg></div>
+    <div class="pdf"><div class="pdf-blob"></div><div class="pdf-n">01</div><div class="pdf-t">Finding Primes</div><div class="pdf-s">A warm-up example</div></div>
+    <div class="h-tray glass">
+      <div class="h-row">
+        <div class="h-btn"><svg class="i" viewBox="0 0 24 24"><rect class="sd" x="3" y="3" width="7" height="18" rx="1"/><rect class="sd" x="14" y="3" width="7" height="18" rx="1"/></svg></div>
+        <div class="h-btn on-bg"><svg class="i" viewBox="0 0 24 24"><path class="sg" d="M12 3v12M12 15l-4-4M12 15l4-4"/><line class="sg" x1="5" y1="21" x2="19" y2="21"/></svg></div>
+        <div class="h-btn"><svg class="i" viewBox="0 0 24 24"><circle class="sd" cx="12" cy="8" r="3"/><path class="sd" d="M12 14v4"/></svg></div>
+        <div class="h-sep"></div>
+        <div class="h-btn"><svg class="i" viewBox="0 0 24 24"><path class="sd" d="M4 19.5A2.5 2.5 0 016.5 17H20M4 19.5V5a2 2 0 012-2h14v14H6.5A2.5 2.5 0 004 19.5z"/></svg></div>
+        <div class="h-btn on-bg"><svg class="i" viewBox="0 0 24 24"><path class="sgf" d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></div>
+        <div class="h-btn"><svg class="i" viewBox="0 0 24 24"><circle class="sd" cx="12" cy="12" r="9"/><path class="sd" d="M9 12l2 2 4-4"/></svg></div>
+        <div class="h-sep"></div>
+        <div class="h-label"><span class="pg">4/40</span></div>
+        <div style="padding:0 2px"><span class="lg">EN→KO</span></div>
+        <div class="h-spacer"></div>
+        <div class="h-btn"><svg class="i" viewBox="0 0 24 24"><polyline class="sd" points="15 18 9 12 15 6"/></svg></div>
+        <div class="h-btn"><svg class="i" viewBox="0 0 24 24"><polyline class="sd" points="9 18 15 12 9 6"/></svg></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ I: Split Top + Fade Bottom ═══ -->
+<div class="card">
+  <div class="card-head">
+    <div class="tag">Option I</div>
+    <div class="card-title">Split Pills + Fade</div>
+    <div class="card-desc">Two separate pills at top. Bottom fades from edge — no bar, just text + circle arrows.</div>
+  </div>
+  <div class="phone">
+    <div class="i-bar">
+      <div class="i-pill glass">
+        <div class="i-btn"><svg class="i" viewBox="0 0 24 24"><line class="sk" x1="18" y1="6" x2="6" y2="18"/><line class="sk" x1="6" y1="6" x2="18" y2="18"/></svg></div>
+        <div class="i-btn"><svg class="i" viewBox="0 0 24 24"><rect class="sd" x="3" y="3" width="7" height="18" rx="1"/><rect class="sd" x="14" y="3" width="7" height="18" rx="1"/></svg></div>
+        <div class="i-btn on-bg"><svg class="i" viewBox="0 0 24 24"><path class="sg" d="M12 3v12M12 15l-4-4M12 15l4-4"/><line class="sg" x1="5" y1="21" x2="19" y2="21"/></svg></div>
+        <div class="i-btn"><svg class="i" viewBox="0 0 24 24"><circle class="sd" cx="12" cy="8" r="3"/><path class="sd" d="M12 14v4"/></svg></div>
+      </div>
+      <div style="flex:1"></div>
+      <div class="i-pill glass">
+        <div class="i-btn"><svg class="i" viewBox="0 0 24 24"><path class="sd" d="M4 19.5A2.5 2.5 0 016.5 17H20M4 19.5V5a2 2 0 012-2h14v14H6.5A2.5 2.5 0 004 19.5z"/></svg></div>
+        <div class="i-btn on-bg"><svg class="i" viewBox="0 0 24 24"><path class="sgf" d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></div>
+        <div class="i-btn"><svg class="i" viewBox="0 0 24 24"><circle class="sd" cx="12" cy="12" r="9"/><path class="sd" d="M9 12l2 2 4-4"/></svg></div>
+      </div>
+    </div>
+    <div class="pdf"><div class="pdf-blob"></div><div class="pdf-n">01</div><div class="pdf-t">Finding Primes</div><div class="pdf-s">A warm-up example</div></div>
+    <div class="i-bottom">
+      <span class="pg">4 / 40</span>
+      <span style="margin:0 4px;color:#ccc">·</span>
+      <span class="lg">EN → KO</span>
+      <div style="flex:1"></div>
+      <div class="i-nav-c glass-s"><svg class="is" viewBox="0 0 24 24"><polyline class="sd" points="15 18 9 12 15 6"/></svg></div>
+      <div style="width:4px"></div>
+      <div class="i-nav-c glass-s"><svg class="is" viewBox="0 0 24 24"><polyline class="sd" points="9 18 15 12 9 6"/></svg></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ J: Notch Style ═══ -->
+<div class="card">
+  <div class="card-head">
+    <div class="tag">Option J</div>
+    <div class="card-title">Top Notch</div>
+    <div class="card-desc">Tools hang from the top edge like a notch. Centered compact row. Bottom is a slim centered capsule.</div>
+  </div>
+  <div class="phone">
+    <div class="j-notch glass">
+      <div class="j-btn"><svg class="i" viewBox="0 0 24 24"><line class="sk" x1="18" y1="6" x2="6" y2="18"/><line class="sk" x1="6" y1="6" x2="18" y2="18"/></svg></div>
+      <div class="j-btn"><svg class="i" viewBox="0 0 24 24"><rect class="sd" x="3" y="3" width="7" height="18" rx="1"/><rect class="sd" x="14" y="3" width="7" height="18" rx="1"/></svg></div>
+      <div class="j-btn on-bg"><svg class="i" viewBox="0 0 24 24"><path class="sg" d="M12 3v12M12 15l-4-4M12 15l4-4"/><line class="sg" x1="5" y1="21" x2="19" y2="21"/></svg></div>
+      <div class="j-btn"><svg class="i" viewBox="0 0 24 24"><circle class="sd" cx="12" cy="8" r="3"/><path class="sd" d="M12 14v4"/></svg></div>
+      <div style="width:6px"></div>
+      <div class="j-btn"><svg class="i" viewBox="0 0 24 24"><path class="sd" d="M4 19.5A2.5 2.5 0 016.5 17H20M4 19.5V5a2 2 0 012-2h14v14H6.5A2.5 2.5 0 004 19.5z"/></svg></div>
+      <div class="j-btn on-bg"><svg class="i" viewBox="0 0 24 24"><path class="sgf" d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></div>
+      <div class="j-btn"><svg class="i" viewBox="0 0 24 24"><circle class="sd" cx="12" cy="12" r="9"/><path class="sd" d="M9 12l2 2 4-4"/></svg></div>
+    </div>
+    <div class="pdf"><div class="pdf-blob"></div><div class="pdf-n">01</div><div class="pdf-t">Finding Primes</div><div class="pdf-s">A warm-up example</div></div>
+    <div class="j-bottom glass">
+      <div class="j-nav"><svg class="is" viewBox="0 0 24 24"><polyline class="sd" points="15 18 9 12 15 6"/></svg></div>
+      <span class="pg">4 / 40</span>
+      <span style="color:#ccc">·</span>
+      <span class="lg">EN→KO</span>
+      <div class="j-nav"><svg class="is" viewBox="0 0 24 24"><polyline class="sd" points="9 18 15 12 9 6"/></svg></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ K: L-Shape Rail ═══ -->
+<div class="card">
+  <div class="card-head">
+    <div class="tag">Option K</div>
+    <div class="card-title">L-Shape Rail</div>
+    <div class="card-desc">Vertical rail on the left + horizontal strip at bottom forming an L. Close at top of rail.</div>
+  </div>
+  <div class="phone">
+    <div class="k-left glass">
+      <div class="k-btn"><svg class="i" viewBox="0 0 24 24"><line class="sk" x1="18" y1="6" x2="6" y2="18"/><line class="sk" x1="6" y1="6" x2="18" y2="18"/></svg></div>
+      <div class="k-btn"><svg class="i" viewBox="0 0 24 24"><rect class="sd" x="3" y="3" width="7" height="18" rx="1"/><rect class="sd" x="14" y="3" width="7" height="18" rx="1"/></svg></div>
+      <div class="k-btn on-bg"><svg class="i" viewBox="0 0 24 24"><path class="sg" d="M12 3v12M12 15l-4-4M12 15l4-4"/><line class="sg" x1="5" y1="21" x2="19" y2="21"/></svg></div>
+      <div class="k-btn"><svg class="i" viewBox="0 0 24 24"><circle class="sd" cx="12" cy="8" r="3"/><path class="sd" d="M12 14v4"/></svg></div>
+      <div class="k-btn"><svg class="i" viewBox="0 0 24 24"><path class="sd" d="M4 19.5A2.5 2.5 0 016.5 17H20M4 19.5V5a2 2 0 012-2h14v14H6.5A2.5 2.5 0 004 19.5z"/></svg></div>
+      <div class="k-btn on-bg"><svg class="i" viewBox="0 0 24 24"><path class="sgf" d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></div>
+      <div class="k-btn"><svg class="i" viewBox="0 0 24 24"><circle class="sd" cx="12" cy="12" r="9"/><path class="sd" d="M9 12l2 2 4-4"/></svg></div>
+    </div>
+    <div class="pdf" style="left:55%"><div class="pdf-blob"></div><div class="pdf-n">01</div><div class="pdf-t">Finding Primes</div><div class="pdf-s">A warm-up example</div></div>
+    <div class="k-bottom glass">
+      <span class="pg">4 / 40</span>
+      <span style="color:#ccc">·</span>
+      <span class="lg">EN → KO</span>
+      <div style="flex:1"></div>
+      <div class="k-nav"><svg class="is" viewBox="0 0 24 24"><polyline class="sd" points="15 18 9 12 15 6"/></svg></div>
+      <div class="k-nav"><svg class="is" viewBox="0 0 24 24"><polyline class="sd" points="9 18 15 12 9 6"/></svg></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ L: Arc Bar ═══ -->
+<div class="card">
+  <div class="card-head">
+    <div class="tag">Option L</div>
+    <div class="card-title">Circular Arc</div>
+    <div class="card-desc">All top buttons are circles in a wide capsule arc. Playful, distinctive. Bottom is a compact pill.</div>
+  </div>
+  <div class="phone">
+    <div class="l-arc glass">
+      <div class="l-btn"><svg class="i" viewBox="0 0 24 24"><line class="sk" x1="18" y1="6" x2="6" y2="18"/><line class="sk" x1="6" y1="6" x2="18" y2="18"/></svg></div>
+      <div class="l-btn"><svg class="i" viewBox="0 0 24 24"><rect class="sd" x="3" y="3" width="7" height="18" rx="1"/><rect class="sd" x="14" y="3" width="7" height="18" rx="1"/></svg></div>
+      <div class="l-btn on-bg" style="border-radius:50%"><svg class="i" viewBox="0 0 24 24"><path class="sg" d="M12 3v12M12 15l-4-4M12 15l4-4"/><line class="sg" x1="5" y1="21" x2="19" y2="21"/></svg></div>
+      <div class="l-btn"><svg class="i" viewBox="0 0 24 24"><circle class="sd" cx="12" cy="8" r="3"/><path class="sd" d="M12 14v4"/></svg></div>
+      <div style="width:8px"></div>
+      <div class="l-btn"><svg class="i" viewBox="0 0 24 24"><path class="sd" d="M4 19.5A2.5 2.5 0 016.5 17H20M4 19.5V5a2 2 0 012-2h14v14H6.5A2.5 2.5 0 004 19.5z"/></svg></div>
+      <div class="l-btn on-bg" style="border-radius:50%"><svg class="i" viewBox="0 0 24 24"><path class="sgf" d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></div>
+      <div class="l-btn"><svg class="i" viewBox="0 0 24 24"><circle class="sd" cx="12" cy="12" r="9"/><path class="sd" d="M9 12l2 2 4-4"/></svg></div>
+    </div>
+    <div class="pdf"><div class="pdf-blob"></div><div class="pdf-n">01</div><div class="pdf-t">Finding Primes</div><div class="pdf-s">A warm-up example</div></div>
+    <div class="l-bottom glass">
+      <svg class="is" viewBox="0 0 24 24"><polyline class="sd" points="15 18 9 12 15 6"/></svg>
+      <span class="pg">4 / 40</span>
+      <span style="color:#ccc">·</span>
+      <span class="lg">EN→KO</span>
+      <svg class="is" viewBox="0 0 24 24"><polyline class="sd" points="9 18 15 12 9 6"/></svg>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ M: Floating Island ═══ -->
+<div class="card">
+  <div class="card-head">
+    <div class="tag">Option M</div>
+    <div class="card-title">Floating Island</div>
+    <div class="card-desc">Dynamic Island-inspired top bar with "Done" text close. Bottom: page chip left, nav circles right. Scattered.</div>
+  </div>
+  <div class="phone">
+    <div class="m-island glass">
+      <div class="m-close-pill"><span class="m-close-text">Done</span></div>
+      <div class="m-btn"><svg class="i" viewBox="0 0 24 24"><rect class="sd" x="3" y="3" width="7" height="18" rx="1"/><rect class="sd" x="14" y="3" width="7" height="18" rx="1"/></svg></div>
+      <div class="m-btn on-bg"><svg class="i" viewBox="0 0 24 24"><path class="sg" d="M12 3v12M12 15l-4-4M12 15l4-4"/><line class="sg" x1="5" y1="21" x2="19" y2="21"/></svg></div>
+      <div class="m-btn"><svg class="i" viewBox="0 0 24 24"><circle class="sd" cx="12" cy="8" r="3"/><path class="sd" d="M12 14v4"/></svg></div>
+      <div style="width:4px;height:16px;background:rgba(0,0,0,0.06);border-radius:1px;margin:0 2px"></div>
+      <div class="m-btn"><svg class="i" viewBox="0 0 24 24"><path class="sd" d="M4 19.5A2.5 2.5 0 016.5 17H20M4 19.5V5a2 2 0 012-2h14v14H6.5A2.5 2.5 0 004 19.5z"/></svg></div>
+      <div class="m-btn on-bg"><svg class="i" viewBox="0 0 24 24"><path class="sgf" d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></div>
+      <div class="m-btn"><svg class="i" viewBox="0 0 24 24"><circle class="sd" cx="12" cy="12" r="9"/><path class="sd" d="M9 12l2 2 4-4"/></svg></div>
+    </div>
+    <div class="pdf"><div class="pdf-blob"></div><div class="pdf-n">01</div><div class="pdf-t">Finding Primes</div><div class="pdf-s">A warm-up example</div></div>
+    <div class="m-bottom-l">
+      <div class="m-page-float glass-s"><span class="pg">4 / 40</span><span style="margin:0 4px;color:#ccc">·</span><span class="lg">EN→KO</span></div>
+    </div>
+    <div class="m-bottom-r">
+      <div class="m-nav-float glass-s"><svg class="is" viewBox="0 0 24 24"><polyline class="sd" points="15 18 9 12 15 6"/></svg></div>
+      <div class="m-nav-float glass-s"><svg class="is" viewBox="0 0 24 24"><polyline class="sd" points="9 18 15 12 9 6"/></svg></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ N: Minimal Edge ═══ -->
+<div class="card">
+  <div class="card-head">
+    <div class="tag">Option N</div>
+    <div class="card-title">Bare Edge</div>
+    <div class="card-desc">No bars at all. Icons sit directly on gradient fades. Most minimal possible. Tap to show/hide.</div>
+  </div>
+  <div class="phone">
+    <div class="n-top">
+      <div class="n-btn"><svg class="i" viewBox="0 0 24 24"><line class="sk" x1="18" y1="6" x2="6" y2="18"/><line class="sk" x1="6" y1="6" x2="18" y2="18"/></svg></div>
+      <div style="width:8px"></div>
+      <div class="n-btn"><svg class="i" viewBox="0 0 24 24"><rect class="sd" x="3" y="3" width="7" height="18" rx="1"/><rect class="sd" x="14" y="3" width="7" height="18" rx="1"/></svg></div>
+      <div class="n-btn on"><svg class="i" viewBox="0 0 24 24"><path class="sg" d="M12 3v12M12 15l-4-4M12 15l4-4"/><line class="sg" x1="5" y1="21" x2="19" y2="21"/></svg></div>
+      <div class="n-btn"><svg class="i" viewBox="0 0 24 24"><circle class="sd" cx="12" cy="8" r="3"/><path class="sd" d="M12 14v4"/></svg></div>
+      <div class="n-spacer"></div>
+      <div class="n-btn"><svg class="i" viewBox="0 0 24 24"><path class="sd" d="M4 19.5A2.5 2.5 0 016.5 17H20M4 19.5V5a2 2 0 012-2h14v14H6.5A2.5 2.5 0 004 19.5z"/></svg></div>
+      <div class="n-btn on"><svg class="i" viewBox="0 0 24 24"><path class="sgf" d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></div>
+      <div class="n-btn"><svg class="i" viewBox="0 0 24 24"><circle class="sd" cx="12" cy="12" r="9"/><path class="sd" d="M9 12l2 2 4-4"/></svg></div>
+    </div>
+    <div class="pdf"><div class="pdf-blob"></div><div class="pdf-n">01</div><div class="pdf-t">Finding Primes</div><div class="pdf-s">A warm-up example</div></div>
+    <div class="n-bottom">
+      <span class="pg">4 / 40</span>
+      <span style="margin:0 6px;color:#bbb">·</span>
+      <span class="lg">EN → KO</span>
+      <div style="flex:1"></div>
+      <svg class="i" style="opacity:0.6" viewBox="0 0 24 24"><polyline class="sd" points="15 18 9 12 15 6"/></svg>
+      <div style="width:12px"></div>
+      <svg class="i" style="opacity:0.6" viewBox="0 0 24 24"><polyline class="sd" points="9 18 15 12 9 6"/></svg>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

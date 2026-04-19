@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReadTap Word Detail — Readability</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700;9..40,800&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+  body{background:#08080c;min-height:100vh;font-family:'DM Sans','Noto Sans KR',sans-serif;color:#fff}
+  .hdr{text-align:center;padding:60px 20px 10px}
+  .hdr h1{font-size:28px;font-weight:800;letter-spacing:-.5px}
+  .hdr p{font-size:13px;color:#555;margin-top:6px;letter-spacing:3px;text-transform:uppercase}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(375px,1fr));gap:48px;max-width:1680px;margin:0 auto;padding:40px 40px 80px}
+  .wrap{display:flex;flex-direction:column;align-items:center;gap:18px}
+  .lbl{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#555;text-align:center}
+  .lbl span{display:block;font-size:18px;font-weight:800;color:#999;letter-spacing:-.3px;text-transform:none;margin-top:4px}
+  .lbl .desc{display:block;font-size:11px;font-weight:400;color:#444;letter-spacing:0;text-transform:none;margin-top:6px;line-height:1.5;max-width:340px}
+  .dev{width:375px;height:812px;border-radius:44px;overflow:hidden;position:relative;box-shadow:0 0 0 1px rgba(255,255,255,0.05),0 40px 80px rgba(0,0,0,0.5)}
+  .sb{height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 8px;position:relative;z-index:20}
+  .sb-t{font-size:15px;font-weight:600}
+  .sb-r{display:flex;gap:5px;align-items:center}
+  .sb-d{width:3px;height:3px;border-radius:50%;background:currentColor}
+  .sb-pill{width:25px;height:12px;border-radius:3px;border:1.5px solid currentColor;position:relative}
+  .sb-pill::after{content:'';position:absolute;right:1px;top:1.5px;bottom:1.5px;left:4px;border-radius:1px;background:currentColor}
+  .sc{position:absolute;top:0;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .sc::-webkit-scrollbar{display:none}
+  .btabs{position:absolute;bottom:0;left:0;right:0;height:84px;display:flex;align-items:flex-start;justify-content:space-around;padding-top:10px;z-index:20;background:linear-gradient(0deg,#eaeff3 60%,transparent)}
+  .bt{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:600;color:#b0b8c4}.bt.on{color:#1a8a4a}.bt svg{width:20px;height:20px;fill:currentColor}
+  :root{--ink:#1F2733;--muted:#6A7482;--eyebrow:#808D9B;--accent:#1a8a4a;--amber:#C49340;--bg-top:#F7F8FA;--bg-bottom:#EAEFF3;--card:#fff;--border:rgba(31,39,51,0.06);--fill:#EBF0F2}
+
+  /* Shared nav */
+  .nav{display:flex;align-items:center;gap:10px;padding:64px 20px 0;margin-bottom:14px}
+  .nav-back{width:32px;height:32px;border-radius:10px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--muted)}
+  .nav-title{font-size:15px;font-weight:700;color:var(--ink);flex:1}
+  .nav-cnt{font-size:11px;color:var(--muted)}
+
+  /* Shared book bar */
+  .book-bar{display:flex;gap:14px;align-items:center;padding:0 20px;margin-bottom:12px}
+  .cover{width:48px;height:64px;border-radius:10px;overflow:hidden;flex-shrink:0;box-shadow:0 3px 8px rgba(0,0,0,0.08);background:linear-gradient(135deg,#C8A87C,#AA8A5F);display:flex;align-items:flex-end;padding:5px}
+  .cover span{font-size:6px;font-weight:800;color:rgba(255,255,255,.8);line-height:1.2}
+  .bb-info{flex:1}
+  .bb-title{font-size:14px;font-weight:700;color:var(--ink)}
+  .bb-sub{font-size:11px;color:var(--muted);margin-top:2px}
+
+  /* Shared filter */
+  .filter{display:flex;gap:6px;padding:0 20px;margin-bottom:12px}
+  .ft{padding:6px 12px;border-radius:10px;font-size:11px;font-weight:600;color:var(--muted);background:var(--card);border:1px solid var(--border)}
+  .ft.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  /* ═══ Current ═══ */
+  .cur{background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom))}.cur .sb{color:var(--ink)}
+  .cur .t-head{display:grid;grid-template-columns:1fr 1fr 56px;padding:6px 20px;margin-bottom:2px}
+  .cur .t-head span{font-size:9px;font-weight:700;color:var(--eyebrow);text-transform:uppercase;letter-spacing:.5px}
+  .cur .t-head span:last-child{text-align:right}
+  .cur .t-row{display:grid;grid-template-columns:1fr 1fr 56px;padding:13px 20px;border-bottom:1px solid var(--border);align-items:center}
+  .cur .t-word{font-size:14px;font-weight:700;color:var(--ink)}
+  .cur .t-mean{font-size:12px;color:var(--muted)}
+  .cur .t-badge{font-size:9px;font-weight:700;padding:3px 8px;border-radius:6px;background:rgba(26,138,74,0.06);color:var(--accent);text-align:right;display:inline-block}
+
+  /* ═══ A — Bigger Table ═══ */
+  .va{background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom))}.va .sb{color:var(--ink)}
+  .va .t-head{display:grid;grid-template-columns:1fr 1fr 60px;padding:8px 20px;margin-bottom:4px}
+  .va .t-head span{font-size:10px;font-weight:700;color:var(--eyebrow);text-transform:uppercase;letter-spacing:.5px}
+  .va .t-head span:last-child{text-align:right}
+  .va .t-row{display:grid;grid-template-columns:1fr 1fr 60px;padding:16px 20px;border-bottom:1px solid var(--border);align-items:center}
+  .va .t-word{font-size:16px;font-weight:800;color:var(--ink);letter-spacing:-.2px}
+  .va .t-mean{font-size:13px;color:var(--muted)}
+  .va .t-badge{font-size:10px;font-weight:700;padding:4px 10px;border-radius:8px;background:rgba(26,138,74,0.06);color:var(--accent);text-align:right;display:inline-block}
+
+  /* ═══ B — Card Rows ═══ */
+  .vb{background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom))}.vb .sb{color:var(--ink)}
+  .vb .cards{padding:0 20px 100px;display:flex;flex-direction:column;gap:8px}
+  .vb .wcard{padding:16px;background:var(--card);border-radius:16px;border:1px solid var(--border);box-shadow:0 1px 6px rgba(0,0,0,0.03)}
+  .vb .wc-row{display:flex;align-items:flex-start;gap:8px}
+  .vb .wc-word{font-size:17px;font-weight:800;color:var(--ink);letter-spacing:-.2px;flex:1}
+  .vb .wc-badge{font-size:10px;font-weight:700;padding:4px 10px;border-radius:8px;background:rgba(26,138,74,0.06);color:var(--accent)}
+  .vb .wc-mean{font-size:14px;color:var(--muted);margin-top:4px;line-height:1.5}
+
+  /* ═══ C — Bigger Lines ═══ */
+  .vc{background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom))}.vc .sb{color:var(--ink)}
+  .vc .words{padding:0 20px 100px}
+  .vc .w-item{padding:18px 0;border-bottom:1px solid var(--border)}
+  .vc .w-word{font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-.3px}
+  .vc .w-mean{font-size:14px;color:var(--muted);margin-top:5px;line-height:1.5}
+  .vc .w-meta{display:flex;align-items:center;gap:8px;margin-top:6px}
+  .vc .w-badge{font-size:10px;font-weight:700;padding:4px 10px;border-radius:8px;background:rgba(26,138,74,0.06);color:var(--accent)}
+  .vc .w-page{font-size:10px;color:var(--eyebrow)}
+
+  /* ═══ D — Two Column ═══ */
+  .vd{background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom))}.vd .sb{color:var(--ink)}
+  .vd .words{padding:0 20px 100px}
+  .vd .w-item{padding:16px 0;border-bottom:1px solid var(--border);display:flex;gap:16px}
+  .vd .w-left{flex:1}
+  .vd .w-word{font-size:17px;font-weight:800;color:var(--ink);letter-spacing:-.2px}
+  .vd .w-badge{display:inline-block;font-size:9px;font-weight:700;padding:3px 8px;border-radius:6px;background:rgba(26,138,74,0.06);color:var(--accent);margin-left:8px;vertical-align:middle}
+  .vd .w-right{flex:1}
+  .vd .w-mean{font-size:14px;color:var(--muted);line-height:1.5}
+
+  /* ═══ E — Stacked Focus ═══ */
+  .ve{background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom))}.ve .sb{color:var(--ink)}
+  .ve .words{padding:0 20px 100px}
+  .ve .w-item{padding:16px 0;border-bottom:1px solid var(--border)}
+  .ve .w-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .ve .w-word{font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-.3px}
+  .ve .w-badge{font-size:10px;font-weight:700;padding:4px 10px;border-radius:8px;background:rgba(26,138,74,0.06);color:var(--accent)}
+  .ve .w-mean{font-size:15px;color:var(--ink);font-weight:500;line-height:1.5;padding:10px 14px;background:var(--fill);border-radius:10px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>Word Detail</h1>
+  <p>Readability Options</p>
+</div>
+
+<div class="grid">
+
+<!-- Current -->
+<div class="wrap">
+  <div class="lbl">Current<span>현재 (참고)</span></div>
+  <div class="dev cur">
+    <div class="sc">
+      <div class="sb"><span class="sb-t">12:28</span><div class="sb-r"><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div>&nbsp;&nbsp;<div class="sb-pill"></div></div></div>
+      <div class="nav"><div class="nav-back">‹</div><div class="nav-title">2027 수능특강 영어</div><div class="nav-cnt">1</div></div>
+      <div class="book-bar"><div class="cover"><span>수능<br>특강</span></div><div class="bb-info"><div class="bb-title">2027 수능특강 영어</div><div class="bb-sub">1 words · 1 unknown · 0 known</div></div></div>
+      <div class="filter"><div class="ft on">All</div><div class="ft">Unknown</div><div class="ft">Learned</div></div>
+      <div class="t-head"><span>Word</span><span>Meaning</span><span>Status</span></div>
+      <div class="t-row"><span class="t-word">firms</span><span class="t-mean">기업</span><span style="text-align:right"><span class="t-badge">New</span></span></div>
+    </div>
+    <div class="btabs"><div class="bt"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z"/></svg><span>Home</span></div><div class="bt"><svg viewBox="0 0 24 24"><path d="M4 4h4v16H4zm6 0h4v16h-4zm6 0h4v16h-4z"/></svg><span>Library</span></div><div class="bt on"><svg viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg><span>Words</span></div><div class="bt"><svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 018.5 12a3.5 3.5 0 013.5-3.5 3.5 3.5 0 013.5 3.5 3.5 3.5 0 01-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97s-.03-.66-.07-1l2.11-1.63a.5.5 0 00.12-.64l-2-3.46a.5.5 0 00-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98L14.5 2.42a.5.5 0 00-.5-.42h-4a.5.5 0 00-.5.42l-.37 2.65c-.61.25-1.17.58-1.69.98l-2.49-1a.5.5 0 00-.61.22l-2 3.46a.5.5 0 00.12.64l2.11 1.63a8.14 8.14 0 000 1.94l-2.11 1.66a.5.5 0 00-.12.64l2 3.46a.5.5 0 00.61.22l2.49-1c.52.4 1.08.73 1.69.98l.37 2.65a.5.5 0 00.5.42h4a.5.5 0 00.5-.42l.37-2.65c.61-.25 1.17-.58 1.69-.98l2.49 1a.5.5 0 00.61-.22l2-3.46a.5.5 0 00-.12-.64l-2.11-1.66z"/></svg><span>Settings</span></div></div>
+  </div>
+</div>
+
+<!-- A — Bigger Table -->
+<div class="wrap">
+  <div class="lbl">A<span>Bigger Table</span>
+    <span class="desc">기존 테이블 구조 유지. 단어 16px, 뜻 13px, 뱃지 10px. 행 패딩 16px. 사이즈만 전체적으로 키움.</span>
+  </div>
+  <div class="dev va">
+    <div class="sc">
+      <div class="sb"><span class="sb-t">12:28</span><div class="sb-r"><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div>&nbsp;&nbsp;<div class="sb-pill"></div></div></div>
+      <div class="nav"><div class="nav-back">‹</div><div class="nav-title">2027 수능특강 영어</div><div class="nav-cnt">4</div></div>
+      <div class="book-bar"><div class="cover"><span>수능<br>특강</span></div><div class="bb-info"><div class="bb-title">2027 수능특강 영어</div><div class="bb-sub">4 words · 4 unknown · 0 known</div></div></div>
+      <div class="filter"><div class="ft on">All</div><div class="ft">Unknown</div><div class="ft">Learned</div></div>
+      <div class="t-head"><span>Word</span><span>Meaning</span><span>Status</span></div>
+      <div class="t-row"><span class="t-word">deficit</span><span class="t-mean">적자</span><span style="text-align:right"><span class="t-badge">New</span></span></div>
+      <div class="t-row"><span class="t-word">surplus</span><span class="t-mean">잉여 생산</span><span style="text-align:right"><span class="t-badge">New</span></span></div>
+      <div class="t-row"><span class="t-word">firms</span><span class="t-mean">기업</span><span style="text-align:right"><span class="t-badge">New</span></span></div>
+      <div class="t-row"><span class="t-word">merchants</span><span class="t-mean">상인</span><span style="text-align:right"><span class="t-badge">New</span></span></div>
+    </div>
+    <div class="btabs"><div class="bt"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z"/></svg><span>Home</span></div><div class="bt"><svg viewBox="0 0 24 24"><path d="M4 4h4v16H4zm6 0h4v16h-4zm6 0h4v16h-4z"/></svg><span>Library</span></div><div class="bt on"><svg viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg><span>Words</span></div><div class="bt"><svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 018.5 12a3.5 3.5 0 013.5-3.5 3.5 3.5 0 013.5 3.5 3.5 3.5 0 01-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97s-.03-.66-.07-1l2.11-1.63a.5.5 0 00.12-.64l-2-3.46a.5.5 0 00-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98L14.5 2.42a.5.5 0 00-.5-.42h-4a.5.5 0 00-.5.42l-.37 2.65c-.61.25-1.17.58-1.69.98l-2.49-1a.5.5 0 00-.61.22l-2 3.46a.5.5 0 00.12.64l2.11 1.63a8.14 8.14 0 000 1.94l-2.11 1.66a.5.5 0 00-.12.64l2 3.46a.5.5 0 00.61.22l2.49-1c.52.4 1.08.73 1.69.98l.37 2.65a.5.5 0 00.5.42h4a.5.5 0 00.5-.42l.37-2.65c.61-.25 1.17-.58 1.69-.98l2.49 1a.5.5 0 00.61-.22l2-3.46a.5.5 0 00-.12-.64l-2.11-1.66z"/></svg><span>Settings</span></div></div>
+  </div>
+</div>
+
+<!-- B — Card Rows -->
+<div class="wrap">
+  <div class="lbl">B<span>Word Cards</span>
+    <span class="desc">각 단어가 카드. 단어 17px + 뱃지 한 줄. 뜻 14px 아래 줄. 넉넉한 패딩.</span>
+  </div>
+  <div class="dev vb">
+    <div class="sc">
+      <div class="sb"><span class="sb-t">12:28</span><div class="sb-r"><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div>&nbsp;&nbsp;<div class="sb-pill"></div></div></div>
+      <div class="nav"><div class="nav-back">‹</div><div class="nav-title">2027 수능특강 영어</div><div class="nav-cnt">4</div></div>
+      <div class="book-bar"><div class="cover"><span>수능<br>특강</span></div><div class="bb-info"><div class="bb-title">2027 수능특강 영어</div><div class="bb-sub">4 words · 4 unknown · 0 known</div></div></div>
+      <div class="filter"><div class="ft on">All</div><div class="ft">Unknown</div><div class="ft">Learned</div></div>
+      <div class="cards">
+        <div class="wcard"><div class="wc-row"><span class="wc-word">deficit</span><span class="wc-badge">New</span></div><div class="wc-mean">적자</div></div>
+        <div class="wcard"><div class="wc-row"><span class="wc-word">surplus-producing</span><span class="wc-badge">New</span></div><div class="wc-mean">잉여 생산</div></div>
+        <div class="wcard"><div class="wc-row"><span class="wc-word">firms</span><span class="wc-badge">New</span></div><div class="wc-mean">기업</div></div>
+        <div class="wcard"><div class="wc-row"><span class="wc-word">merchant traders</span><span class="wc-badge">New</span></div><div class="wc-mean">상인 무역업자</div></div>
+      </div>
+    </div>
+    <div class="btabs"><div class="bt"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z"/></svg><span>Home</span></div><div class="bt"><svg viewBox="0 0 24 24"><path d="M4 4h4v16H4zm6 0h4v16h-4zm6 0h4v16h-4z"/></svg><span>Library</span></div><div class="bt on"><svg viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg><span>Words</span></div><div class="bt"><svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 018.5 12a3.5 3.5 0 013.5-3.5 3.5 3.5 0 013.5 3.5 3.5 3.5 0 01-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97s-.03-.66-.07-1l2.11-1.63a.5.5 0 00.12-.64l-2-3.46a.5.5 0 00-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98L14.5 2.42a.5.5 0 00-.5-.42h-4a.5.5 0 00-.5.42l-.37 2.65c-.61.25-1.17.58-1.69.98l-2.49-1a.5.5 0 00-.61.22l-2 3.46a.5.5 0 00.12.64l2.11 1.63a8.14 8.14 0 000 1.94l-2.11 1.66a.5.5 0 00-.12.64l2 3.46a.5.5 0 00.61.22l2.49-1c.52.4 1.08.73 1.69.98l.37 2.65a.5.5 0 00.5.42h4a.5.5 0 00.5-.42l.37-2.65c.61-.25 1.17-.58 1.69-.98l2.49 1a.5.5 0 00.61-.22l2-3.46a.5.5 0 00-.12-.64l-2.11-1.66z"/></svg><span>Settings</span></div></div>
+  </div>
+</div>
+
+<!-- C — Bigger Lines -->
+<div class="wrap">
+  <div class="lbl">C<span>Bigger Lines</span>
+    <span class="desc">테이블 헤더 없음. 단어 18px heavy. 뜻 14px. 아래 뱃지+페이지. 넉넉한 18px 패딩. By Date와 동일 스타일.</span>
+  </div>
+  <div class="dev vc">
+    <div class="sc">
+      <div class="sb"><span class="sb-t">12:28</span><div class="sb-r"><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div>&nbsp;&nbsp;<div class="sb-pill"></div></div></div>
+      <div class="nav"><div class="nav-back">‹</div><div class="nav-title">2027 수능특강 영어</div><div class="nav-cnt">4</div></div>
+      <div class="book-bar"><div class="cover"><span>수능<br>특강</span></div><div class="bb-info"><div class="bb-title">2027 수능특강 영어</div><div class="bb-sub">4 words · 4 unknown · 0 known</div></div></div>
+      <div class="filter"><div class="ft on">All</div><div class="ft">Unknown</div><div class="ft">Learned</div></div>
+      <div class="words">
+        <div class="w-item"><div class="w-word">deficit</div><div class="w-mean">적자</div><div class="w-meta"><span class="w-badge">New</span><span class="w-page">p.75</span></div></div>
+        <div class="w-item"><div class="w-word">surplus-producing</div><div class="w-mean">잉여 생산</div><div class="w-meta"><span class="w-badge">New</span><span class="w-page">p.75</span></div></div>
+        <div class="w-item"><div class="w-word">firms</div><div class="w-mean">기업</div><div class="w-meta"><span class="w-badge">New</span><span class="w-page">p.75</span></div></div>
+        <div class="w-item"><div class="w-word">merchant traders</div><div class="w-mean">상인 무역업자</div><div class="w-meta"><span class="w-badge">New</span><span class="w-page">p.75</span></div></div>
+      </div>
+    </div>
+    <div class="btabs"><div class="bt"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z"/></svg><span>Home</span></div><div class="bt"><svg viewBox="0 0 24 24"><path d="M4 4h4v16H4zm6 0h4v16h-4zm6 0h4v16h-4z"/></svg><span>Library</span></div><div class="bt on"><svg viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg><span>Words</span></div><div class="bt"><svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 018.5 12a3.5 3.5 0 013.5-3.5 3.5 3.5 0 013.5 3.5 3.5 3.5 0 01-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97s-.03-.66-.07-1l2.11-1.63a.5.5 0 00.12-.64l-2-3.46a.5.5 0 00-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98L14.5 2.42a.5.5 0 00-.5-.42h-4a.5.5 0 00-.5.42l-.37 2.65c-.61.25-1.17.58-1.69.98l-2.49-1a.5.5 0 00-.61.22l-2 3.46a.5.5 0 00.12.64l2.11 1.63a8.14 8.14 0 000 1.94l-2.11 1.66a.5.5 0 00-.12.64l2 3.46a.5.5 0 00.61.22l2.49-1c.52.4 1.08.73 1.69.98l.37 2.65a.5.5 0 00.5.42h4a.5.5 0 00.5-.42l.37-2.65c.61-.25 1.17-.58 1.69-.98l2.49 1a.5.5 0 00.61-.22l2-3.46a.5.5 0 00-.12-.64l-2.11-1.66z"/></svg><span>Settings</span></div></div>
+  </div>
+</div>
+
+<!-- D — Two Column -->
+<div class="wrap">
+  <div class="lbl">D<span>Side by Side</span>
+    <span class="desc">단어(좌) | 뜻(우) 좌우 분리. 테이블 느낌이지만 큰 사이즈. 단어와 뜻이 같은 높이.</span>
+  </div>
+  <div class="dev vd">
+    <div class="sc">
+      <div class="sb"><span class="sb-t">12:28</span><div class="sb-r"><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div>&nbsp;&nbsp;<div class="sb-pill"></div></div></div>
+      <div class="nav"><div class="nav-back">‹</div><div class="nav-title">2027 수능특강 영어</div><div class="nav-cnt">4</div></div>
+      <div class="book-bar"><div class="cover"><span>수능<br>특강</span></div><div class="bb-info"><div class="bb-title">2027 수능특강 영어</div><div class="bb-sub">4 words · 4 unknown · 0 known</div></div></div>
+      <div class="filter"><div class="ft on">All</div><div class="ft">Unknown</div><div class="ft">Learned</div></div>
+      <div class="words">
+        <div class="w-item"><div class="w-left"><span class="w-word">deficit</span><span class="w-badge">New</span></div><div class="w-right"><span class="w-mean">적자</span></div></div>
+        <div class="w-item"><div class="w-left"><span class="w-word">surplus</span><span class="w-badge">New</span></div><div class="w-right"><span class="w-mean">잉여 생산</span></div></div>
+        <div class="w-item"><div class="w-left"><span class="w-word">firms</span><span class="w-badge">New</span></div><div class="w-right"><span class="w-mean">기업</span></div></div>
+        <div class="w-item"><div class="w-left"><span class="w-word">merchants</span><span class="w-badge">New</span></div><div class="w-right"><span class="w-mean">상인 무역업자</span></div></div>
+      </div>
+    </div>
+    <div class="btabs"><div class="bt"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z"/></svg><span>Home</span></div><div class="bt"><svg viewBox="0 0 24 24"><path d="M4 4h4v16H4zm6 0h4v16h-4zm6 0h4v16h-4z"/></svg><span>Library</span></div><div class="bt on"><svg viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg><span>Words</span></div><div class="bt"><svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 018.5 12a3.5 3.5 0 013.5-3.5 3.5 3.5 0 013.5 3.5 3.5 3.5 0 01-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97s-.03-.66-.07-1l2.11-1.63a.5.5 0 00.12-.64l-2-3.46a.5.5 0 00-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98L14.5 2.42a.5.5 0 00-.5-.42h-4a.5.5 0 00-.5.42l-.37 2.65c-.61.25-1.17.58-1.69.98l-2.49-1a.5.5 0 00-.61.22l-2 3.46a.5.5 0 00.12.64l2.11 1.63a8.14 8.14 0 000 1.94l-2.11 1.66a.5.5 0 00-.12.64l2 3.46a.5.5 0 00.61.22l2.49-1c.52.4 1.08.73 1.69.98l.37 2.65a.5.5 0 00.5.42h4a.5.5 0 00.5-.42l.37-2.65c.61-.25 1.17-.58 1.69-.98l2.49 1a.5.5 0 00.61-.22l2-3.46a.5.5 0 00-.12-.64l-2.11-1.66z"/></svg><span>Settings</span></div></div>
+  </div>
+</div>
+
+<!-- E — Stacked Focus -->
+<div class="wrap">
+  <div class="lbl">E<span>Meaning Box</span>
+    <span class="desc">단어 18px + 뱃지 한 줄. 뜻이 회색 배경 박스 안에 15px. 뜻이 강조됨. 학습에 최적.</span>
+  </div>
+  <div class="dev ve">
+    <div class="sc">
+      <div class="sb"><span class="sb-t">12:28</span><div class="sb-r"><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div>&nbsp;&nbsp;<div class="sb-pill"></div></div></div>
+      <div class="nav"><div class="nav-back">‹</div><div class="nav-title">2027 수능특강 영어</div><div class="nav-cnt">4</div></div>
+      <div class="book-bar"><div class="cover"><span>수능<br>특강</span></div><div class="bb-info"><div class="bb-title">2027 수능특강 영어</div><div class="bb-sub">4 words · 4 unknown · 0 known</div></div></div>
+      <div class="filter"><div class="ft on">All</div><div class="ft">Unknown</div><div class="ft">Learned</div></div>
+      <div class="words">
+        <div class="w-item"><div class="w-top"><span class="w-word">deficit</span><span class="w-badge">New</span></div><div class="w-mean">적자</div></div>
+        <div class="w-item"><div class="w-top"><span class="w-word">surplus-producing</span><span class="w-badge">New</span></div><div class="w-mean">잉여 생산</div></div>
+        <div class="w-item"><div class="w-top"><span class="w-word">firms</span><span class="w-badge">New</span></div><div class="w-mean">기업</div></div>
+        <div class="w-item"><div class="w-top"><span class="w-word">merchant traders</span><span class="w-badge">New</span></div><div class="w-mean">상인 무역업자</div></div>
+      </div>
+    </div>
+    <div class="btabs"><div class="bt"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z"/></svg><span>Home</span></div><div class="bt"><svg viewBox="0 0 24 24"><path d="M4 4h4v16H4zm6 0h4v16h-4zm6 0h4v16h-4z"/></svg><span>Library</span></div><div class="bt on"><svg viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg><span>Words</span></div><div class="bt"><svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 018.5 12a3.5 3.5 0 013.5-3.5 3.5 3.5 0 013.5 3.5 3.5 3.5 0 01-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97s-.03-.66-.07-1l2.11-1.63a.5.5 0 00.12-.64l-2-3.46a.5.5 0 00-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98L14.5 2.42a.5.5 0 00-.5-.42h-4a.5.5 0 00-.5.42l-.37 2.65c-.61.25-1.17.58-1.69.98l-2.49-1a.5.5 0 00-.61.22l-2 3.46a.5.5 0 00.12.64l2.11 1.63a8.14 8.14 0 000 1.94l-2.11 1.66a.5.5 0 00-.12.64l2 3.46a.5.5 0 00.61.22l2.49-1c.52.4 1.08.73 1.69.98l.37 2.65a.5.5 0 00.5.42h4a.5.5 0 00.5-.42l.37-2.65c.61-.25 1.17-.58 1.69-.98l2.49 1a.5.5 0 00.61-.22l2-3.46a.5.5 0 00-.12-.64l-2.11-1.66z"/></svg><span>Settings</span></div></div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

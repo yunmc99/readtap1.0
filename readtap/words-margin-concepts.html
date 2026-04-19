@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Words Tab - Margin & Layout Concepts</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'DM Sans', -apple-system, sans-serif;
+    background: #d8dcde;
+    padding: 32px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px;
+    justify-content: center;
+  }
+  .option-wrapper { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .option-label {
+    font-size: 12px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 1.5px; color: #444; background: #fff;
+    padding: 4px 14px; border-radius: 6px;
+  }
+  .phone {
+    width: 375px; height: 720px; background: #F1F4F5;
+    border-radius: 44px; overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    display: flex; flex-direction: column;
+    position: relative;
+  }
+  .status-bar {
+    height: 54px; display: flex; align-items: flex-end;
+    justify-content: center; padding-bottom: 6px;
+    font-size: 14px; font-weight: 700; color: #1a1a1a;
+  }
+  .content { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+  .tab-bar {
+    height: 70px; background: rgba(255,255,255,0.92);
+    border-top: 1px solid rgba(0,0,0,0.06);
+    display: flex; align-items: center; justify-content: space-around;
+    padding: 0 20px; flex-shrink: 0;
+  }
+  .tab-item { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10px; color: #aaa; font-weight: 600; }
+  .tab-item.active { color: #2EAF6E; }
+  .tab-icon { font-size: 20px; }
+  .desc {
+    font-size: 11px; color: #666; max-width: 340px;
+    text-align: center; line-height: 1.5;
+  }
+
+  /* Shared components */
+  .segmented {
+    display: flex; border-radius: 12px; padding: 4px;
+    background: rgba(255,255,255,0.7); border: 1px solid rgba(0,0,0,0.06);
+    position: relative;
+  }
+  .seg-slider {
+    position: absolute; top: 4px; left: 4px;
+    width: calc(50% - 4px); height: calc(100% - 8px);
+    background: white; border-radius: 9px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .seg-btn {
+    flex: 1; text-align: center; padding: 9px 0;
+    font-size: 13px; font-weight: 700; z-index: 1;
+  }
+  .seg-btn.active { color: #1a1a1a; }
+  .seg-btn.inactive { color: #999; }
+
+  .calendar-card {
+    background: rgba(255,255,255,0.88); border-radius: 20px;
+    border: 1px solid rgba(0,0,0,0.06);
+    padding: 14px 16px 10px;
+  }
+  .cal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px;
+  }
+  .cal-arrow { width: 28px; height: 28px; border-radius: 50%; background: rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: center; color: #999; font-size: 12px; }
+  .cal-title { font-size: 15px; font-weight: 800; color: #1a1a1a; }
+
+  .week-row {
+    display: flex; gap: 0;
+  }
+  .week-day {
+    flex: 1; text-align: center;
+  }
+  .week-day .label { font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; margin-bottom: 6px; }
+  .week-day .num { font-size: 18px; font-weight: 800; color: #1a1a1a; }
+  .week-day .num.today { color: #2EAF6E; }
+  .week-day .bar { width: 18px; height: 3px; border-radius: 2px; margin: 4px auto 0; }
+  .week-day .bar.has { background: #2EAF6E; }
+  .week-day .bar.empty { background: transparent; }
+
+  .drag-handle {
+    width: 32px; height: 4px; border-radius: 2px;
+    background: rgba(0,0,0,0.08); margin: 6px auto 0;
+  }
+
+  .words-card {
+    background: rgba(255,255,255,0.88);
+    border: 1px solid rgba(0,0,0,0.06);
+    overflow: hidden;
+  }
+  .word-row {
+    padding: 14px 18px; border-bottom: 1px solid rgba(0,0,0,0.04);
+  }
+  .word-row:last-child { border-bottom: none; }
+  .word-row .word { font-size: 16px; font-weight: 800; color: #1a1a1a; margin-bottom: 3px; }
+  .word-row .meaning { font-size: 12px; color: #888; margin-bottom: 4px; }
+  .word-row .meta { font-size: 10px; color: #aaa; font-weight: 600; }
+  .word-row .badge {
+    display: inline-block; font-size: 9px; font-weight: 700;
+    padding: 2px 7px; border-radius: 5px; margin-left: 6px;
+  }
+  .badge.new { background: rgba(46,175,110,0.08); color: #2EAF6E; }
+
+  /* ===== Option A: Current-ish (12px margin) ===== */
+  .opt-a .content { padding: 12px 12px 0; gap: 10px; }
+  .opt-a .words-card { border-radius: 16px; }
+
+  /* ===== Option B: 16px margin, matched radius ===== */
+  .opt-b .content { padding: 12px 16px 0; gap: 12px; }
+  .opt-b .words-card { border-radius: 20px; }
+  .opt-b .calendar-card { border-radius: 20px; }
+
+  /* ===== Option C: 20px margin, tighter spacing ===== */
+  .opt-c .content { padding: 12px 20px 0; gap: 12px; }
+  .opt-c .words-card { border-radius: 20px; }
+  .opt-c .calendar-card { border-radius: 20px; }
+
+  /* ===== Option D: 16px margin, seamless look (no gap between calendar and words) ===== */
+  .opt-d .content { padding: 12px 16px 0; gap: 12px; }
+  .opt-d .calendar-card { border-radius: 20px 20px 0 0; border-bottom: none; }
+  .opt-d .words-card { border-radius: 0 0 20px 20px; border-top: none; }
+  .opt-d .connected-block { display: flex; flex-direction: column; }
+
+  /* ===== Option E: 16px margin, shadow cards ===== */
+  .opt-e .content { padding: 12px 16px 0; gap: 14px; }
+  .opt-e .words-card { border-radius: 20px; border: none; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+  .opt-e .calendar-card { border: none; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+</style>
+</head>
+<body>
+
+<!-- Option A: Current (12px) -->
+<div class="option-wrapper">
+  <span class="option-label">Option A - Current (12px)</span>
+  <div class="phone opt-a">
+    <div class="status-bar">12:07</div>
+    <div class="content">
+      <div class="segmented">
+        <div class="seg-slider"></div>
+        <div class="seg-btn active">By Date</div>
+        <div class="seg-btn inactive">By Book</div>
+      </div>
+      <div class="calendar-card">
+        <div class="cal-header">
+          <div class="cal-arrow">&lt;</div>
+          <div class="cal-title">March 2026</div>
+          <div class="cal-arrow">&gt;</div>
+        </div>
+        <div class="week-row">
+          <div class="week-day"><div class="label">SUN</div><div class="num">22</div><div class="bar empty"></div></div>
+          <div class="week-day"><div class="label">MON</div><div class="num">23</div><div class="bar empty"></div></div>
+          <div class="week-day"><div class="label">TUE</div><div class="num">24</div><div class="bar empty"></div></div>
+          <div class="week-day"><div class="label">WED</div><div class="num today">25</div><div class="bar has"></div></div>
+          <div class="week-day"><div class="label">THU</div><div class="num">26</div><div class="bar empty"></div></div>
+          <div class="week-day"><div class="label">FRI</div><div class="num">27</div><div class="bar empty"></div></div>
+          <div class="week-day"><div class="label">SAT</div><div class="num">28</div><div class="bar empty"></div></div>
+        </div>
+        <div class="drag-handle"></div>
+      </div>
+      <div class="words-card">
+        <div class="word-row"><div class="word">deficit</div><div class="meaning">적자</div><div class="meta">2027 수능특강 영어 · p.75 <span class="badge new">New</span></div></div>
+        <div class="word-row"><div class="word">surplus-producing</div><div class="meaning">잉여 생산</div><div class="meta">2027 수능특강 영어 · p.75 <span class="badge new">New</span></div></div>
+        <div class="word-row"><div class="word">early grain trade firms</div><div class="meaning">초기 곡물 무역 회사</div><div class="meta">2027 수능특강 영어 · p.75 <span class="badge new">New</span></div></div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item"><span class="tab-icon">&#9751;</span>Home</div>
+      <div class="tab-item"><span class="tab-icon">&#9776;</span>Library</div>
+      <div class="tab-item active"><span class="tab-icon">&#9993;</span>Words</div>
+      <div class="tab-item"><span class="tab-icon">&#9881;</span>Settings</div>
+    </div>
+  </div>
+  <div class="desc">현재. 양옆 12px. 캘린더와 단어 사이 간격이 좁고 카드 radius 불일치</div>
+</div>
+
+<!-- Option B: 16px matched -->
+<div class="option-wrapper">
+  <span class="option-label">Option B - 16px Matched</span>
+  <div class="phone opt-b">
+    <div class="status-bar">12:07</div>
+    <div class="content">
+      <div class="segmented">
+        <div class="seg-slider"></div>
+        <div class="seg-btn active">By Date</div>
+        <div class="seg-btn inactive">By Book</div>
+      </div>
+      <div class="calendar-card">
+        <div class="cal-header">
+          <div class="cal-arrow">&lt;</div>
+          <div class="cal-title">March 2026</div>
+          <div class="cal-arrow">&gt;</div>
+        </div>
+        <div class="week-row">
+          <div class="week-day"><div class="label">SUN</div><div class="num">22</div><div class="bar empty"></div></div>
+          <div class="week-day"><div class="label">MON</div><div class="num">23</div><div class="bar empty"></div></div>
+          <div class="week-day"><div class="label">TUE</div><div class="num">24</div><div class="bar empty"></div></div>
+          <div class="week-day"><div class="label">WED</div><div class="num today">25</div><div class="bar has"></div></div>
+          <div class="week-day"><div class="label">THU</div><div class="num">26</div><div class="bar empty"></div></div>
+          <div class="week-day"><div class="label">FRI</div><div class="num">27</div><div class="bar empty"></div></div>
+          <div class="week-day"><div class="label">SAT</div><div class="num">28</div><div class="bar empty"></div></div>
+        </div>
+        <div class="drag-handle"></div>
+      </div>
+      <div class="words-card">
+        <div class="word-row"><div class="word">deficit</div><div class="meaning">적자</div><div class="meta">2027 수능특강 영어 · p.75 <span class="badge new">New</span></div></div>
+        <div class="word-row"><div class="word">surplus-producing</div><div class="meaning">잉여 생산</div><div class="meta">2027 수능특강 영어 · p.75 <span class="badge new">New</span></div></div>
+        <div class="word-row"><div class="word">early grain trade firms</div><div class="meaning">초기 곡물 무역 회사</div><div class="meta">2027 수능특강 영어 · p.75 <span class="badge new">New</span></div></div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item"><span class="tab-icon">&#9751;</span>Home</div>
+      <div class="tab-item"><span class="tab-icon">&#9776;</span>Library</div>
+      <div class="tab-item active"><span class="tab-icon">&#9993;</span>Words</div>
+      <div class="tab-item"><span class="tab-icon">&#9881;</span>Settings</div>
+    </div>
+  </div>
+  <div class="desc">16px 마진. 캘린더/단어 카드 모두 radius 20으로 통일. 적당한 호흡</div>
+</div>
+
+<!-- Option C: 20px margin -->
+<div class="option-wrapper">
+  <span class="option-label">Option C - 20px Breathing</span>
+  <div class="phone opt-c">
+    <div class="status-bar">12:07</div>
+    <div class="content">
+      <div class="segmented">
+        <div class="seg-slider"></div>
+        <div class="seg-btn active">By Date</div>
+        <div class="seg-btn inactive">By Book</div>
+      </div>
+      <div class="calendar-card">
+        <div class="cal-header">
+          <div class="cal-arrow">&lt;</div>
+          <div class="cal-title">March 2026</div>
+          <div class="cal-arrow">&gt;</div>
+        </div>
+        <div class="week-row">
+          <div class="week-day"><div class="label">SUN</div><div class="num">22</div><div class="bar empty"></div></div>
+          <div class="week-day"><div class="label">MON</div><div class="num">23</div><div class="bar empty"></div></div>
+          <div class="week-day"><div class="label">TUE</div><div class="num">24</div><div class="bar empty"></div></div>
+          <div class="week-day"><div class="label">WED</div><div class="num today">25</div><div class="bar has"></div></div>
+          <div class="week-day"><div class="label">THU</div><div class="num">26</div><div class="bar empty"></div></div>
+          <div class="week-day"><div class="label">FRI</div><div class="num">27</div><div class="bar empty"></div></div>
+          <div class="week-day"><div class="label">SAT</div><div class="num">28</div><div class="bar empty"></div></div>
+        </div>
+        <div class="drag-handle"></div>
+      </div>
+      <div class="words-card">
+        <div class="word-row"><div class="word">deficit</div><div class="meaning">적자</div><div class="meta">2027 수능특강 영어 · p.75 <span class="badge new">New</span></div></div>
+        <div class="word-row"><div class="word">surplus-producing</div><div class="meaning">잉여 생산</div><div class="meta">2027 수능특강 영어 · p.75 <span class="badge new">New</span></div></div>
+        <div class="word-row"><div class="word">early grain trade firms</div><div class="meaning">초기 곡물 무역 회사</div><div class="meta">2027 수능특강 영어 · p.75 <span class="badge new">New</span></div></div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item"><span class="tab-icon">&#9751;</span>Home</div>
+      <div class="tab-item"><span class="tab-icon">&#9776;</span>Library</div>
+      <div class="tab-item active"><span class="tab-icon">&#9993;</span>Words</div>
+      <div class="tab-item"><span class="tab-icon">&#9881;</span>Settings</div>
+    </div>
+  </div>
+  <div class="desc">20px 마진. 넉넉한 여백. 카드가 화면 안에 확실히 자리잡음. 가장 여유로운 레이아웃</div>
+</div>
+
+<!-- Option D: Connected cards -->
+<div class="option-wrapper">
+  <span class="option-label">Option D - Connected</span>
+  <div class="phone opt-d">
+    <div class="status-bar">12:07</div>
+    <div class="content">
+      <div class="segmented">
+        <div class="seg-slider"></div>
+        <div class="seg-btn active">By Date</div>
+        <div class="seg-btn inactive">By Book</div>
+      </div>
+      <div class="connected-block">
+        <div class="calendar-card">
+          <div class="cal-header">
+            <div class="cal-arrow">&lt;</div>
+            <div class="cal-title">March 2026</div>
+            <div class="cal-arrow">&gt;</div>
+          </div>
+          <div class="week-row">
+            <div class="week-day"><div class="label">SUN</div><div class="num">22</div><div class="bar empty"></div></div>
+            <div class="week-day"><div class="label">MON</div><div class="num">23</div><div class="bar empty"></div></div>
+            <div class="week-day"><div class="label">TUE</div><div class="num">24</div><div class="bar empty"></div></div>
+            <div class="week-day"><div class="label">WED</div><div class="num today">25</div><div class="bar has"></div></div>
+            <div class="week-day"><div class="label">THU</div><div class="num">26</div><div class="bar empty"></div></div>
+            <div class="week-day"><div class="label">FRI</div><div class="num">27</div><div class="bar empty"></div></div>
+            <div class="week-day"><div class="label">SAT</div><div class="num">28</div><div class="bar empty"></div></div>
+          </div>
+          <div class="drag-handle"></div>
+        </div>
+        <div class="words-card">
+          <div class="word-row"><div class="word">deficit</div><div class="meaning">적자</div><div class="meta">2027 수능특강 영어 · p.75 <span class="badge new">New</span></div></div>
+          <div class="word-row"><div class="word">surplus-producing</div><div class="meaning">잉여 생산</div><div class="meta">2027 수능특강 영어 · p.75 <span class="badge new">New</span></div></div>
+          <div class="word-row"><div class="word">early grain trade firms</div><div class="meaning">초기 곡물 무역 회사</div><div class="meta">2027 수능특강 영어 · p.75 <span class="badge new">New</span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item"><span class="tab-icon">&#9751;</span>Home</div>
+      <div class="tab-item"><span class="tab-icon">&#9776;</span>Library</div>
+      <div class="tab-item active"><span class="tab-icon">&#9993;</span>Words</div>
+      <div class="tab-item"><span class="tab-icon">&#9881;</span>Settings</div>
+    </div>
+  </div>
+  <div class="desc">16px 마진. 캘린더+단어가 하나로 이어진 카드. 완전 통일감. 붕 뜰 수 없음</div>
+</div>
+
+<!-- Option E: Shadow style -->
+<div class="option-wrapper">
+  <span class="option-label">Option E - Soft Shadow</span>
+  <div class="phone opt-e">
+    <div class="status-bar">12:07</div>
+    <div class="content">
+      <div class="segmented" style="border: none; box-shadow: 0 2px 12px rgba(0,0,0,0.06);">
+        <div class="seg-slider"></div>
+        <div class="seg-btn active">By Date</div>
+        <div class="seg-btn inactive">By Book</div>
+      </div>
+      <div class="calendar-card">
+        <div class="cal-header">
+          <div class="cal-arrow">&lt;</div>
+          <div class="cal-title">March 2026</div>
+          <div class="cal-arrow">&gt;</div>
+        </div>
+        <div class="week-row">
+          <div class="week-day"><div class="label">SUN</div><div class="num">22</div><div class="bar empty"></div></div>
+          <div class="week-day"><div class="label">MON</div><div class="num">23</div><div class="bar empty"></div></div>
+          <div class="week-day"><div class="label">TUE</div><div class="num">24</div><div class="bar empty"></div></div>
+          <div class="week-day"><div class="label">WED</div><div class="num today">25</div><div class="bar has"></div></div>
+          <div class="week-day"><div class="label">THU</div><div class="num">26</div><div class="bar empty"></div></div>
+          <div class="week-day"><div class="label">FRI</div><div class="num">27</div><div class="bar empty"></div></div>
+          <div class="week-day"><div class="label">SAT</div><div class="num">28</div><div class="bar empty"></div></div>
+        </div>
+        <div class="drag-handle"></div>
+      </div>
+      <div class="words-card">
+        <div class="word-row"><div class="word">deficit</div><div class="meaning">적자</div><div class="meta">2027 수능특강 영어 · p.75 <span class="badge new">New</span></div></div>
+        <div class="word-row"><div class="word">surplus-producing</div><div class="meaning">잉여 생산</div><div class="meta">2027 수능특강 영어 · p.75 <span class="badge new">New</span></div></div>
+        <div class="word-row"><div class="word">early grain trade firms</div><div class="meaning">초기 곡물 무역 회사</div><div class="meta">2027 수능특강 영어 · p.75 <span class="badge new">New</span></div></div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item"><span class="tab-icon">&#9751;</span>Home</div>
+      <div class="tab-item"><span class="tab-icon">&#9776;</span>Library</div>
+      <div class="tab-item active"><span class="tab-icon">&#9993;</span>Words</div>
+      <div class="tab-item"><span class="tab-icon">&#9881;</span>Settings</div>
+    </div>
+  </div>
+  <div class="desc">16px 마진. border 대신 soft shadow. 모든 카드 동일 shadow 스타일. 부드러운 depth</div>
+</div>
+
+</body>
+</html>

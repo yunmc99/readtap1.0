@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReadTap Week Strip — Concepts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700;9..40,800&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+  body{background:#08080c;min-height:100vh;font-family:'DM Sans','Noto Sans KR',sans-serif;color:#fff}
+  .hdr{text-align:center;padding:60px 20px 10px}
+  .hdr h1{font-size:28px;font-weight:800;letter-spacing:-.5px}
+  .hdr p{font-size:13px;color:#555;margin-top:6px;letter-spacing:3px;text-transform:uppercase}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:36px;max-width:1680px;margin:0 auto;padding:40px 32px 80px}
+  .wrap{display:flex;flex-direction:column;align-items:center;gap:14px}
+  .lbl{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#555;text-align:center}
+  .lbl span{display:block;font-size:17px;font-weight:800;color:#999;letter-spacing:-.3px;text-transform:none;margin-top:3px}
+  .lbl .desc{display:block;font-size:11px;font-weight:400;color:#444;letter-spacing:0;text-transform:none;margin-top:5px;line-height:1.5;max-width:340px}
+
+  .strip-frame{width:335px;border-radius:16px;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,0.04),0 16px 40px rgba(0,0,0,0.4);position:relative;padding:16px 12px}
+  :root{--ink:#1F2733;--muted:#6A7482;--eyebrow:#808D9B;--accent:#1a8a4a;--bg:#F7F8FA;--card:#fff;--border:rgba(31,39,51,0.06);--fill:#EBF0F2}
+
+  /* ═══ A — Pill Columns ═══ */
+  .a .strip-frame{background:var(--bg)}
+  .a .row{display:flex;gap:4px}
+  .a .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 0;border-radius:14px;cursor:pointer}
+  .a .col.sel{background:var(--accent)}
+  .a .wd{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
+  .a .col.sel .wd{color:rgba(255,255,255,.5)}
+  .a .col.today .wd{color:var(--accent)}
+  .a .num{font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-.5px}
+  .a .col.sel .num{color:#fff}
+  .a .col.today .num{color:var(--accent)}
+  .a .ring{width:26px;height:26px;border-radius:50%;border:2.5px solid var(--fill);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:var(--muted)}
+  .a .ring.has{border-color:rgba(26,138,74,.3);color:var(--accent)}
+  .a .col.sel .ring{border-color:rgba(255,255,255,.3);color:#fff}
+  .a .col.sel .ring.has{border-color:rgba(255,255,255,.5)}
+  .a .dot{width:4px;height:4px;border-radius:50%;background:transparent}
+  .a .col.today .dot{background:var(--accent)}
+  .a .col.sel .dot{background:#fff}
+
+  /* ═══ B — Underline Bar ═══ */
+  .b .strip-frame{background:var(--bg)}
+  .b .row{display:flex;gap:0}
+  .b .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0 6px;cursor:pointer;border-radius:10px}
+  .b .col.sel{background:var(--accent)}
+  .b .wd{font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase}
+  .b .col.sel .wd{color:rgba(255,255,255,.5)}
+  .b .col.today .wd{color:var(--accent)}
+  .b .num{font-size:16px;font-weight:800;color:var(--ink);letter-spacing:-.3px}
+  .b .col.sel .num{color:#fff}
+  .b .col.today .num{color:var(--accent)}
+  .b .bar{width:16px;height:3px;border-radius:2px;background:transparent;margin-top:1px}
+  .b .bar.has{background:rgba(26,138,74,.25)}
+  .b .col.today .bar{background:var(--accent)}
+  .b .col.sel .bar{background:rgba(255,255,255,.4)}
+
+  /* ═══ C — Minimal Dots ═══ */
+  .c .strip-frame{background:var(--bg);padding:14px 8px}
+  .c .row{display:flex;gap:0}
+  .c .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 0;cursor:pointer}
+  .c .wd{font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase}
+  .c .col.today .wd{color:var(--accent);font-weight:700}
+  .c .col.sel .wd{color:var(--accent);font-weight:700}
+  .c .num{font-size:16px;font-weight:800;color:var(--ink);letter-spacing:-.3px}
+  .c .col.today .num{color:var(--accent)}
+  .c .col.sel .num{color:var(--accent)}
+  .c .dot-row{display:flex;gap:2px;height:6px;align-items:center}
+  .c .d{width:5px;height:5px;border-radius:50%;background:var(--fill)}
+  .c .d.filled{background:rgba(26,138,74,.35)}
+  .c .col.sel .d.filled{background:var(--accent)}
+  .c .sel-line{width:16px;height:2px;border-radius:1px;background:transparent;margin-top:2px}
+  .c .col.sel .sel-line{background:var(--accent)}
+
+  /* ═══ D — Card Chips ═══ */
+  .d .strip-frame{background:var(--bg);padding:12px 8px}
+  .d .row{display:flex;gap:6px}
+  .d .col{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+    padding:10px 0;border-radius:14px;cursor:pointer;
+    background:var(--card);border:1px solid var(--border);
+  }
+  .d .col.sel{background:var(--accent);border-color:var(--accent)}
+  .d .col.today:not(.sel){border-color:var(--accent);border-width:1.5px}
+  .d .wd{font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
+  .d .col.sel .wd{color:rgba(255,255,255,.5)}
+  .d .col.today .wd{color:var(--accent)}
+  .d .num{font-size:17px;font-weight:800;color:var(--ink);letter-spacing:-.3px}
+  .d .col.sel .num{color:#fff}
+  .d .col.today .num{color:var(--accent)}
+  .d .cnt{font-size:9px;font-weight:700;color:var(--muted)}
+  .d .cnt.has{color:var(--accent)}
+  .d .col.sel .cnt{color:rgba(255,255,255,.7)}
+
+  /* ═══ E — Compact Inline ═══ */
+  .e .strip-frame{background:var(--card);border:1px solid var(--border);padding:12px}
+  .e .row{display:flex;gap:0}
+  .e .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;cursor:pointer}
+  .e .wd{font-size:8px;font-weight:600;color:var(--muted);text-transform:uppercase;opacity:.6}
+  .e .col.sel .wd{opacity:1;color:var(--accent)}
+  .e .col.today .wd{opacity:1;color:var(--accent)}
+  .e .num{font-size:14px;font-weight:800;color:var(--ink);letter-spacing:-.2px}
+  .e .col.sel .num{color:var(--accent)}
+  .e .col.today .num{color:var(--accent)}
+  .e .indicator{width:20px;height:3px;border-radius:2px;background:transparent;margin-top:2px}
+  .e .col.sel .indicator{background:var(--accent)}
+  .e .col.has .indicator{background:rgba(26,138,74,.15)}
+  .e .col.sel.has .indicator{background:var(--accent)}
+
+  /* ═══ F — Big Number ═══ */
+  .f .strip-frame{background:var(--bg);padding:16px 6px}
+  .f .row{display:flex;gap:2px}
+  .f .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;cursor:pointer;border-radius:12px}
+  .f .col.sel{background:var(--accent)}
+  .f .wd{font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
+  .f .col.sel .wd{color:rgba(255,255,255,.5)}
+  .f .col.today .wd{color:var(--accent)}
+  .f .num{font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.5px;line-height:1}
+  .f .col.sel .num{color:#fff}
+  .f .col.today .num{color:var(--accent)}
+  .f .sub{font-size:8px;font-weight:700;color:var(--muted);margin-top:1px}
+  .f .sub.has{color:var(--accent)}
+  .f .col.sel .sub{color:rgba(255,255,255,.6)}
+
+  /* ═══ G — Horizontal Scroll ═══ */
+  .g .strip-frame{background:var(--bg);padding:14px 0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .g .strip-frame::-webkit-scrollbar{display:none}
+  .g .row{display:flex;gap:4px;padding:0 14px;width:max-content}
+  .g .col{width:48px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0 10px;border-radius:14px;cursor:pointer}
+  .g .col.sel{background:var(--accent)}
+  .g .wd{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase}
+  .g .col.sel .wd{color:rgba(255,255,255,.5)}
+  .g .col.today .wd{color:var(--accent)}
+  .g .num{font-size:16px;font-weight:800;color:var(--ink);letter-spacing:-.3px}
+  .g .col.sel .num{color:#fff}
+  .g .col.today .num{color:var(--accent)}
+  .g .bar{width:16px;height:3px;border-radius:2px;background:var(--fill)}
+  .g .bar.has{background:rgba(26,138,74,.3)}
+  .g .col.sel .bar{background:rgba(255,255,255,.3)}
+  .g .col.sel .bar.has{background:rgba(255,255,255,.6)}
+
+  /* ═══ H — Segmented Blocks ═══ */
+  .h .strip-frame{background:var(--bg);padding:14px 10px}
+  .h .row{display:flex;gap:3px}
+  .h .col{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    padding:10px 0;border-radius:10px;cursor:pointer;
+    background:var(--fill);
+  }
+  .h .col.has{background:rgba(26,138,74,.06)}
+  .h .col.sel{background:var(--accent)}
+  .h .col.today:not(.sel){box-shadow:inset 0 0 0 1.5px var(--accent)}
+  .h .wd{font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
+  .h .col.sel .wd{color:rgba(255,255,255,.5)}
+  .h .col.today .wd{color:var(--accent)}
+  .h .num{font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.2px}
+  .h .col.sel .num{color:#fff}
+  .h .col.today .num{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>Week Strip</h1>
+  <p>8 Concepts</p>
+</div>
+
+<div class="grid">
+
+<!-- A — Pill Columns (현재 유사) -->
+<div class="wrap">
+  <div class="lbl">A<span>Pill + Ring</span><span class="desc">요일 + 큰 숫자 + 링(단어 수) + 오늘 도트. 현재와 비슷하지만 정리됨.</span></div>
+  <div class="a"><div class="strip-frame"><div class="row">
+    <div class="col"><span class="wd">Sun</span><span class="num">22</span><div class="ring">—</div><div class="dot"></div></div>
+    <div class="col"><span class="wd">Mon</span><span class="num">23</span><div class="ring">—</div><div class="dot"></div></div>
+    <div class="col"><span class="wd">Tue</span><span class="num">24</span><div class="ring">—</div><div class="dot"></div></div>
+    <div class="col sel today"><span class="wd">Wed</span><span class="num">25</span><div class="ring has">2</div><div class="dot"></div></div>
+    <div class="col"><span class="wd">Thu</span><span class="num">26</span><div class="ring">—</div><div class="dot"></div></div>
+    <div class="col"><span class="wd">Fri</span><span class="num">27</span><div class="ring">—</div><div class="dot"></div></div>
+    <div class="col"><span class="wd">Sat</span><span class="num">28</span><div class="ring">—</div><div class="dot"></div></div>
+  </div></div></div>
+</div>
+
+<!-- B — Underline Bar -->
+<div class="wrap">
+  <div class="lbl">B<span>Underline Bar</span><span class="desc">캘린더 E와 동일 미학. 숫자 아래 짧은 바. 가장 통일된 느낌.</span></div>
+  <div class="b"><div class="strip-frame"><div class="row">
+    <div class="col"><span class="wd">Sun</span><span class="num">22</span><div class="bar"></div></div>
+    <div class="col"><span class="wd">Mon</span><span class="num">23</span><div class="bar"></div></div>
+    <div class="col"><span class="wd">Tue</span><span class="num">24</span><div class="bar"></div></div>
+    <div class="col sel today"><span class="wd">Wed</span><span class="num">25</span><div class="bar has"></div></div>
+    <div class="col"><span class="wd">Thu</span><span class="num">26</span><div class="bar"></div></div>
+    <div class="col"><span class="wd">Fri</span><span class="num">27</span><div class="bar"></div></div>
+    <div class="col"><span class="wd">Sat</span><span class="num">28</span><div class="bar"></div></div>
+  </div></div></div>
+</div>
+
+<!-- C — Minimal Dots -->
+<div class="wrap">
+  <div class="lbl">C<span>Minimal Dots</span><span class="desc">단어 수를 도트 개수로 표현. 선택일에 밑줄. 극한 미니멀.</span></div>
+  <div class="c"><div class="strip-frame"><div class="row">
+    <div class="col"><span class="wd">Sun</span><span class="num">22</span><div class="dot-row"></div><div class="sel-line"></div></div>
+    <div class="col"><span class="wd">Mon</span><span class="num">23</span><div class="dot-row"><div class="d filled"></div></div><div class="sel-line"></div></div>
+    <div class="col"><span class="wd">Tue</span><span class="num">24</span><div class="dot-row"></div><div class="sel-line"></div></div>
+    <div class="col sel today"><span class="wd">Wed</span><span class="num">25</span><div class="dot-row"><div class="d filled"></div><div class="d filled"></div></div><div class="sel-line"></div></div>
+    <div class="col"><span class="wd">Thu</span><span class="num">26</span><div class="dot-row"></div><div class="sel-line"></div></div>
+    <div class="col"><span class="wd">Fri</span><span class="num">27</span><div class="dot-row"><div class="d filled"></div><div class="d filled"></div><div class="d filled"></div></div><div class="sel-line"></div></div>
+    <div class="col"><span class="wd">Sat</span><span class="num">28</span><div class="dot-row"></div><div class="sel-line"></div></div>
+  </div></div></div>
+</div>
+
+<!-- D — Card Chips -->
+<div class="wrap">
+  <div class="lbl">D<span>Card Chips</span><span class="desc">각 날짜가 미니 카드. 오늘은 accent 보더. 선택은 채워진 카드. 단어 수 텍스트.</span></div>
+  <div class="d"><div class="strip-frame"><div class="row">
+    <div class="col"><span class="wd">S</span><span class="num">22</span><span class="cnt">—</span></div>
+    <div class="col"><span class="wd">M</span><span class="num">23</span><span class="cnt has">1</span></div>
+    <div class="col"><span class="wd">T</span><span class="num">24</span><span class="cnt">—</span></div>
+    <div class="col sel today"><span class="wd">W</span><span class="num">25</span><span class="cnt has">2</span></div>
+    <div class="col"><span class="wd">T</span><span class="num">26</span><span class="cnt">—</span></div>
+    <div class="col"><span class="wd">F</span><span class="num">27</span><span class="cnt has">3</span></div>
+    <div class="col"><span class="wd">S</span><span class="num">28</span><span class="cnt">—</span></div>
+  </div></div></div>
+</div>
+
+<!-- E — Compact Inline -->
+<div class="wrap">
+  <div class="lbl">E<span>Compact Inline</span><span class="desc">카드 안에 깔끔하게. 작은 사이즈. 선택일에 accent 밑줄. 활동일에 연한 바.</span></div>
+  <div class="e"><div class="strip-frame"><div class="row">
+    <div class="col"><span class="wd">Sun</span><span class="num">22</span><div class="indicator"></div></div>
+    <div class="col has"><span class="wd">Mon</span><span class="num">23</span><div class="indicator"></div></div>
+    <div class="col"><span class="wd">Tue</span><span class="num">24</span><div class="indicator"></div></div>
+    <div class="col sel has today"><span class="wd">Wed</span><span class="num">25</span><div class="indicator"></div></div>
+    <div class="col"><span class="wd">Thu</span><span class="num">26</span><div class="indicator"></div></div>
+    <div class="col has"><span class="wd">Fri</span><span class="num">27</span><div class="indicator"></div></div>
+    <div class="col"><span class="wd">Sat</span><span class="num">28</span><div class="indicator"></div></div>
+  </div></div></div>
+</div>
+
+<!-- F — Big Number -->
+<div class="wrap">
+  <div class="lbl">F<span>Big Number</span><span class="desc">숫자가 크게 (22px). 아래 단어 수 작은 텍스트. 임팩트 있는 숫자 중심.</span></div>
+  <div class="f"><div class="strip-frame"><div class="row">
+    <div class="col"><span class="wd">S</span><span class="num">22</span><span class="sub">—</span></div>
+    <div class="col"><span class="wd">M</span><span class="num">23</span><span class="sub has">1</span></div>
+    <div class="col"><span class="wd">T</span><span class="num">24</span><span class="sub">—</span></div>
+    <div class="col sel today"><span class="wd">W</span><span class="num">25</span><span class="sub has">2</span></div>
+    <div class="col"><span class="wd">T</span><span class="num">26</span><span class="sub">—</span></div>
+    <div class="col"><span class="wd">F</span><span class="num">27</span><span class="sub has">3</span></div>
+    <div class="col"><span class="wd">S</span><span class="num">28</span><span class="sub">—</span></div>
+  </div></div></div>
+</div>
+
+<!-- G — Horizontal Scroll -->
+<div class="wrap">
+  <div class="lbl">G<span>Scroll Strip</span><span class="desc">7일 이상 가로 스크롤. 14일치 보임. Underline bar 포함. 시간을 넓게 탐색.</span></div>
+  <div class="g"><div class="strip-frame"><div class="row">
+    <div class="col"><span class="wd">Thu</span><span class="num">19</span><div class="bar has"></div></div>
+    <div class="col"><span class="wd">Fri</span><span class="num">20</span><div class="bar has"></div></div>
+    <div class="col"><span class="wd">Sat</span><span class="num">21</span><div class="bar"></div></div>
+    <div class="col"><span class="wd">Sun</span><span class="num">22</span><div class="bar"></div></div>
+    <div class="col"><span class="wd">Mon</span><span class="num">23</span><div class="bar has"></div></div>
+    <div class="col"><span class="wd">Tue</span><span class="num">24</span><div class="bar"></div></div>
+    <div class="col sel today"><span class="wd">Wed</span><span class="num">25</span><div class="bar has"></div></div>
+    <div class="col"><span class="wd">Thu</span><span class="num">26</span><div class="bar"></div></div>
+    <div class="col"><span class="wd">Fri</span><span class="num">27</span><div class="bar"></div></div>
+    <div class="col"><span class="wd">Sat</span><span class="num">28</span><div class="bar"></div></div>
+    <div class="col"><span class="wd">Sun</span><span class="num">29</span><div class="bar"></div></div>
+    <div class="col"><span class="wd">Mon</span><span class="num">30</span><div class="bar"></div></div>
+  </div></div></div>
+</div>
+
+<!-- H — Segmented Blocks -->
+<div class="wrap">
+  <div class="lbl">H<span>Segmented Blocks</span><span class="desc">각 날짜가 블록. 활동 있으면 연한 초록. 오늘은 accent 인셋 링. 선택은 채움.</span></div>
+  <div class="h"><div class="strip-frame"><div class="row">
+    <div class="col"><span class="wd">S</span><span class="num">22</span></div>
+    <div class="col has"><span class="wd">M</span><span class="num">23</span></div>
+    <div class="col"><span class="wd">T</span><span class="num">24</span></div>
+    <div class="col sel today"><span class="wd">W</span><span class="num">25</span></div>
+    <div class="col"><span class="wd">T</span><span class="num">26</span></div>
+    <div class="col has"><span class="wd">F</span><span class="num">27</span></div>
+    <div class="col"><span class="wd">S</span><span class="num">28</span></div>
+  </div></div></div>
+</div>
+
+</div>
+</body>
+</html>

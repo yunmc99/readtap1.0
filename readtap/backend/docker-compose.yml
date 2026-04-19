@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: readtap-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: readtap
+      POSTGRES_USER: readtap
+      POSTGRES_PASSWORD: readtap
+    volumes:
+      - readtap-postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U readtap"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    container_name: readtap-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    image: readtap/app-server:latest
+    container_name: readtap-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DATABASE_URL: jdbc:postgresql://db:5432/readtap
+      DATABASE_USER: readtap
+      DATABASE_PASSWORD: readtap
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      TRANSLATE_WORKER_URL: https://readtap-translation-worker.ymcyun99.workers.dev/translate
+      REQUEST_SIGNING_SECRET: ${REQUEST_SIGNING_SECRET}
+      CONTEXT_SERVER_TOKEN: ${CONTEXT_SERVER_TOKEN}
+      APPLE_SHARED_SECRET: ${APPLE_SHARED_SECRET}
+    ports:
+      - "8080:8080"
+
+volumes:
+  readtap-postgres-data:

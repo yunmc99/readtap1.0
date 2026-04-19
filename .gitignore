@@ -1,0 +1,34 @@
+.DS_Store
+.Rhistory
+
+# Xcode user data
+**/xcuserdata/**
+**/*.xcuserstate
+
+# DerivedData & build artifacts
+DerivedData/
+.deriveddata/
+**/build/
+**/.build/
+*.log
+
+# SwiftPM
+**/.swiftpm/
+.swiftpm/
+Package.resolved
+
+# Claude Code workspace & session state
+.claude/
+**/.claude/
+.superpowers/
+**/.wrangler/
+
+# Secrets (real API keys)
+Secrets.xcconfig
+readtap/Secrets.xcconfig
+readtap/readtap/Platform/Infrastructure/SecretsBootstrap.swift
+**/.env
+**/.dev.vars
+
+# Firebase secrets (keep local; add your own file if enabling cloud sync)
+readtap/readtap/GoogleService-Info.plist

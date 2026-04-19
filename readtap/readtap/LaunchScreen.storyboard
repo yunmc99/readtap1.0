@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24506" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="launchViewController">
+    <device id="retina6_1" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24504"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <scene sceneID="main-launch-scene">
+            <objects>
+                <viewController id="launchViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="launchView">
+                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <!-- Brand logo -->
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="ReadTap" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="rtLabel">
+                                <rect key="frame" x="57" y="410" width="300" height="50"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="300" id="w1"/>
+                                    <constraint firstAttribute="height" constant="50" id="h1"/>
+                                </constraints>
+                                <fontDescription key="fontDescription" type="system" weight="bold" pointSize="42"/>
+                                <color key="textColor" red="0.12156862745098039" green="0.67843137254901964" blue="0.3803921568627451" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <!-- Tagline -->
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Your reading companion" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="tagLabel">
+                                <rect key="frame" x="57" y="462" width="300" height="20"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="300" id="tw1"/>
+                                    <constraint firstAttribute="height" constant="20" id="th1"/>
+                                </constraints>
+                                <fontDescription key="fontDescription" type="system" weight="regular" pointSize="14"/>
+                                <color key="textColor" red="0.58039215686274515" green="0.63921568627450975" blue="0.72156862745098038" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="D4N-Ab-VkI"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <constraints>
+                            <!-- Center the logo horizontally and slightly above vertical center -->
+                            <constraint firstItem="rtLabel" firstAttribute="centerX" secondItem="launchView" secondAttribute="centerX" id="c1"/>
+                            <constraint firstItem="rtLabel" firstAttribute="centerY" secondItem="launchView" secondAttribute="centerY" constant="-16" id="c2"/>
+                            <!-- Tagline below logo -->
+                            <constraint firstItem="tagLabel" firstAttribute="centerX" secondItem="launchView" secondAttribute="centerX" id="tc1"/>
+                            <constraint firstItem="tagLabel" firstAttribute="top" secondItem="rtLabel" secondAttribute="bottom" constant="6" id="tc2"/>
+                        </constraints>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="firstResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="139" y="113"/>
+        </scene>
+    </scenes>
+</document>

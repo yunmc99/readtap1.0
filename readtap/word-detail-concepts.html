@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReadTap Word Detail — Concepts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700;9..40,800&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+  body{background:#08080c;min-height:100vh;font-family:'DM Sans','Noto Sans KR',sans-serif;color:#fff}
+  .hdr{text-align:center;padding:60px 20px 10px}
+  .hdr h1{font-size:28px;font-weight:800;letter-spacing:-.5px}
+  .hdr p{font-size:13px;color:#555;margin-top:6px;letter-spacing:3px;text-transform:uppercase}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(375px,1fr));gap:48px;max-width:1680px;margin:0 auto;padding:40px 40px 80px}
+  .wrap{display:flex;flex-direction:column;align-items:center;gap:18px}
+  .lbl{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#555;text-align:center}
+  .lbl span{display:block;font-size:18px;font-weight:800;color:#999;letter-spacing:-.3px;text-transform:none;margin-top:4px}
+  .lbl .desc{display:block;font-size:11px;font-weight:400;color:#444;letter-spacing:0;text-transform:none;margin-top:6px;line-height:1.5;max-width:340px}
+  .dev{width:375px;height:812px;border-radius:44px;overflow:hidden;position:relative;box-shadow:0 0 0 1px rgba(255,255,255,0.05),0 40px 80px rgba(0,0,0,0.5)}
+  .sb{height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 8px;position:relative;z-index:20}
+  .sb-t{font-size:15px;font-weight:600}
+  .sb-r{display:flex;gap:5px;align-items:center}
+  .sb-d{width:3px;height:3px;border-radius:50%;background:currentColor}
+  .sb-pill{width:25px;height:12px;border-radius:3px;border:1.5px solid currentColor;position:relative}
+  .sb-pill::after{content:'';position:absolute;right:1px;top:1.5px;bottom:1.5px;left:4px;border-radius:1px;background:currentColor}
+  .sc{position:absolute;top:0;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .sc::-webkit-scrollbar{display:none}
+  @keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .ani>*{animation:fu .35s ease both}
+  .ani>*:nth-child(1){animation-delay:.04s}.ani>*:nth-child(2){animation-delay:.08s}.ani>*:nth-child(3){animation-delay:.12s}.ani>*:nth-child(4){animation-delay:.16s}.ani>*:nth-child(5){animation-delay:.20s}.ani>*:nth-child(6){animation-delay:.24s}.ani>*:nth-child(7){animation-delay:.28s}.ani>*:nth-child(8){animation-delay:.32s}
+  :root{--ink:#1F2733;--muted:#6A7482;--eyebrow:#808D9B;--accent:#1a8a4a;--amber:#C49340;--bg-top:#F7F8FA;--bg-bottom:#EAEFF3;--card:#fff;--border:rgba(31,39,51,0.06);--fill:#EBF0F2}
+
+  /* Shared nav bar */
+  .nav{display:flex;align-items:center;gap:10px;padding:64px 20px 0;margin-bottom:16px}
+  .nav-back{width:32px;height:32px;border-radius:10px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--muted);cursor:pointer}
+  .nav-title{font-size:15px;font-weight:700;color:var(--ink);flex:1}
+  .nav-sub{font-size:11px;color:var(--muted)}
+
+  .cover{border-radius:10px;overflow:hidden;flex-shrink:0;box-shadow:0 3px 8px rgba(0,0,0,0.08);display:flex;align-items:flex-end;padding:5px;background:linear-gradient(135deg,#3a356a,#1e1b4a)}
+  .cover span{font-size:6px;font-weight:800;color:rgba(255,255,255,.8);line-height:1.2}
+
+  /* ═══ A — Clean Word List ═══ */
+  .a{background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom))}.a .sb{color:var(--ink)}
+
+  .a .book-bar{display:flex;gap:12px;align-items:center;padding:0 20px;margin-bottom:14px}
+  .a .book-bar .cover{width:40px;height:54px}
+  .a .bb-info{flex:1}
+  .a .bb-title{font-size:14px;font-weight:700;color:var(--ink)}
+  .a .bb-sub{font-size:11px;color:var(--muted);margin-top:1px}
+  .a .bb-cnt{font-size:12px;font-weight:800;color:var(--accent)}
+
+  .a .filter-row{display:flex;gap:6px;padding:0 20px;margin-bottom:14px}
+  .a .ftab{padding:6px 12px;border-radius:10px;font-size:11px;font-weight:600;color:var(--muted);background:var(--card);border:1px solid var(--border)}.a .ftab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  .a .word-list{padding:0 20px 40px}
+  .a .wl-item{display:flex;align-items:center;gap:10px;padding:14px 0;border-bottom:1px solid var(--border)}
+  .a .wl-word{font-size:15px;font-weight:700;color:var(--ink);flex:1}
+  .a .wl-mean{font-size:12px;color:var(--muted);margin-top:2px}
+  .a .wl-left{flex:1}
+  .a .wl-badge{font-size:9px;font-weight:700;padding:3px 8px;border-radius:6px;flex-shrink:0}
+  .a .wl-badge.new{background:rgba(26,138,74,0.06);color:var(--accent)}
+  .a .wl-badge.known{background:var(--fill);color:var(--muted)}
+  .a .wl-page{font-size:9px;color:var(--muted);margin-top:4px}
+
+  /* ═══ B — Card Per Word ═══ */
+  .b{background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom))}.b .sb{color:var(--ink)}
+
+  .b .book-header{padding:0 20px;margin-bottom:16px;display:flex;gap:14px;align-items:center}
+  .b .book-header .cover{width:48px;height:64px}
+  .b .bh-info{flex:1}
+  .b .bh-title{font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.2px}
+  .b .bh-sub{font-size:11px;color:var(--muted);margin-top:2px}
+  .b .bh-stats{display:flex;gap:8px;margin-top:6px}
+  .b .bh-stat{font-size:9px;font-weight:700;padding:3px 8px;border-radius:6px}
+  .b .bh-stat.total{background:var(--fill);color:var(--ink)}
+  .b .bh-stat.unknown{background:rgba(196,147,64,0.06);color:var(--amber)}
+
+  .b .cards{padding:0 20px 40px;display:flex;flex-direction:column;gap:10px}
+  .b .wcard{padding:16px;background:var(--card);border-radius:16px;border:1px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,0.03)}
+  .b .wc-top{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px}
+  .b .wc-word{font-size:17px;font-weight:800;color:var(--ink);letter-spacing:-.2px;flex:1}
+  .b .wc-badge{font-size:9px;font-weight:700;padding:3px 8px;border-radius:6px;flex-shrink:0}
+  .b .wc-badge.new{background:rgba(26,138,74,0.06);color:var(--accent)}
+  .b .wc-mean{font-size:13px;color:var(--muted);line-height:1.5}
+  .b .wc-meta{display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+  .b .wc-chip{font-size:9px;font-weight:600;color:var(--eyebrow);padding:3px 8px;border-radius:6px;background:var(--fill)}
+
+  /* ═══ C — Minimal Lines ═══ */
+  .c{background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom))}.c .sb{color:var(--ink)}
+
+  .c .book-line{display:flex;align-items:baseline;gap:8px;padding:0 20px;margin-bottom:20px}
+  .c .bl-title{font-size:15px;font-weight:700;color:var(--ink)}
+  .c .bl-cnt{font-size:12px;color:var(--muted)}
+
+  .c .word-list{padding:0 20px 40px}
+  .c .wl-item{padding:16px 0;border-bottom:1px solid var(--border)}
+  .c .wl-word{font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-.3px}
+  .c .wl-mean{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.5}
+  .c .wl-meta{font-size:10px;color:var(--eyebrow);margin-top:6px}
+
+  /* ═══ D — Grouped by Page ═══ */
+  .d{background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom))}.d .sb{color:var(--ink)}
+
+  .d .book-bar{display:flex;gap:12px;align-items:center;padding:0 20px;margin-bottom:16px}
+  .d .book-bar .cover{width:44px;height:58px}
+  .d .bb-info{flex:1}
+  .d .bb-title{font-size:14px;font-weight:700;color:var(--ink)}
+  .d .bb-sub{font-size:11px;color:var(--muted);margin-top:1px}
+
+  .d .page-group{padding:0 20px;margin-bottom:16px}
+  .d .pg-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .d .pg-label{font-size:10px;font-weight:700;color:var(--eyebrow);text-transform:uppercase;letter-spacing:1px}
+  .d .pg-cnt{font-size:10px;font-weight:700;color:var(--accent);padding:2px 6px;border-radius:4px;background:rgba(26,138,74,0.06)}
+  .d .pg-btn{font-size:10px;font-weight:600;color:var(--accent);margin-left:auto;cursor:pointer}
+
+  .d .pg-cards{display:flex;flex-direction:column;gap:6px}
+  .d .pg-card{display:flex;align-items:center;gap:10px;padding:12px;background:var(--card);border-radius:14px;border:1px solid var(--border)}
+  .d .pgc-word{font-size:14px;font-weight:700;color:var(--ink);flex:1}
+  .d .pgc-mean{font-size:11px;color:var(--muted);max-width:130px;text-align:right}
+
+  /* ═══ E — Two-Tone Split ═══ */
+  .e{background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom))}.e .sb{color:var(--ink)}
+
+  .e .hero{margin:0 20px 16px;padding:20px;background:var(--card);border-radius:20px;border:1px solid var(--border);box-shadow:0 4px 16px rgba(0,0,0,0.04)}
+  .e .hero-top{display:flex;gap:14px;margin-bottom:14px}
+  .e .hero-top .cover{width:56px;height:74px;border-radius:12px}
+  .e .h-info{flex:1}
+  .e .h-title{font-size:16px;font-weight:800;color:var(--ink);letter-spacing:-.3px}
+  .e .h-sub{font-size:11px;color:var(--muted);margin-top:3px}
+  .e .hero-stats{display:flex;gap:0;border-top:1px solid var(--border);padding-top:12px}
+  .e .h-stat{flex:1;text-align:center}
+  .e .h-stat .num{font-size:18px;font-weight:800;letter-spacing:-.3px}
+  .e .h-stat .num.dark{color:var(--ink)}.e .h-stat .num.amber{color:var(--amber)}.e .h-stat .num.green{color:var(--accent)}
+  .e .h-stat .lbl{font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;margin-top:1px}
+
+  .e .filter-row{display:flex;gap:6px;padding:0 20px;margin-bottom:14px}
+  .e .ftab{padding:6px 12px;border-radius:10px;font-size:11px;font-weight:600;color:var(--muted);background:var(--card);border:1px solid var(--border)}.e .ftab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  .e .word-list{padding:0 20px 40px}
+  .e .wl-item{display:flex;align-items:flex-start;gap:10px;padding:14px 0;border-bottom:1px solid var(--border)}
+  .e .wl-left{flex:1}
+  .e .wl-word{font-size:15px;font-weight:700;color:var(--ink)}
+  .e .wl-mean{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.4}
+  .e .wl-page{font-size:9px;color:var(--eyebrow);margin-top:4px}
+  .e .wl-badge{font-size:9px;font-weight:700;padding:3px 8px;border-radius:6px;flex-shrink:0;margin-top:2px}
+  .e .wl-badge.new{background:rgba(26,138,74,0.06);color:var(--accent)}
+  .e .wl-badge.known{background:var(--fill);color:var(--muted)}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>Word Detail</h1>
+  <p>Book → Words Page</p>
+</div>
+
+<div class="grid">
+
+<!-- ═══ A — Clean Word List ═══ -->
+<div class="wrap">
+  <div class="lbl">Option A<span>Clean List</span>
+    <span class="desc">상단에 책 정보 바. 필터 칩(All/Unknown/Learned). 아래 단어 라인 리스트. Library 리스트와 동일 미학.</span>
+  </div>
+  <div class="dev a">
+    <div class="sc">
+      <div class="sb"><span class="sb-t">9:37</span><div class="sb-r"><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div>&nbsp;&nbsp;<div class="sb-pill"></div></div></div>
+      <div class="ani">
+        <div class="nav"><div class="nav-back">‹</div><div class="nav-title">1 Course Overview</div><div class="nav-sub">2 words</div></div>
+
+        <div class="book-bar">
+          <div class="cover" style="width:40px;height:54px"><span>Co.</span></div>
+          <div class="bb-info"><div class="bb-title">1 Course Overview</div><div class="bb-sub">Page 4 · Saved today</div></div>
+          <div class="bb-cnt">2</div>
+        </div>
+
+        <div class="filter-row">
+          <div class="ftab on">All</div>
+          <div class="ftab">Unknown</div>
+          <div class="ftab">Known</div>
+        </div>
+
+        <div class="word-list">
+          <div class="wl-item"><div class="wl-left"><div class="wl-word">FindingPrime</div><div class="wl-mean">소수 찾기</div><div class="wl-page">Page 4 · 2 hr ago</div></div><div class="wl-badge new">New</div></div>
+          <div class="wl-item"><div class="wl-left"><div class="wl-word">Finding</div><div class="wl-mean">찾기</div><div class="wl-page">Page 4 · 2 hr ago</div></div><div class="wl-badge new">New</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ B — Card Per Word ═══ -->
+<div class="wrap">
+  <div class="lbl">Option B<span>Word Cards</span>
+    <span class="desc">각 단어가 독립 카드. 큰 단어(17px) + 뜻 + 메타 칩(page, time). 풍성한 정보.</span>
+  </div>
+  <div class="dev b">
+    <div class="sc">
+      <div class="sb"><span class="sb-t">9:37</span><div class="sb-r"><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div>&nbsp;&nbsp;<div class="sb-pill"></div></div></div>
+      <div class="ani">
+        <div class="nav"><div class="nav-back">‹</div><div class="nav-title">1 Course Overview</div><div class="nav-sub">2 words</div></div>
+
+        <div class="book-header">
+          <div class="cover" style="width:48px;height:64px"><span>Course<br>Ov.</span></div>
+          <div class="bh-info">
+            <div class="bh-title">1 Course Overview</div>
+            <div class="bh-sub">Last saved today · page 4</div>
+            <div class="bh-stats"><div class="bh-stat total">2 total</div><div class="bh-stat unknown">2 unknown</div></div>
+          </div>
+        </div>
+
+        <div class="cards">
+          <div class="wcard">
+            <div class="wc-top"><div class="wc-word">FindingPrime</div><div class="wc-badge new">New</div></div>
+            <div class="wc-mean">소수 찾기 — a function or algorithm used to determine prime numbers</div>
+            <div class="wc-meta"><div class="wc-chip">Page 4</div><div class="wc-chip">2 hr ago</div><div class="wc-chip">Mar 25</div></div>
+          </div>
+          <div class="wcard">
+            <div class="wc-top"><div class="wc-word">Finding</div><div class="wc-badge new">New</div></div>
+            <div class="wc-mean">찾기 — the act of discovering or locating something</div>
+            <div class="wc-meta"><div class="wc-chip">Page 4</div><div class="wc-chip">2 hr ago</div><div class="wc-chip">Mar 25</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ C — Minimal Lines ═══ -->
+<div class="wrap">
+  <div class="lbl">Option C<span>Minimal Lines</span>
+    <span class="desc">책 이름 한 줄 + 단어가 큰 텍스트(18px)로. 카드 없이 라인만. Zen 미학 극한.</span>
+  </div>
+  <div class="dev c">
+    <div class="sc">
+      <div class="sb"><span class="sb-t">9:37</span><div class="sb-r"><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div>&nbsp;&nbsp;<div class="sb-pill"></div></div></div>
+      <div class="ani">
+        <div class="nav"><div class="nav-back">‹</div><div class="nav-title">1 Course Overview</div></div>
+
+        <div class="book-line"><span class="bl-title">1 Course Overview</span><span class="bl-cnt">· 2 words</span></div>
+
+        <div class="word-list">
+          <div class="wl-item">
+            <div class="wl-word">FindingPrime</div>
+            <div class="wl-mean">소수 찾기</div>
+            <div class="wl-meta">Page 4 · 2 hr ago · New</div>
+          </div>
+          <div class="wl-item">
+            <div class="wl-word">Finding</div>
+            <div class="wl-mean">찾기</div>
+            <div class="wl-meta">Page 4 · 2 hr ago · New</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ D — Grouped by Page ═══ -->
+<div class="wrap">
+  <div class="lbl">Option D<span>Page Groups</span>
+    <span class="desc">페이지별로 단어 그룹. "PAGE 4" 헤더 + 카드 리스트. Open page 버튼으로 리더 이동.</span>
+  </div>
+  <div class="dev d">
+    <div class="sc">
+      <div class="sb"><span class="sb-t">9:37</span><div class="sb-r"><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div>&nbsp;&nbsp;<div class="sb-pill"></div></div></div>
+      <div class="ani">
+        <div class="nav"><div class="nav-back">‹</div><div class="nav-title">1 Course Overview</div><div class="nav-sub">2 words</div></div>
+
+        <div class="book-bar">
+          <div class="cover" style="width:44px;height:58px"><span>Co.</span></div>
+          <div class="bb-info"><div class="bb-title">1 Course Overview</div><div class="bb-sub">2 words · 2 unknown</div></div>
+        </div>
+
+        <div class="page-group">
+          <div class="pg-head"><span class="pg-label">Page 4</span><span class="pg-cnt">2</span><span class="pg-btn">Open page →</span></div>
+          <div class="pg-cards">
+            <div class="pg-card"><span class="pgc-word">FindingPrime</span><span class="pgc-mean">소수 찾기</span></div>
+            <div class="pg-card"><span class="pgc-word">Finding</span><span class="pgc-mean">찾기</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ E — Hero + List ═══ -->
+<div class="wrap">
+  <div class="lbl">Option E<span>Hero + List</span>
+    <span class="desc">상단 히어로 카드(커버+스탯 3열). 필터 칩. 아래 단어 리스트. Zen Card 홈과 동일 구조.</span>
+  </div>
+  <div class="dev e">
+    <div class="sc">
+      <div class="sb"><span class="sb-t">9:37</span><div class="sb-r"><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div>&nbsp;&nbsp;<div class="sb-pill"></div></div></div>
+      <div class="ani">
+        <div class="nav"><div class="nav-back">‹</div><div class="nav-title">1 Course Overview</div></div>
+
+        <div class="hero">
+          <div class="hero-top">
+            <div class="cover" style="width:56px;height:74px;border-radius:12px"><span>Course<br>Ov.</span></div>
+            <div class="h-info"><div class="h-title">1 Course Overview</div><div class="h-sub">Last saved today · page 4</div></div>
+          </div>
+          <div class="hero-stats">
+            <div class="h-stat"><div class="num dark">2</div><div class="lbl">Total</div></div>
+            <div class="h-stat"><div class="num amber">2</div><div class="lbl">Unknown</div></div>
+            <div class="h-stat"><div class="num green">0</div><div class="lbl">Known</div></div>
+          </div>
+        </div>
+
+        <div class="filter-row">
+          <div class="ftab on">All</div>
+          <div class="ftab">Unknown</div>
+          <div class="ftab">Known</div>
+        </div>
+
+        <div class="word-list">
+          <div class="wl-item"><div class="wl-left"><div class="wl-word">FindingPrime</div><div class="wl-mean">소수 찾기</div><div class="wl-page">Page 4 · 2 hr ago</div></div><div class="wl-badge new">New</div></div>
+          <div class="wl-item"><div class="wl-left"><div class="wl-word">Finding</div><div class="wl-mean">찾기</div><div class="wl-page">Page 4 · 2 hr ago</div></div><div class="wl-badge new">New</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

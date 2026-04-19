@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=393, initial-scale=1.0, maximum-scale=1.0">
+<title>Word Delete Concepts — By Book Detail</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, 'SF Pro', 'Helvetica Neue', sans-serif; background: #f0f0f0; }
+
+  .concept-label {
+    text-align: center; padding: 18px 16px 10px; font-size: 13px; font-weight: 700;
+    color: #fff; letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .concept-desc {
+    text-align: center; padding: 0 24px 14px; font-size: 12px; color: rgba(255,255,255,0.8); line-height: 1.5;
+  }
+  .concept-wrap { margin-bottom: 32px; }
+  .concept-wrap:nth-child(1) .concept-label,
+  .concept-wrap:nth-child(1) .concept-desc { background: #1a1a2e; }
+  .concept-wrap:nth-child(2) .concept-label,
+  .concept-wrap:nth-child(2) .concept-desc { background: #16213e; }
+  .concept-wrap:nth-child(3) .concept-label,
+  .concept-wrap:nth-child(3) .concept-desc { background: #0f3460; }
+  .concept-wrap:nth-child(4) .concept-label,
+  .concept-wrap:nth-child(4) .concept-desc { background: #533483; }
+
+  .phone {
+    width: 393px; margin: 0 auto; background: #eef2f5;
+    border-radius: 0; min-height: 852px; position: relative; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+
+  /* Status bar */
+  .status-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 24px 8px; font-size: 15px; font-weight: 600;
+  }
+  .status-icons { display: flex; gap: 5px; align-items: center; font-size: 13px; }
+
+  /* Nav bar */
+  .nav-bar {
+    display: flex; align-items: center; padding: 4px 16px 12px; gap: 8px;
+  }
+  .nav-back {
+    width: 36px; height: 36px; border-radius: 18px; background: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 18px; color: #333;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .nav-title {
+    flex: 1; font-size: 17px; font-weight: 700; color: #1a1a1a;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .nav-count {
+    background: #4CAF50; color: #fff; font-size: 13px; font-weight: 700;
+    padding: 2px 8px; border-radius: 10px;
+  }
+
+  /* Book header card */
+  .book-card {
+    margin: 0 16px 12px; background: #fff; border-radius: 16px; padding: 14px;
+    display: flex; gap: 14px; align-items: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .book-cover {
+    width: 56px; height: 74px; border-radius: 8px; background: #e87e24;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; color: #fff; font-weight: 700; text-align: center; line-height: 1.2;
+    flex-shrink: 0;
+  }
+  .book-info { flex: 1; min-width: 0; }
+  .book-name { font-size: 15px; font-weight: 700; color: #1a1a1a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .book-meta { font-size: 12px; color: #888; margin-top: 3px; }
+
+  /* Filter chips */
+  .filter-row { display: flex; gap: 8px; padding: 0 16px 12px; }
+  .chip {
+    padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;
+    background: #fff; color: #666; border: 1px solid #e0e0e0; cursor: pointer;
+  }
+  .chip.active { background: #4CAF50; color: #fff; border-color: #4CAF50; }
+
+  /* Section header */
+  .section-hdr {
+    display: flex; align-items: center; gap: 8px; padding: 12px 20px 8px;
+    font-size: 14px; font-weight: 700; color: #555;
+  }
+  .section-count {
+    background: #e8e8e8; color: #666; font-size: 12px; font-weight: 700;
+    padding: 1px 8px; border-radius: 10px;
+  }
+
+  /* Word list container */
+  .word-list {
+    margin: 0 16px; background: #fff; border-radius: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow: hidden;
+  }
+
+  /* Word row base */
+  .word-row {
+    padding: 14px 16px; border-bottom: 1px solid #f0f0f0; position: relative;
+    overflow: hidden;
+  }
+  .word-row:last-child { border-bottom: none; }
+  .word-title { font-size: 18px; font-weight: 700; color: #1a1a1a; }
+  .word-meaning { font-size: 13px; color: #666; margin-top: 2px; line-height: 1.4; }
+  .word-meaning.long { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .mastery-badge {
+    display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px;
+    border-radius: 8px; margin-top: 6px;
+  }
+  .mastery-badge.unknown { background: #e8f5e9; color: #4CAF50; }
+  .mastery-badge.learned { background: #e3f2fd; color: #1976D2; }
+
+  /* Tab bar */
+  .tab-bar {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(245,245,240,0.95); backdrop-filter: blur(20px);
+    display: flex; padding: 8px 0 28px; border-top: 1px solid #e0e0e0;
+  }
+  .tab-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    font-size: 10px; color: #999;
+  }
+  .tab-item.active { color: #4CAF50; }
+  .tab-icon { font-size: 22px; }
+
+  /* ========== CONCEPT A: Swipe to Delete ========== */
+  .swipe-container { position: relative; overflow: hidden; }
+  .swipe-bg {
+    position: absolute; right: 0; top: 0; bottom: 0; width: 80px;
+    background: #FF3B30; display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 13px; font-weight: 600; flex-direction: column; gap: 4px;
+  }
+  .swipe-bg .icon { font-size: 20px; }
+  .swipe-content {
+    position: relative; background: #fff; transform: translateX(-80px);
+    transition: transform 0.3s; z-index: 1;
+  }
+  .swipe-hint {
+    position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+    font-size: 10px; color: #ccc; display: flex; align-items: center; gap: 3px;
+  }
+
+  /* ========== CONCEPT B: Multi-Select with Checkboxes ========== */
+  .select-mode-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 16px; background: #fff; margin: 0 16px 8px; border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .select-btn {
+    font-size: 13px; font-weight: 600; color: #4CAF50; padding: 6px 12px;
+    background: #e8f5e9; border-radius: 8px;
+  }
+  .select-all-btn {
+    font-size: 13px; color: #888; font-weight: 500;
+  }
+
+  .checkbox-row { display: flex; align-items: center; gap: 12px; }
+  .checkbox {
+    width: 24px; height: 24px; border-radius: 12px; border: 2px solid #ddd;
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .checkbox.checked {
+    background: #FF3B30; border-color: #FF3B30; color: #fff; font-size: 14px; font-weight: 700;
+  }
+  .checkbox.unchecked { background: #fff; }
+
+  .delete-action-bar {
+    position: absolute; bottom: 90px; left: 16px; right: 16px;
+    background: #fff; border-radius: 16px; padding: 12px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+  }
+  .delete-count { font-size: 15px; font-weight: 600; color: #333; }
+  .delete-btn {
+    display: flex; align-items: center; gap: 6px; padding: 10px 20px;
+    background: #FF3B30; color: #fff; border-radius: 24px;
+    font-size: 14px; font-weight: 700;
+  }
+
+  /* ========== CONCEPT C: Context Menu (Long Press) ========== */
+  .context-overlay {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.3); backdrop-filter: blur(8px); z-index: 10;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .context-card {
+    background: #fff; border-radius: 16px; padding: 14px 16px; width: 320px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.2); margin-bottom: 8px;
+  }
+  .context-menu {
+    background: #fff; border-radius: 14px; width: 240px; overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+  }
+  .ctx-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; font-size: 15px; color: #1a1a1a;
+    border-bottom: 0.5px solid #e8e8e8;
+  }
+  .ctx-item:last-child { border-bottom: none; }
+  .ctx-item.destructive { color: #FF3B30; }
+  .ctx-item .ctx-icon { font-size: 18px; }
+
+  /* ========== CONCEPT D: Bottom Sheet Edit Mode ========== */
+  .edit-toggle {
+    font-size: 13px; font-weight: 600; color: #4CAF50; padding: 6px 14px;
+    background: #e8f5e9; border-radius: 8px; margin-left: auto;
+  }
+
+  .word-row-edit { display: flex; align-items: center; gap: 10px; }
+  .minus-btn {
+    width: 24px; height: 24px; border-radius: 12px; background: #FF3B30;
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; flex-shrink: 0;
+    animation: wobble 0.4s ease;
+  }
+  @keyframes wobble {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-2deg); }
+    75% { transform: rotate(2deg); }
+  }
+  .word-content-edit { flex: 1; min-width: 0; }
+
+  .delete-confirm-row {
+    display: flex; align-items: center; gap: 0;
+    position: absolute; right: 0; top: 0; bottom: 0;
+  }
+  .delete-confirm-btn {
+    background: #FF3B30; color: #fff; height: 100%;
+    padding: 0 16px; font-size: 14px; font-weight: 600;
+    display: flex; align-items: center;
+  }
+
+  /* Reveal button animation */
+  .row-with-reveal { position: relative; }
+  .reveal-delete {
+    position: absolute; right: 0; top: 0; bottom: 1px;
+    background: #FF3B30; color: #fff; padding: 0 16px;
+    display: flex; align-items: center; font-size: 14px; font-weight: 600;
+    border-radius: 0;
+  }
+  .row-shifted { transform: translateX(-70px); transition: transform 0.25s ease; background: #fff; position: relative; z-index: 1; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- CONCEPT A: Swipe to Delete (iOS Native Style) -->
+<!-- ============================================================ -->
+<div class="concept-wrap">
+  <div class="concept-label" style="background:#1a1a2e;">Concept A: Swipe to Delete</div>
+  <div class="concept-desc" style="background:#1a1a2e;">iOS 기본 스와이프 삭제 / 왼쪽으로 밀면 삭제 버튼 노출<br>단어 하나씩 빠르게 삭제할 때 최적</div>
+  <div class="phone">
+    <div class="status-bar"><span>6:05</span><div class="status-icons">&#9679;&#9679;&#9679; &nbsp;&#9681; &nbsp;&#9646;</div></div>
+    <div class="nav-bar">
+      <div class="nav-back">&larr;</div>
+      <div class="nav-title">basic-chinese_-a-grammar-an...</div>
+      <div class="nav-count">3</div>
+    </div>
+
+    <div class="book-card">
+      <div class="book-cover">Basic<br>Chinese</div>
+      <div class="book-info">
+        <div class="book-name">basic-chinese_-a-grammar-an...</div>
+        <div class="book-meta">3개 단어 &middot; 3 미암기 &middot; 0 암기</div>
+      </div>
+    </div>
+
+    <div class="filter-row">
+      <div class="chip active">전체</div>
+      <div class="chip">모르는</div>
+      <div class="chip">학습됨</div>
+    </div>
+
+    <div class="section-hdr">미암기 <span class="section-count">3</span></div>
+
+    <div class="word-list">
+      <!-- Swiped row -->
+      <div class="swipe-container">
+        <div class="swipe-bg">
+          <div class="icon">&#128465;</div>
+          <span>삭제</span>
+        </div>
+        <div class="swipe-content word-row" style="transform: translateX(-80px);">
+          <div class="word-title">languages</div>
+          <div class="word-meaning long">noun. A body of words, and set of methods of combining them (called a grammar), understood...</div>
+          <div class="mastery-badge unknown">미암기</div>
+        </div>
+      </div>
+
+      <!-- Normal row with hint arrow -->
+      <div class="word-row" style="position:relative;">
+        <div class="word-title">Chinese</div>
+        <div class="word-meaning">中文</div>
+        <div class="mastery-badge unknown">미암기</div>
+        <div class="swipe-hint">&larr; 밀어서 삭제</div>
+      </div>
+
+      <div class="word-row">
+        <div class="word-title">an</div>
+        <div class="word-meaning">하나의</div>
+        <div class="mastery-badge unknown">미암기</div>
+      </div>
+    </div>
+
+    <div class="tab-bar">
+      <div class="tab-item"><span class="tab-icon">&#127968;</span>홈</div>
+      <div class="tab-item"><span class="tab-icon">&#128218;</span>책장</div>
+      <div class="tab-item active"><span class="tab-icon">&#128196;</span>단어</div>
+      <div class="tab-item"><span class="tab-icon">&#9881;</span>설정</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- CONCEPT B: Multi-Select Checkbox Mode -->
+<!-- ============================================================ -->
+<div class="concept-wrap">
+  <div class="concept-label" style="background:#16213e;">Concept B: Multi-Select (체크박스 선택 삭제)</div>
+  <div class="concept-desc" style="background:#16213e;">선택 모드 진입 → 여러 단어 체크 → 하단 삭제 버튼<br>대량 삭제에 최적 / 기존 WordsTab 패턴과 동일</div>
+  <div class="phone">
+    <div class="status-bar"><span>6:05</span><div class="status-icons">&#9679;&#9679;&#9679; &nbsp;&#9681; &nbsp;&#9646;</div></div>
+    <div class="nav-bar">
+      <div class="nav-back">&larr;</div>
+      <div class="nav-title">basic-chinese_-a-grammar-an...</div>
+      <div class="nav-count">3</div>
+    </div>
+
+    <div class="book-card">
+      <div class="book-cover">Basic<br>Chinese</div>
+      <div class="book-info">
+        <div class="book-name">basic-chinese_-a-grammar-an...</div>
+        <div class="book-meta">3개 단어 &middot; 3 미암기 &middot; 0 암기</div>
+      </div>
+    </div>
+
+    <div class="select-mode-bar">
+      <div class="select-all-btn">전체 선택</div>
+      <div style="font-size:14px; font-weight:600; color:#333;">2개 선택됨</div>
+      <div style="font-size:13px; font-weight:600; color:#FF3B30; cursor:pointer;">취소</div>
+    </div>
+
+    <div class="section-hdr">미암기 <span class="section-count">3</span></div>
+
+    <div class="word-list">
+      <div class="word-row">
+        <div class="checkbox-row">
+          <div class="checkbox checked">&#10003;</div>
+          <div>
+            <div class="word-title">languages</div>
+            <div class="word-meaning long">noun. A body of words, and set of methods of combining them...</div>
+            <div class="mastery-badge unknown">미암기</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="word-row">
+        <div class="checkbox-row">
+          <div class="checkbox checked">&#10003;</div>
+          <div>
+            <div class="word-title">Chinese</div>
+            <div class="word-meaning">中文</div>
+            <div class="mastery-badge unknown">미암기</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="word-row">
+        <div class="checkbox-row">
+          <div class="checkbox unchecked"></div>
+          <div>
+            <div class="word-title">an</div>
+            <div class="word-meaning">하나의</div>
+            <div class="mastery-badge unknown">미암기</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating delete bar -->
+    <div class="delete-action-bar">
+      <div class="delete-count">2개 선택됨</div>
+      <div class="delete-btn">&#128465; &nbsp;삭제</div>
+    </div>
+
+    <div class="tab-bar">
+      <div class="tab-item"><span class="tab-icon">&#127968;</span>홈</div>
+      <div class="tab-item"><span class="tab-icon">&#128218;</span>책장</div>
+      <div class="tab-item active"><span class="tab-icon">&#128196;</span>단어</div>
+      <div class="tab-item"><span class="tab-icon">&#9881;</span>설정</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- CONCEPT C: Long-Press Context Menu -->
+<!-- ============================================================ -->
+<div class="concept-wrap">
+  <div class="concept-label" style="background:#0f3460;">Concept C: Long-Press Context Menu (꾹 눌러서 메뉴)</div>
+  <div class="concept-desc" style="background:#0f3460;">단어를 길게 누르면 iOS 컨텍스트 메뉴 등장<br>삭제 외 복사, 암기 전환 등 여러 액션 제공 가능</div>
+  <div class="phone">
+    <div class="status-bar"><span>6:05</span><div class="status-icons">&#9679;&#9679;&#9679; &nbsp;&#9681; &nbsp;&#9646;</div></div>
+    <div class="nav-bar">
+      <div class="nav-back">&larr;</div>
+      <div class="nav-title">basic-chinese_-a-grammar-an...</div>
+      <div class="nav-count">3</div>
+    </div>
+
+    <!-- Context menu overlay -->
+    <div class="context-overlay">
+      <div class="context-card">
+        <div class="word-title">languages</div>
+        <div class="word-meaning" style="margin-top:4px;">noun. A body of words, and set of methods of combining them (called a grammar), understood...</div>
+        <div class="mastery-badge unknown" style="margin-top:8px;">미암기</div>
+      </div>
+      <div class="context-menu">
+        <div class="ctx-item">
+          <span>암기 완료로 변경</span>
+          <span class="ctx-icon">&#9989;</span>
+        </div>
+        <div class="ctx-item">
+          <span>단어 복사</span>
+          <span class="ctx-icon">&#128203;</span>
+        </div>
+        <div class="ctx-item">
+          <span>폴더로 이동</span>
+          <span class="ctx-icon">&#128193;</span>
+        </div>
+        <div class="ctx-item">
+          <span>선택 모드</span>
+          <span class="ctx-icon">&#9745;</span>
+        </div>
+        <div class="ctx-item destructive">
+          <span>삭제</span>
+          <span class="ctx-icon">&#128465;</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-bar">
+      <div class="tab-item"><span class="tab-icon">&#127968;</span>홈</div>
+      <div class="tab-item"><span class="tab-icon">&#128218;</span>책장</div>
+      <div class="tab-item active"><span class="tab-icon">&#128196;</span>단어</div>
+      <div class="tab-item"><span class="tab-icon">&#9881;</span>설정</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- CONCEPT D: Edit Mode (iOS Native Style, minus buttons) -->
+<!-- ============================================================ -->
+<div class="concept-wrap">
+  <div class="concept-label" style="background:#533483;">Concept D: Edit Mode (편집 모드)</div>
+  <div class="concept-desc" style="background:#533483;">상단 "편집" 버튼 → 각 행에 빨간 마이너스 버튼 노출<br>iOS 기본 편집 패턴 / 마이너스 누르면 삭제 확인 슬라이드</div>
+  <div class="phone">
+    <div class="status-bar"><span>6:05</span><div class="status-icons">&#9679;&#9679;&#9679; &nbsp;&#9681; &nbsp;&#9646;</div></div>
+    <div class="nav-bar">
+      <div class="nav-back">&larr;</div>
+      <div class="nav-title">basic-chinese_-a-grammar-an...</div>
+      <div class="edit-toggle">완료</div>
+    </div>
+
+    <div class="book-card">
+      <div class="book-cover">Basic<br>Chinese</div>
+      <div class="book-info">
+        <div class="book-name">basic-chinese_-a-grammar-an...</div>
+        <div class="book-meta">3개 단어 &middot; 3 미암기 &middot; 0 암기</div>
+      </div>
+    </div>
+
+    <div class="filter-row">
+      <div class="chip active">전체</div>
+      <div class="chip">모르는</div>
+      <div class="chip">학습됨</div>
+    </div>
+
+    <div class="section-hdr">미암기 <span class="section-count">3</span></div>
+
+    <div class="word-list">
+      <!-- Row with minus button, reveal delete -->
+      <div class="word-row row-with-reveal">
+        <div class="reveal-delete">삭제</div>
+        <div class="row-shifted" style="padding: 14px 16px;">
+          <div class="word-row-edit">
+            <div class="minus-btn" style="transform: rotate(0deg);">&#8722;</div>
+            <div class="word-content-edit">
+              <div class="word-title">languages</div>
+              <div class="word-meaning long">noun. A body of words, and set of methods of combining...</div>
+              <div class="mastery-badge unknown">미암기</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Normal edit row -->
+      <div class="word-row">
+        <div class="word-row-edit">
+          <div class="minus-btn">&#8722;</div>
+          <div class="word-content-edit">
+            <div class="word-title">Chinese</div>
+            <div class="word-meaning">中文</div>
+            <div class="mastery-badge unknown">미암기</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="word-row">
+        <div class="word-row-edit">
+          <div class="minus-btn">&#8722;</div>
+          <div class="word-content-edit">
+            <div class="word-title">an</div>
+            <div class="word-meaning">하나의</div>
+            <div class="mastery-badge unknown">미암기</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-bar">
+      <div class="tab-item"><span class="tab-icon">&#127968;</span>홈</div>
+      <div class="tab-item"><span class="tab-icon">&#128218;</span>책장</div>
+      <div class="tab-item active"><span class="tab-icon">&#128196;</span>단어</div>
+      <div class="tab-item"><span class="tab-icon">&#9881;</span>설정</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Summary comparison -->
+<!-- ============================================================ -->
+<div style="padding: 24px 16px 60px; max-width: 500px; margin: 0 auto;">
+  <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 16px; text-align:center;">Comparison</h2>
+  <table style="width:100%; border-collapse:collapse; font-size:12px; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+    <tr style="background:#f5f5f5; font-weight:700;">
+      <td style="padding:10px;">방식</td>
+      <td style="padding:10px;">단일 삭제</td>
+      <td style="padding:10px;">대량 삭제</td>
+      <td style="padding:10px;">난이도</td>
+    </tr>
+    <tr>
+      <td style="padding:10px; font-weight:600;">A. Swipe</td>
+      <td style="padding:10px;">&#11088; 최고</td>
+      <td style="padding:10px;">&#9898; 불가</td>
+      <td style="padding:10px;">쉬움</td>
+    </tr>
+    <tr style="background:#f9f9f9;">
+      <td style="padding:10px; font-weight:600;">B. Multi-Select</td>
+      <td style="padding:10px;">&#9898; 보통</td>
+      <td style="padding:10px;">&#11088; 최고</td>
+      <td style="padding:10px;">보통</td>
+    </tr>
+    <tr>
+      <td style="padding:10px; font-weight:600;">C. Context Menu</td>
+      <td style="padding:10px;">&#11088; 좋음</td>
+      <td style="padding:10px;">&#9898; 불가</td>
+      <td style="padding:10px;">쉬움</td>
+    </tr>
+    <tr style="background:#f9f9f9;">
+      <td style="padding:10px; font-weight:600;">D. Edit Mode</td>
+      <td style="padding:10px;">&#9898; 보통</td>
+      <td style="padding:10px;">&#9898; 보통</td>
+      <td style="padding:10px;">보통</td>
+    </tr>
+    <tr style="background:#e8f5e9;">
+      <td style="padding:10px; font-weight:700;" colspan="4">&#10148; 추천: A + B 조합 (스와이프 + 길게눌러 다중선택)</td>
+    </tr>
+  </table>
+</div>
+
+</body>
+</html>

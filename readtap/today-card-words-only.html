@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Today Card — Words Only</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    background: #e8e8ed;
+    padding: 40px 20px;
+    display: flex; flex-wrap: wrap; gap: 36px; justify-content: center;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .label { font-size: 12px; font-weight: 700; color: #888; letter-spacing: 1.5px; text-transform: uppercase; }
+  .cf {
+    width: 345px; background: #fff; border-radius: 22px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; padding: 22px;
+  }
+  :root {
+    --g: #1fad61; --b: #5b8fb9; --t: #1a2534; --m: #6b7580; --l: #9ca3ab; --bd: #f0f1f3;
+  }
+  .hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .hdr h3 { font-size: 15px; font-weight: 800; color: var(--t); }
+  .streak { font-size: 11px; font-weight: 700; color: var(--g); background: rgba(31,173,97,0.08); padding: 4px 10px; border-radius: 8px; }
+
+  /* ══════ A — Hero + Bar ══════ */
+  .a .hero { display: flex; align-items: baseline; gap: 4px; margin-bottom: 4px; }
+  .a .hero .big { font-size: 36px; font-weight: 900; color: var(--g); letter-spacing: -1px; }
+  .a .hero .sep { font-size: 18px; color: var(--l); font-weight: 600; }
+  .a .hero .total { font-size: 36px; font-weight: 900; color: var(--t); letter-spacing: -1px; }
+  .a .sub { font-size: 11px; color: var(--m); margin-bottom: 12px; }
+  .a .sub strong { color: var(--t); }
+  .a .bar { height: 10px; background: rgba(91,143,185,0.12); border-radius: 5px; overflow: hidden; }
+  .a .bar .fill { height: 100%; border-radius: 5px; background: linear-gradient(90deg, var(--g), #2ec872); }
+
+  /* ══════ B — Split Cards ══════ */
+  .b .cards { display: flex; gap: 8px; margin-bottom: 14px; }
+  .b .card-item { flex: 1; text-align: center; padding: 14px 8px; border-radius: 14px; }
+  .b .card-item.saved { background: rgba(91,143,185,0.06); }
+  .b .card-item.learned { background: rgba(31,173,97,0.06); border: 1px solid rgba(31,173,97,0.12); }
+  .b .card-item.remain { background: rgba(0,0,0,0.02); }
+  .b .card-item .num { font-size: 24px; font-weight: 800; }
+  .b .card-item .lbl { font-size: 9px; font-weight: 600; color: var(--m); margin-top: 2px; }
+  .b .bar-area {}
+  .b .bar-top { display: flex; justify-content: space-between; font-size: 10px; font-weight: 600; margin-bottom: 4px; }
+  .b .bar { height: 6px; background: rgba(91,143,185,0.1); border-radius: 3px; overflow: hidden; }
+  .b .bar .fill { height: 100%; border-radius: 3px; background: var(--g); }
+
+  /* ══════ C — Nested Accent Card ══════ */
+  .c .inner {
+    background: linear-gradient(135deg, rgba(31,173,97,0.05), rgba(31,173,97,0.01));
+    border: 1px solid rgba(31,173,97,0.12);
+    border-radius: 16px; padding: 16px; margin-bottom: 10px;
+  }
+  .c .inner-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .c .inner-top .left { display: flex; align-items: baseline; gap: 4px; }
+  .c .inner-top .left .big { font-size: 28px; font-weight: 900; color: var(--g); }
+  .c .inner-top .left .of { font-size: 14px; color: var(--m); font-weight: 600; }
+  .c .inner-top .tag { font-size: 10px; font-weight: 700; color: var(--g); background: rgba(31,173,97,0.1); padding: 3px 8px; border-radius: 6px; }
+  .c .inner-bar { height: 8px; background: rgba(31,173,97,0.1); border-radius: 4px; overflow: hidden; margin-bottom: 6px; }
+  .c .inner-bar .fill { height: 100%; border-radius: 4px; background: var(--g); }
+  .c .inner-hint { font-size: 10px; color: var(--m); }
+  .c .inner-hint strong { color: var(--t); }
+  .c .saved-line {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px; background: rgba(91,143,185,0.05); border-radius: 10px;
+  }
+  .c .saved-line .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--b); flex-shrink: 0; }
+  .c .saved-line span { font-size: 11px; font-weight: 600; color: var(--m); }
+  .c .saved-line strong { color: var(--b); font-weight: 800; }
+
+  /* ══════ D — Two-Tone Bar ══════ */
+  .d .stats { display: flex; gap: 8px; margin-bottom: 14px; }
+  .d .stat { flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; background: rgba(0,0,0,0.02); }
+  .d .stat .num { font-size: 20px; font-weight: 800; }
+  .d .stat .lbl { font-size: 9px; font-weight: 600; color: var(--m); }
+  .d .two-bar { position: relative; height: 12px; background: var(--bd); border-radius: 6px; overflow: hidden; margin-bottom: 6px; }
+  .d .two-bar .bg { position: absolute; top: 0; left: 0; height: 100%; background: rgba(91,143,185,0.15); border-radius: 6px; }
+  .d .two-bar .fg { position: absolute; top: 0; left: 0; height: 100%; background: var(--g); border-radius: 6px; }
+  .d .legend { display: flex; gap: 14px; font-size: 9px; font-weight: 600; color: var(--m); }
+  .d .legend .dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 3px; vertical-align: middle; }
+
+  /* ══════ E — Ring Compact ══════ */
+  .e .main { display: flex; align-items: center; gap: 18px; }
+  .e .ring-area { position: relative; width: 80px; height: 80px; flex-shrink: 0; }
+  .e .ring-bg {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: conic-gradient(var(--g) 0% 15%, rgba(91,143,185,0.12) 15% 100%);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .e .ring-hole {
+    width: 56px; height: 56px; border-radius: 50%; background: #fff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .e .ring-hole .pct { font-size: 16px; font-weight: 900; color: var(--g); }
+  .e .ring-hole .lbl { font-size: 7px; font-weight: 600; color: var(--m); }
+  .e .info { flex: 1; }
+  .e .info-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+  .e .info-row:last-child { margin-bottom: 0; }
+  .e .info-row .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .e .info-row .txt { flex: 1; font-size: 11px; color: var(--m); }
+  .e .info-row .val { font-size: 15px; font-weight: 800; }
+
+  /* ══════ F — Minimal One-Line ══════ */
+  .f .text { font-size: 13px; color: var(--m); line-height: 1.7; margin-bottom: 12px; }
+  .f .text .g { color: var(--g); font-weight: 800; }
+  .f .text .b { color: var(--b); font-weight: 800; }
+  .f .text .dark { color: var(--t); font-weight: 800; }
+  .f .bar { height: 10px; background: rgba(91,143,185,0.1); border-radius: 5px; overflow: hidden; margin-bottom: 5px; }
+  .f .bar .fill { height: 100%; border-radius: 5px; background: var(--g); }
+  .f .hint { font-size: 10px; color: var(--l); text-align: right; }
+
+  /* ══════ G — Segment Chips ══════ */
+  .g .chips { display: flex; gap: 6px; margin-bottom: 12px; }
+  .g .chip { flex: 1; text-align: center; padding: 10px 4px; border-radius: 12px; }
+  .g .chip .num { font-size: 20px; font-weight: 800; }
+  .g .chip .lbl { font-size: 8px; font-weight: 700; margin-top: 1px; }
+  .g .chip.s { background: rgba(91,143,185,0.06); }
+  .g .chip.s .num { color: var(--b); }
+  .g .chip.s .lbl { color: var(--b); }
+  .g .chip.l { background: rgba(31,173,97,0.06); }
+  .g .chip.l .num { color: var(--g); }
+  .g .chip.l .lbl { color: var(--g); }
+  .g .chip.r { background: rgba(0,0,0,0.02); }
+  .g .chip.r .num { color: var(--l); }
+  .g .chip.r .lbl { color: var(--l); }
+  .g .seg { display: flex; height: 8px; border-radius: 4px; overflow: hidden; gap: 2px; }
+  .g .seg div { border-radius: 3px; }
+
+  /* ══════ H — Badge Row ══════ */
+  .h .badges { display: flex; gap: 6px; margin-bottom: 14px; }
+  .h .badge {
+    flex: 1; display: flex; align-items: center; gap: 8px;
+    padding: 10px 10px; border-radius: 12px;
+  }
+  .h .badge .ic {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; flex-shrink: 0;
+  }
+  .h .badge .info .num { font-size: 16px; font-weight: 800; color: var(--t); }
+  .h .badge .info .lbl { font-size: 8px; font-weight: 600; color: var(--m); }
+  .h .badge.s { background: rgba(91,143,185,0.06); }
+  .h .badge.s .ic { background: rgba(91,143,185,0.15); }
+  .h .badge.l { background: rgba(31,173,97,0.06); }
+  .h .badge.l .ic { background: rgba(31,173,97,0.15); }
+  .h .badge.r { background: rgba(0,0,0,0.02); }
+  .h .badge.r .ic { background: rgba(0,0,0,0.05); }
+  .h .bar-area .top { display: flex; justify-content: space-between; font-size: 10px; font-weight: 600; margin-bottom: 5px; }
+  .h .bar { height: 8px; background: rgba(91,143,185,0.1); border-radius: 4px; overflow: hidden; }
+  .h .bar .fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--g), #2ec872); }
+</style>
+</head>
+<body>
+
+<!-- A -->
+<div class="wrap a">
+  <div class="label">A — Hero Number</div>
+  <div class="cf">
+    <div class="hdr"><h3>오늘</h3><div class="streak">3 일 연속</div></div>
+    <div class="hero"><span class="big">5</span><span class="sep"> / </span><span class="total">32</span></div>
+    <div class="sub">학습 완료 · <strong>27</strong>개 남음</div>
+    <div class="bar"><div class="fill" style="width:15%"></div></div>
+  </div>
+</div>
+
+<!-- B -->
+<div class="wrap b">
+  <div class="label">B — Split Cards</div>
+  <div class="cf">
+    <div class="hdr"><h3>오늘</h3><div class="streak">3 일 연속</div></div>
+    <div class="cards">
+      <div class="card-item saved"><div class="num" style="color:var(--b)">32</div><div class="lbl">저장</div></div>
+      <div class="card-item learned"><div class="num" style="color:var(--g)">5</div><div class="lbl">학습 완료</div></div>
+      <div class="card-item remain"><div class="num" style="color:var(--l)">27</div><div class="lbl">남음</div></div>
+    </div>
+    <div class="bar-area">
+      <div class="bar-top"><span style="color:var(--m)">학습 진행률</span><span style="color:var(--g)">15%</span></div>
+      <div class="bar"><div class="fill" style="width:15%"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- C -->
+<div class="wrap c">
+  <div class="label">C — Nested Card</div>
+  <div class="cf">
+    <div class="hdr"><h3>오늘</h3><div class="streak">3 일 연속</div></div>
+    <div class="inner">
+      <div class="inner-top">
+        <div class="left"><span class="big">5</span><span class="of"> / 32</span></div>
+        <div class="tag">15% 완료</div>
+      </div>
+      <div class="inner-bar"><div class="fill" style="width:15%"></div></div>
+      <div class="inner-hint"><strong>27</strong>개 더 학습하면 오늘 완료</div>
+    </div>
+    <div class="saved-line">
+      <div class="dot"></div>
+      <span>오늘 <strong>32</strong>개 단어 저장</span>
+    </div>
+  </div>
+</div>
+
+<!-- D -->
+<div class="wrap d">
+  <div class="label">D — Two-Tone</div>
+  <div class="cf">
+    <div class="hdr"><h3>오늘</h3><div class="streak">3 일 연속</div></div>
+    <div class="stats">
+      <div class="stat"><div><div class="num" style="color:var(--b)">32</div><div class="lbl">저장</div></div></div>
+      <div class="stat"><div><div class="num" style="color:var(--g)">5</div><div class="lbl">학습 완료</div></div></div>
+      <div class="stat"><div><div class="num" style="color:var(--l)">27</div><div class="lbl">남음</div></div></div>
+    </div>
+    <div class="two-bar">
+      <div class="bg" style="width:100%"></div>
+      <div class="fg" style="width:15%"></div>
+    </div>
+    <div class="legend">
+      <span><span class="dot" style="background:var(--g)"></span>학습 완료 5</span>
+      <span><span class="dot" style="background:rgba(91,143,185,0.2)"></span>남은 학습 27</span>
+    </div>
+  </div>
+</div>
+
+<!-- E -->
+<div class="wrap e">
+  <div class="label">E — Ring</div>
+  <div class="cf">
+    <div class="hdr"><h3>오늘</h3><div class="streak">3 일 연속</div></div>
+    <div class="main">
+      <div class="ring-area">
+        <div class="ring-bg"><div class="ring-hole"><div class="pct">15%</div><div class="lbl">학습 완료</div></div></div>
+      </div>
+      <div class="info">
+        <div class="info-row"><div class="dot" style="background:var(--b)"></div><span class="txt">저장</span><span class="val" style="color:var(--b)">32</span></div>
+        <div class="info-row"><div class="dot" style="background:var(--g)"></div><span class="txt">학습 완료</span><span class="val" style="color:var(--g)">5</span></div>
+        <div class="info-row"><div class="dot" style="background:var(--bd)"></div><span class="txt">남은 학습</span><span class="val" style="color:var(--l)">27</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- F -->
+<div class="wrap f">
+  <div class="label">F — Minimal</div>
+  <div class="cf">
+    <div class="hdr"><h3>오늘</h3><div class="streak">3 일 연속</div></div>
+    <div class="text"><span class="b">32</span>개 저장 · <span class="g">5</span>개 학습 완료 · <span class="dark">27</span>개 남음</div>
+    <div class="bar"><div class="fill" style="width:15%"></div></div>
+    <div class="hint">27개 더 학습하면 완료</div>
+  </div>
+</div>
+
+<!-- G -->
+<div class="wrap g">
+  <div class="label">G — Segment</div>
+  <div class="cf">
+    <div class="hdr"><h3>오늘</h3><div class="streak">3 일 연속</div></div>
+    <div class="chips">
+      <div class="chip s"><div class="num">32</div><div class="lbl">저장</div></div>
+      <div class="chip l"><div class="num">5</div><div class="lbl">학습 완료</div></div>
+      <div class="chip r"><div class="num">27</div><div class="lbl">남음</div></div>
+    </div>
+    <div class="seg">
+      <div style="flex:5;background:var(--g)"></div>
+      <div style="flex:27;background:rgba(91,143,185,0.12)"></div>
+    </div>
+  </div>
+</div>
+
+<!-- H -->
+<div class="wrap h">
+  <div class="label">H — Badge + Bar</div>
+  <div class="cf">
+    <div class="hdr"><h3>오늘</h3><div class="streak">3 일 연속</div></div>
+    <div class="badges">
+      <div class="badge s"><div class="ic">📖</div><div class="info"><div class="num" style="color:var(--b)">32</div><div class="lbl">저장</div></div></div>
+      <div class="badge l"><div class="ic">✅</div><div class="info"><div class="num" style="color:var(--g)">5</div><div class="lbl">학습</div></div></div>
+      <div class="badge r"><div class="ic">📝</div><div class="info"><div class="num">27</div><div class="lbl">남음</div></div></div>
+    </div>
+    <div class="bar-area">
+      <div class="top"><span style="color:var(--m)">학습 진행률 5/32</span><span style="color:var(--g)">15%</span></div>
+      <div class="bar"><div class="fill" style="width:15%"></div></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

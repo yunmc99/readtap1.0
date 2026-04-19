@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Free Trial Offer — 3 Concepts</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    background: #f0f0f5;
+    padding: 40px 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 48px;
+    justify-content: center;
+    -webkit-font-smoothing: antialiased;
+  }
+  .concept-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .concept-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #888;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .phone {
+    width: 375px;
+    height: 720px;
+    background: #fff;
+    border-radius: 44px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.06);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .status-bar {
+    height: 54px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 8px;
+    background: inherit;
+  }
+  .status-bar .notch {
+    width: 126px;
+    height: 34px;
+    background: #000;
+    border-radius: 0 0 20px 20px;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  /* ──────────── CONCEPT A: Minimal Clean ──────────── */
+  .concept-a .phone { background: #fff; }
+  .concept-a .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0 28px;
+    padding-top: 20px;
+  }
+  .concept-a .welcome-badge {
+    align-self: center;
+    background: rgba(31,173,97,0.08);
+    color: #1fad61;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 16px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+    letter-spacing: 0.3px;
+  }
+  .concept-a .hero-icon {
+    align-self: center;
+    width: 72px;
+    height: 72px;
+    background: linear-gradient(135deg, #1fad61 0%, #17c96a 100%);
+    border-radius: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    margin-bottom: 24px;
+    box-shadow: 0 8px 24px rgba(31,173,97,0.25);
+  }
+  .concept-a h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a2534;
+    text-align: center;
+    line-height: 1.3;
+    margin-bottom: 8px;
+  }
+  .concept-a .subtitle {
+    font-size: 15px;
+    color: #6b7580;
+    text-align: center;
+    line-height: 1.5;
+    margin-bottom: 32px;
+  }
+  .concept-a .feature-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: auto;
+  }
+  .concept-a .feature-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .concept-a .feature-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgba(31,173,97,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .concept-a .feature-text h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a2534;
+    margin-bottom: 2px;
+  }
+  .concept-a .feature-text p {
+    font-size: 13px;
+    color: #8a919a;
+    line-height: 1.4;
+  }
+  .concept-a .cta-area {
+    padding: 20px 0 36px;
+  }
+  .concept-a .btn-primary {
+    width: 100%;
+    padding: 16px;
+    background: #1fad61;
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 8px;
+  }
+  .concept-a .btn-secondary {
+    width: 100%;
+    padding: 12px;
+    background: none;
+    border: 1.5px solid #1fad61;
+    color: #1fad61;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 12px;
+  }
+  .concept-a .dismiss {
+    display: block;
+    text-align: center;
+    font-size: 14px;
+    color: #9ca3ab;
+    cursor: pointer;
+  }
+
+  /* ──────────── CONCEPT B: Card + Illustration ──────────── */
+  .concept-b .phone { background: #f8f9fa; }
+  .concept-b .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 16px 20px;
+  }
+  .concept-b .hero-banner {
+    background: linear-gradient(145deg, #1fad61 0%, #0d9050 50%, #17c96a 100%);
+    border-radius: 24px;
+    padding: 32px 24px 28px;
+    margin-bottom: 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .concept-b .hero-banner::before {
+    content: '';
+    position: absolute;
+    top: -40px;
+    right: -30px;
+    width: 120px;
+    height: 120px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 50%;
+  }
+  .concept-b .hero-banner::after {
+    content: '';
+    position: absolute;
+    bottom: -20px;
+    left: -20px;
+    width: 80px;
+    height: 80px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 50%;
+  }
+  .concept-b .hero-emoji {
+    font-size: 44px;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 1;
+  }
+  .concept-b .hero-banner h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 6px;
+    position: relative;
+    z-index: 1;
+  }
+  .concept-b .hero-banner p {
+    font-size: 14px;
+    color: rgba(255,255,255,0.85);
+    position: relative;
+    z-index: 1;
+  }
+  .concept-b .trial-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.2);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    margin-top: 14px;
+    position: relative;
+    z-index: 1;
+  }
+  .concept-b .features-card {
+    background: #fff;
+    border-radius: 18px;
+    padding: 6px 0;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    margin-bottom: auto;
+  }
+  .concept-b .feature-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 20px;
+  }
+  .concept-b .feature-row + .feature-row {
+    border-top: 1px solid rgba(0,0,0,0.04);
+  }
+  .concept-b .feature-dot {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    flex-shrink: 0;
+  }
+  .concept-b .feature-dot.green { background: rgba(31,173,97,0.10); }
+  .concept-b .feature-dot.blue { background: rgba(64,152,220,0.10); }
+  .concept-b .feature-dot.purple { background: rgba(140,100,255,0.10); }
+  .concept-b .feature-info h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a2534;
+    margin-bottom: 2px;
+  }
+  .concept-b .feature-info p {
+    font-size: 12px;
+    color: #8a919a;
+  }
+  .concept-b .feature-check {
+    margin-left: auto;
+    color: #1fad61;
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .concept-b .cta-area {
+    padding: 16px 0 32px;
+  }
+  .concept-b .btn-primary {
+    width: 100%;
+    padding: 16px;
+    background: #1fad61;
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 16px rgba(31,173,97,0.3);
+  }
+  .concept-b .sub-actions {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+  }
+  .concept-b .sub-actions a {
+    font-size: 14px;
+    color: #9ca3ab;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .concept-b .sub-actions a.accent {
+    color: #1fad61;
+    font-weight: 500;
+  }
+
+  /* ──────────── CONCEPT C: Fullscreen Immersive ──────────── */
+  .concept-c .phone {
+    background: linear-gradient(180deg, #f4faf6 0%, #ffffff 40%);
+  }
+  .concept-c .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0 24px;
+    padding-top: 10px;
+  }
+  .concept-c .top-section {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  .concept-c .book-stack {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 6px;
+    margin-bottom: 24px;
+    height: 80px;
+  }
+  .concept-c .book {
+    width: 18px;
+    border-radius: 3px 5px 5px 3px;
+    box-shadow: 1px 2px 4px rgba(0,0,0,0.1);
+  }
+  .concept-c .book:nth-child(1) { height: 56px; background: #1fad61; }
+  .concept-c .book:nth-child(2) { height: 68px; background: #66c18c; }
+  .concept-c .book:nth-child(3) { height: 78px; background: #0d9050; }
+  .concept-c .book:nth-child(4) { height: 64px; background: #40b878; }
+  .concept-c .book:nth-child(5) { height: 52px; background: #8ad4a8; }
+  .concept-c h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #1a2534;
+    line-height: 1.3;
+    margin-bottom: 10px;
+  }
+  .concept-c h1 .accent { color: #1fad61; }
+  .concept-c .subtitle {
+    font-size: 14px;
+    color: #6b7580;
+    line-height: 1.5;
+  }
+  .concept-c .timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-bottom: auto;
+    padding-left: 4px;
+  }
+  .concept-c .timeline-item {
+    display: flex;
+    gap: 16px;
+    position: relative;
+    padding-bottom: 20px;
+  }
+  .concept-c .timeline-item:last-child { padding-bottom: 0; }
+  .concept-c .timeline-line {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 24px;
+    flex-shrink: 0;
+  }
+  .concept-c .timeline-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #1fad61;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #fff;
+    font-weight: 700;
+    flex-shrink: 0;
+    z-index: 1;
+  }
+  .concept-c .timeline-dot.muted {
+    background: #e8eaed;
+    color: #9ca3ab;
+  }
+  .concept-c .timeline-connector {
+    width: 2px;
+    flex: 1;
+    background: #e8eaed;
+    margin-top: 4px;
+  }
+  .concept-c .timeline-content {
+    padding-top: 2px;
+  }
+  .concept-c .timeline-content h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a2534;
+    margin-bottom: 3px;
+  }
+  .concept-c .timeline-content p {
+    font-size: 13px;
+    color: #8a919a;
+    line-height: 1.4;
+  }
+  .concept-c .day-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #1fad61;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+  }
+  .concept-c .cta-area {
+    padding: 20px 0 36px;
+  }
+  .concept-c .btn-primary {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #1fad61 0%, #17c96a 100%);
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 4px;
+    box-shadow: 0 4px 16px rgba(31,173,97,0.25);
+  }
+  .concept-c .fine-print {
+    text-align: center;
+    font-size: 12px;
+    color: #b0b5bc;
+    margin-bottom: 12px;
+  }
+  .concept-c .sub-links {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+  }
+  .concept-c .sub-links a {
+    font-size: 14px;
+    color: #9ca3ab;
+    text-decoration: none;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ CONCEPT A: Minimal Clean ═══════════ -->
+<div class="concept-wrap concept-a">
+  <div class="concept-label">A — Minimal Clean</div>
+  <div class="phone">
+    <div class="status-bar"><div class="notch"></div></div>
+    <div class="content">
+      <div class="welcome-badge">🎉 환영합니다!</div>
+      <div class="hero-icon">📚</div>
+      <h1>7일 무료 체험으로<br>프리미엄을 경험해보세요</h1>
+      <p class="subtitle">출시 기념 특별 혜택이에요<br>언제든 취소할 수 있어요</p>
+
+      <div class="feature-list">
+        <div class="feature-item">
+          <div class="feature-icon">✨</div>
+          <div class="feature-text">
+            <h3>더 정확한 번역</h3>
+            <p>문맥을 반영한 정확한 뜻을 제공해요</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">📋</div>
+          <div class="feature-text">
+            <h3>품사별 번역</h3>
+            <p>명사, 동사 등 품사로 뜻을 확인해요</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🎨</div>
+          <div class="feature-text">
+            <h3>프리미엄 테마</h3>
+            <p>Paper, Mint 테마를 자유롭게 사용해요</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="cta-area">
+        <button class="btn-primary">7일 무료 체험 시작</button>
+        <button class="btn-secondary">구독 플랜 보기</button>
+        <span class="dismiss">나중에</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ CONCEPT B: Card + Banner ═══════════ -->
+<div class="concept-wrap concept-b">
+  <div class="concept-label">B — Card Banner</div>
+  <div class="phone">
+    <div class="status-bar"><div class="notch"></div></div>
+    <div class="content">
+      <div class="hero-banner">
+        <div class="hero-emoji">📖</div>
+        <h1>읽기의 새로운 경험</h1>
+        <p>출시 기념, 프리미엄 7일 무료 체험</p>
+        <div class="trial-badge">🎁 FREE 7 DAYS</div>
+      </div>
+
+      <div class="features-card">
+        <div class="feature-row">
+          <div class="feature-dot green">✨</div>
+          <div class="feature-info">
+            <h3>문맥 기반 정확한 번역</h3>
+            <p>문장 속 의미를 정확히 파악해요</p>
+          </div>
+          <span class="feature-check">✓</span>
+        </div>
+        <div class="feature-row">
+          <div class="feature-dot blue">📋</div>
+          <div class="feature-info">
+            <h3>품사별 상세 번역</h3>
+            <p>명사·동사·형용사별로 확인</p>
+          </div>
+          <span class="feature-check">✓</span>
+        </div>
+        <div class="feature-row">
+          <div class="feature-dot purple">🎨</div>
+          <div class="feature-info">
+            <h3>프리미엄 테마</h3>
+            <p>Paper, Mint 잠금 해제</p>
+          </div>
+          <span class="feature-check">✓</span>
+        </div>
+      </div>
+
+      <div class="cta-area">
+        <button class="btn-primary">무료 체험 시작하기</button>
+        <div class="sub-actions">
+          <a href="#">나중에</a>
+          <a class="accent" href="#">구독 플랜</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ CONCEPT C: Timeline Journey ═══════════ -->
+<div class="concept-wrap concept-c">
+  <div class="concept-label">C — Timeline Journey</div>
+  <div class="phone">
+    <div class="status-bar"><div class="notch"></div></div>
+    <div class="content">
+      <div class="top-section">
+        <div class="book-stack">
+          <div class="book"></div>
+          <div class="book"></div>
+          <div class="book"></div>
+          <div class="book"></div>
+          <div class="book"></div>
+        </div>
+        <h1>7일 동안<br><span class="accent">프리미엄</span>을 경험해보세요</h1>
+        <p class="subtitle">출시 기념 무료 체험 · 자동 결제 없음</p>
+      </div>
+
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-line">
+            <div class="timeline-dot">✓</div>
+            <div class="timeline-connector"></div>
+          </div>
+          <div class="timeline-content">
+            <div class="day-label">오늘</div>
+            <h3>모든 프리미엄 기능 잠금 해제</h3>
+            <p>정확한 번역, 품사별 뜻, 프리미엄 테마</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-line">
+            <div class="timeline-dot muted">5</div>
+            <div class="timeline-connector"></div>
+          </div>
+          <div class="timeline-content">
+            <div class="day-label">5일차</div>
+            <h3>만료 알림 발송</h3>
+            <p>체험 종료 전 미리 알려드려요</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-line">
+            <div class="timeline-dot muted">7</div>
+          </div>
+          <div class="timeline-content">
+            <div class="day-label">7일차</div>
+            <h3>체험 종료</h3>
+            <p>구독하거나 무료로 계속 사용해요</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="cta-area">
+        <button class="btn-primary">무료 체험 시작</button>
+        <p class="fine-print">7일 후 자동 결제되지 않아요</p>
+        <div class="sub-links">
+          <a href="#">나중에</a>
+          <a href="#">구독 플랜 보기</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

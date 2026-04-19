@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guest Login Prompt — Over PDF Reader</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif; background: #1a1a2e; display: flex; flex-wrap: wrap; justify-content: center; gap: 40px; padding: 40px 20px; }
+
+  h1 { width: 100%; text-align: center; color: #fff; font-size: 24px; font-weight: 700; margin-bottom: 0; }
+  p.subtitle { width: 100%; text-align: center; color: #8888aa; font-size: 14px; margin-bottom: 20px; }
+
+  .phone {
+    width: 375px; height: 812px;
+    background: #000;
+    border-radius: 50px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    flex-shrink: 0;
+  }
+  .phone::before {
+    content: '';
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 160px; height: 34px;
+    background: #000;
+    border-radius: 0 0 20px 20px;
+    z-index: 100;
+  }
+
+  .label {
+    width: 375px;
+    text-align: center;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    margin-top: -8px;
+  }
+  .label span { color: #8888aa; font-size: 12px; font-weight: 400; display: block; margin-top: 4px; }
+
+  /* Fake PDF background */
+  .pdf-bg {
+    width: 100%; height: 100%;
+    background: #f5f0e8;
+    padding: 60px 28px 40px;
+    font-family: 'Georgia', serif;
+    font-size: 13px;
+    line-height: 1.8;
+    color: #3a3a3a;
+    position: relative;
+  }
+  .pdf-bg::after {
+    content: 'The Great Gatsby — Page 9';
+    position: absolute; bottom: 16px; left: 0; right: 0;
+    text-align: center; font-size: 10px; color: #999;
+    font-family: -apple-system, sans-serif;
+  }
+  .pdf-text {
+    opacity: 0.85;
+  }
+  .pdf-text .highlight {
+    background: rgba(30, 173, 97, 0.25);
+    padding: 1px 2px;
+    border-radius: 2px;
+  }
+
+  /* Dimming overlay */
+  .dim { position: absolute; inset: 0; background: rgba(0,0,0,0.35); z-index: 10; }
+  .dim-light { position: absolute; inset: 0; background: rgba(0,0,0,0.18); z-index: 10; }
+
+  /* ========== CONCEPT A: Bottom Sheet (Compact) ========== */
+  .concept-a {
+    position: absolute; bottom: 0; left: 0; right: 0; z-index: 20;
+    background: #fff;
+    border-radius: 20px 20px 0 0;
+    padding: 20px 24px 44px;
+    text-align: center;
+  }
+  .concept-a .drag-bar { width: 36px; height: 4px; background: #ddd; border-radius: 2px; margin: 0 auto 16px; }
+  .concept-a .icon-wrap { width: 48px; height: 48px; border-radius: 50%; background: rgba(30,173,97,0.1); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
+  .concept-a .icon-wrap svg { width: 22px; height: 22px; fill: #1ead61; }
+  .concept-a h3 { font-size: 19px; font-weight: 700; color: #1f2733; margin-bottom: 4px; }
+  .concept-a .sub { font-size: 13px; color: #8a8a8e; margin-bottom: 18px; line-height: 1.5; }
+  .concept-a .cta { display: block; width: 100%; padding: 14px; background: #1ead61; color: #fff; font-size: 15px; font-weight: 600; border: none; border-radius: 12px; cursor: pointer; margin-bottom: 8px; }
+  .concept-a .skip { font-size: 12px; color: #b0b0b0; border: none; background: none; cursor: pointer; }
+
+  /* ========== CONCEPT B: Floating Card ========== */
+  .concept-b {
+    position: absolute; bottom: 80px; left: 20px; right: 20px; z-index: 20;
+    background: #fff;
+    border-radius: 20px;
+    padding: 22px 22px 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.25), 0 2px 8px rgba(0,0,0,0.1);
+    text-align: center;
+  }
+  .concept-b .close-x { position: absolute; top: 14px; right: 16px; width: 28px; height: 28px; border-radius: 50%; background: #f2f2f7; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; }
+  .concept-b .close-x svg { width: 12px; height: 12px; fill: #8e8e93; }
+  .concept-b h3 { font-size: 18px; font-weight: 700; color: #1f2733; margin-bottom: 4px; }
+  .concept-b .sub { font-size: 13px; color: #8a8a8e; margin-bottom: 16px; line-height: 1.4; }
+  .concept-b .chips { display: flex; gap: 6px; justify-content: center; margin-bottom: 18px; }
+  .concept-b .chip { display: flex; align-items: center; gap: 4px; padding: 5px 10px; background: rgba(30,173,97,0.08); border-radius: 100px; font-size: 11px; font-weight: 600; color: #1ead61; }
+  .concept-b .chip svg { width: 11px; height: 11px; fill: #1ead61; }
+  .concept-b .cta { display: block; width: 100%; padding: 13px; background: #1ead61; color: #fff; font-size: 15px; font-weight: 600; border: none; border-radius: 12px; cursor: pointer; margin-bottom: 6px; }
+  .concept-b .skip { font-size: 12px; color: #b0b0b0; border: none; background: none; cursor: pointer; }
+
+  /* ========== CONCEPT C: Toast Banner ========== */
+  .concept-c {
+    position: absolute; bottom: 40px; left: 16px; right: 16px; z-index: 20;
+    background: rgba(255,255,255,0.97);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 16px;
+    padding: 16px 16px 14px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    display: flex; align-items: center; gap: 14px;
+  }
+  .concept-c .icon-circle { width: 44px; height: 44px; border-radius: 50%; background: rgba(30,173,97,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .concept-c .icon-circle svg { width: 20px; height: 20px; fill: #1ead61; }
+  .concept-c .text-block { flex: 1; }
+  .concept-c .text-block h4 { font-size: 14px; font-weight: 700; color: #1f2733; margin-bottom: 2px; }
+  .concept-c .text-block p { font-size: 11.5px; color: #8a8a8e; line-height: 1.3; }
+  .concept-c .action-btn { padding: 8px 16px; background: #1ead61; color: #fff; font-size: 13px; font-weight: 600; border: none; border-radius: 10px; cursor: pointer; flex-shrink: 0; }
+
+  /* ========== CONCEPT D: Alert Style ========== */
+  .concept-d {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 20;
+    background: rgba(255,255,255,0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 16px;
+    width: 280px;
+    padding: 28px 20px 16px;
+    text-align: center;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.3);
+  }
+  .concept-d .icon-wrap { width: 52px; height: 52px; border-radius: 50%; background: rgba(30,173,97,0.1); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+  .concept-d .icon-wrap svg { width: 24px; height: 24px; fill: #1ead61; }
+  .concept-d h3 { font-size: 17px; font-weight: 700; color: #1f2733; margin-bottom: 4px; }
+  .concept-d .sub { font-size: 12.5px; color: #8a8a8e; margin-bottom: 20px; line-height: 1.4; }
+  .concept-d .divider { height: 0.5px; background: #e5e5ea; margin: 0 -20px; }
+  .concept-d .btn-row { display: flex; margin: 0 -20px; }
+  .concept-d .btn-row button { flex: 1; padding: 14px 8px; border: none; background: none; font-size: 16px; cursor: pointer; }
+  .concept-d .btn-row button:first-child { color: #007aff; font-weight: 400; border-right: 0.5px solid #e5e5ea; }
+  .concept-d .btn-row button:last-child { color: #1ead61; font-weight: 600; }
+
+  /* ========== CONCEPT E: Slide-up Mini Card ========== */
+  .concept-e {
+    position: absolute; bottom: 0; left: 0; right: 0; z-index: 20;
+    background: #fff;
+    border-radius: 24px 24px 0 0;
+    padding: 16px 20px 40px;
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.12);
+  }
+  .concept-e .drag-bar { width: 36px; height: 4px; background: #ddd; border-radius: 2px; margin: 0 auto 14px; }
+  .concept-e .row { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+  .concept-e .row .icon-sq { width: 44px; height: 44px; border-radius: 12px; background: rgba(30,173,97,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .concept-e .row .icon-sq svg { width: 20px; height: 20px; fill: #1ead61; }
+  .concept-e .row .text h4 { font-size: 16px; font-weight: 700; color: #1f2733; margin-bottom: 2px; }
+  .concept-e .row .text p { font-size: 12px; color: #8a8a8e; line-height: 1.3; }
+  .concept-e .btns { display: flex; gap: 8px; }
+  .concept-e .btns .cta { flex: 1; padding: 12px; background: #1ead61; color: #fff; font-size: 14px; font-weight: 600; border: none; border-radius: 11px; cursor: pointer; }
+  .concept-e .btns .later { flex: 0; padding: 12px 18px; background: #f2f2f7; color: #8e8e93; font-size: 14px; font-weight: 500; border: none; border-radius: 11px; cursor: pointer; white-space: nowrap; }
+
+  /* ========== CONCEPT F: Glassmorphism Floating ========== */
+  .concept-f {
+    position: absolute; bottom: 60px; left: 16px; right: 16px; z-index: 20;
+    background: rgba(255,255,255,0.82);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border-radius: 20px;
+    padding: 20px;
+    border: 0.5px solid rgba(255,255,255,0.6);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    text-align: center;
+  }
+  .concept-f .emoji { font-size: 28px; margin-bottom: 8px; }
+  .concept-f h3 { font-size: 17px; font-weight: 700; color: #1f2733; margin-bottom: 4px; }
+  .concept-f .sub { font-size: 12.5px; color: #666; margin-bottom: 16px; line-height: 1.4; }
+  .concept-f .actions { display: flex; gap: 8px; }
+  .concept-f .actions .cta { flex: 1; padding: 12px; background: #1ead61; color: #fff; font-size: 14px; font-weight: 600; border: none; border-radius: 12px; cursor: pointer; }
+  .concept-f .actions .later { flex: 0; padding: 12px 18px; background: rgba(0,0,0,0.06); color: #666; font-size: 14px; font-weight: 500; border: none; border-radius: 12px; cursor: pointer; white-space: nowrap; }
+
+  /* SVG icons inline */
+  .svg-bookmark { }
+</style>
+</head>
+<body>
+
+<h1>Guest Login Prompt — PDF 위 오버레이</h1>
+<p class="subtitle">PDF가 열린 상태에서 나타나는 6가지 디자인 시안</p>
+
+<!-- ======== CONCEPT A: Compact Bottom Sheet ======== -->
+<div>
+<div class="phone">
+  <div class="pdf-bg">
+    <div class="pdf-text">
+      <p style="margin-bottom:12px">In my younger and more vulnerable years my father gave me some advice that I've been turning over in my mind ever since.</p>
+      <p style="margin-bottom:12px">"Whenever you feel like criticizing anyone," he told me, "just remember that all the people in this world haven't had the <span class="highlight">advantages</span> that you've had."</p>
+      <p style="margin-bottom:12px">He didn't say any more, but we've always been unusually communicative in a reserved way, and I understood that he meant a great deal more than that.</p>
+      <p style="margin-bottom:12px">In consequence, I'm inclined to reserve all judgments, a habit that has opened up many curious natures to me and also made me the victim of not a few veteran bores.</p>
+      <p>The abnormal mind is quick to detect and attach itself to this quality when it appears in a normal person, and so it came about that in college I was unjustly accused of being a politician.</p>
+    </div>
+  </div>
+  <div class="dim-light"></div>
+  <div class="concept-a">
+    <div class="drag-bar"></div>
+    <div class="icon-wrap">
+      <svg viewBox="0 0 24 24"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
+    </div>
+    <h3>Save this word?</h3>
+    <p class="sub">Create a free account to build<br>your personal vocabulary.</p>
+    <button class="cta">Create Free Account</button>
+    <button class="skip">Maybe later</button>
+  </div>
+</div>
+<div class="label">A. Compact Bottom Sheet<span>현재와 유사하지만 더 작고 PDF 위에 표시</span></div>
+</div>
+
+<!-- ======== CONCEPT B: Floating Card ======== -->
+<div>
+<div class="phone">
+  <div class="pdf-bg">
+    <div class="pdf-text">
+      <p style="margin-bottom:12px">In my younger and more vulnerable years my father gave me some advice that I've been turning over in my mind ever since.</p>
+      <p style="margin-bottom:12px">"Whenever you feel like criticizing anyone," he told me, "just remember that all the people in this world haven't had the <span class="highlight">advantages</span> that you've had."</p>
+      <p style="margin-bottom:12px">He didn't say any more, but we've always been unusually communicative in a reserved way, and I understood that he meant a great deal more than that.</p>
+      <p style="margin-bottom:12px">In consequence, I'm inclined to reserve all judgments, a habit that has opened up many curious natures to me and also made me the victim of not a few veteran bores.</p>
+      <p>The abnormal mind is quick to detect and attach itself to this quality when it appears in a normal person, and so it came about that in college I was unjustly accused of being a politician.</p>
+    </div>
+  </div>
+  <div class="dim"></div>
+  <div class="concept-b">
+    <button class="close-x"><svg viewBox="0 0 14 14"><path d="M1 1l12 12M13 1L1 13" stroke="#8e8e93" stroke-width="2" stroke-linecap="round" fill="none"/></svg></button>
+    <h3>Save this word?</h3>
+    <p class="sub">Create a free account to build<br>your personal vocabulary.</p>
+    <div class="chips">
+      <div class="chip"><svg viewBox="0 0 24 24"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>Save</div>
+      <div class="chip"><svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>Review</div>
+      <div class="chip"><svg viewBox="0 0 24 24"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>Vocab List</div>
+    </div>
+    <button class="cta">Create Free Account</button>
+    <button class="skip">Maybe later</button>
+  </div>
+</div>
+<div class="label">B. Floating Card<span>X 버튼으로 간편 닫기, 칩으로 혜택 표시</span></div>
+</div>
+
+<!-- ======== CONCEPT C: Toast Banner ======== -->
+<div>
+<div class="phone">
+  <div class="pdf-bg">
+    <div class="pdf-text">
+      <p style="margin-bottom:12px">In my younger and more vulnerable years my father gave me some advice that I've been turning over in my mind ever since.</p>
+      <p style="margin-bottom:12px">"Whenever you feel like criticizing anyone," he told me, "just remember that all the people in this world haven't had the <span class="highlight">advantages</span> that you've had."</p>
+      <p style="margin-bottom:12px">He didn't say any more, but we've always been unusually communicative in a reserved way, and I understood that he meant a great deal more than that.</p>
+      <p style="margin-bottom:12px">In consequence, I'm inclined to reserve all judgments, a habit that has opened up many curious natures to me and also made me the victim of not a few veteran bores.</p>
+      <p style="margin-bottom:12px">The abnormal mind is quick to detect and attach itself to this quality when it appears in a normal person, and so it came about that in college I was unjustly accused of being a politician.</p>
+      <p>I was privy to the secret griefs of wild, unknown men. Most of the confidences were unsought — frequently I have feigned sleep.</p>
+    </div>
+  </div>
+  <div class="concept-c">
+    <div class="icon-circle">
+      <svg viewBox="0 0 24 24"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
+    </div>
+    <div class="text-block">
+      <h4>Save words to your vocab list</h4>
+      <p>Sign up free to save, review &amp; track</p>
+    </div>
+    <button class="action-btn">Sign Up</button>
+  </div>
+</div>
+<div class="label">C. Toast Banner<span>방해 최소화, 한 줄 CTA, PDF 거의 안 가림</span></div>
+</div>
+
+<!-- ======== CONCEPT D: Alert Style ======== -->
+<div>
+<div class="phone">
+  <div class="pdf-bg">
+    <div class="pdf-text">
+      <p style="margin-bottom:12px">In my younger and more vulnerable years my father gave me some advice that I've been turning over in my mind ever since.</p>
+      <p style="margin-bottom:12px">"Whenever you feel like criticizing anyone," he told me, "just remember that all the people in this world haven't had the <span class="highlight">advantages</span> that you've had."</p>
+      <p style="margin-bottom:12px">He didn't say any more, but we've always been unusually communicative in a reserved way, and I understood that he meant a great deal more than that.</p>
+      <p style="margin-bottom:12px">In consequence, I'm inclined to reserve all judgments, a habit that has opened up many curious natures to me and also made me the victim of not a few veteran bores.</p>
+      <p>The abnormal mind is quick to detect and attach itself to this quality when it appears in a normal person, and so it came about that in college I was unjustly accused of being a politician.</p>
+    </div>
+  </div>
+  <div class="dim"></div>
+  <div class="concept-d">
+    <div class="icon-wrap">
+      <svg viewBox="0 0 24 24"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
+    </div>
+    <h3>Save this word?</h3>
+    <p class="sub">Sign up for free to save words,<br>review with flashcards, and more.</p>
+    <div class="divider"></div>
+    <div class="btn-row">
+      <button>Not Now</button>
+      <button>Sign Up</button>
+    </div>
+  </div>
+</div>
+<div class="label">D. iOS Alert Style<span>네이티브 Alert 느낌, 깔끔하고 익숙한 UX</span></div>
+</div>
+
+<!-- ======== CONCEPT E: Slide-up Mini ======== -->
+<div>
+<div class="phone">
+  <div class="pdf-bg">
+    <div class="pdf-text">
+      <p style="margin-bottom:12px">In my younger and more vulnerable years my father gave me some advice that I've been turning over in my mind ever since.</p>
+      <p style="margin-bottom:12px">"Whenever you feel like criticizing anyone," he told me, "just remember that all the people in this world haven't had the <span class="highlight">advantages</span> that you've had."</p>
+      <p style="margin-bottom:12px">He didn't say any more, but we've always been unusually communicative in a reserved way, and I understood that he meant a great deal more than that.</p>
+      <p style="margin-bottom:12px">In consequence, I'm inclined to reserve all judgments, a habit that has opened up many curious natures to me and also made me the victim of not a few veteran bores.</p>
+      <p style="margin-bottom:12px">The abnormal mind is quick to detect and attach itself to this quality when it appears in a normal person, and so it came about that in college I was unjustly accused of being a politician.</p>
+      <p>I was privy to the secret griefs of wild, unknown men. Most of the confidences were unsought.</p>
+    </div>
+  </div>
+  <div class="dim-light"></div>
+  <div class="concept-e">
+    <div class="drag-bar"></div>
+    <div class="row">
+      <div class="icon-sq">
+        <svg viewBox="0 0 24 24"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
+      </div>
+      <div class="text">
+        <h4>Save this word?</h4>
+        <p>Free account = save, review &amp; flashcards</p>
+      </div>
+    </div>
+    <div class="btns">
+      <button class="later">Later</button>
+      <button class="cta">Create Free Account</button>
+    </div>
+  </div>
+</div>
+<div class="label">E. Slide-up Mini Card<span>수평 레이아웃, 컴팩트, 아이콘+텍스트 한 줄</span></div>
+</div>
+
+<!-- ======== CONCEPT F: Glassmorphism ======== -->
+<div>
+<div class="phone">
+  <div class="pdf-bg">
+    <div class="pdf-text">
+      <p style="margin-bottom:12px">In my younger and more vulnerable years my father gave me some advice that I've been turning over in my mind ever since.</p>
+      <p style="margin-bottom:12px">"Whenever you feel like criticizing anyone," he told me, "just remember that all the people in this world haven't had the <span class="highlight">advantages</span> that you've had."</p>
+      <p style="margin-bottom:12px">He didn't say any more, but we've always been unusually communicative in a reserved way, and I understood that he meant a great deal more than that.</p>
+      <p style="margin-bottom:12px">In consequence, I'm inclined to reserve all judgments, a habit that has opened up many curious natures to me and also made me the victim of not a few veteran bores.</p>
+      <p style="margin-bottom:12px">The abnormal mind is quick to detect and attach itself to this quality when it appears in a normal person, and so it came about that in college I was unjustly accused of being a politician.</p>
+      <p>I was privy to the secret griefs of wild, unknown men. Most of the confidences were unsought.</p>
+    </div>
+  </div>
+  <div class="concept-f">
+    <div class="emoji">📚</div>
+    <h3>Build your vocabulary</h3>
+    <p class="sub">Save words you look up and review<br>them anytime with flashcards.</p>
+    <div class="actions">
+      <button class="later">Later</button>
+      <button class="cta">Sign Up Free</button>
+    </div>
+  </div>
+</div>
+<div class="label">F. Glass Floating Card<span>블러 배경, 이모지 아이콘, 가벼운 느낌</span></div>
+</div>
+
+</body>
+</html>

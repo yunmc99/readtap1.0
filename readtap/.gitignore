@@ -1,0 +1,31 @@
+# Swift / Xcode
+.build/
+DerivedData/
+.deriveddata/
+*.xcuserstate
+*.xcuserdatad
+*.xcuserdata
+*.swp
+
+# Xcode user data
+readtap.xcodeproj/xcuserdata/
+readtap.xcodeproj/xcshareddata/
+readtap.xcodeproj/project.xcworkspace/xcshareddata/
+readtap.xcodeproj/project.xcworkspace/xcuserdata/
+
+# SwiftPM
+**/.swiftpm/
+.swiftpm/
+Package.resolved
+
+# Logs and env
+.env
+*.log
+
+# Backups
+*.bak-*
+
+# Secrets (xcconfig with real API keys/tokens — NEVER commit)
+Secrets.xcconfig
+readtap/SecretsBootstrap.swift
+translation-server/.dev.vars

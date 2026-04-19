@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings Redesign Concepts</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'DM Sans', -apple-system, sans-serif;
+    background: #c8ccce;
+    padding: 24px 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    justify-content: center;
+  }
+  .opt-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .opt-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #444; background: #fff; padding: 3px 10px; border-radius: 5px; }
+  .phone {
+    width: 375px; height: 812px; background: #F1F4F5; border-radius: 44px;
+    overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    display: flex; flex-direction: column;
+  }
+  .sbar { height: 54px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 6px; font-size: 14px; font-weight: 700; color: #1a1a1a; }
+  .scroll { flex: 1; overflow-y: auto; padding: 0 20px 20px; }
+  .tbar {
+    height: 70px; background: rgba(255,255,255,0.92); border-top: 1px solid rgba(0,0,0,0.06);
+    display: flex; align-items: center; justify-content: space-around; padding: 0 20px; flex-shrink: 0;
+  }
+  .ti { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10px; color: #aaa; font-weight: 600; }
+  .ti.ac { color: #2EAF6E; }
+  .tic { font-size: 18px; }
+  .desc { font-size: 10px; color: #555; max-width: 340px; text-align: center; line-height: 1.5; }
+
+  /* Shared */
+  .card { background: white; border-radius: 20px; padding: 18px; box-shadow: 0 4px 16px rgba(0,0,0,0.06); margin-bottom: 12px; }
+  .card-sm { background: white; border-radius: 16px; padding: 14px; box-shadow: 0 3px 12px rgba(0,0,0,0.05); margin-bottom: 10px; }
+  .eyebrow { font-size: 9px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #888; margin-bottom: 4px; }
+  .stitle { font-size: 16px; font-weight: 800; color: #1a1a1a; margin-bottom: 12px; }
+  .stitle-sm { font-size: 14px; font-weight: 800; color: #1a1a1a; margin-bottom: 10px; }
+  .row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f2f3f4; }
+  .row:last-child { border-bottom: none; }
+  .row-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .row-text { flex: 1; }
+  .row-title { font-size: 13px; font-weight: 700; color: #1a1a1a; }
+  .row-sub { font-size: 10px; color: #888; margin-top: 1px; }
+  .toggle { width: 42px; height: 24px; border-radius: 12px; position: relative; flex-shrink: 0; }
+  .toggle.on { background: #2EAF6E; }
+  .toggle.off { background: #ddd; }
+  .toggle::after { content: ''; position: absolute; top: 2px; width: 20px; height: 20px; border-radius: 50%; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+  .toggle.on::after { right: 2px; }
+  .toggle.off::after { left: 2px; }
+  .chip { font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
+  .chip-g { background: rgba(46,175,110,0.08); color: #2EAF6E; }
+  .chip-m { background: #f0f1f2; color: #888; }
+  .chevron { color: #ccc; font-size: 12px; font-weight: 700; }
+
+  /* Hero */
+  .hero { border-radius: 22px; padding: 20px; margin-bottom: 14px; position: relative; overflow: hidden; }
+  .hero-grad { background: linear-gradient(135deg, #1a1a1a 0%, #2d4a3e 100%); }
+  .hero-green { background: linear-gradient(135deg, #2EAF6E 0%, #1E8F5E 100%); }
+  .hero-soft { background: linear-gradient(135deg, rgba(46,175,110,0.08) 0%, rgba(46,175,110,0.03) 100%); border: 1px solid rgba(46,175,110,0.12); }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; flex-shrink: 0; }
+  .avatar-w { background: rgba(255,255,255,0.15); color: white; }
+  .avatar-g { background: rgba(46,175,110,0.15); color: #2EAF6E; }
+
+  /* Segment */
+  .seg-row { display: flex; gap: 4px; background: #f0f1f2; border-radius: 10px; padding: 3px; }
+  .seg-btn { flex: 1; text-align: center; padding: 7px 0; font-size: 11px; font-weight: 700; border-radius: 8px; cursor: pointer; }
+  .seg-btn.active { background: white; color: #1a1a1a; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .seg-btn.inactive { color: #888; }
+
+  /* Theme dots */
+  .theme-row { display: flex; gap: 8px; }
+  .theme-dot { width: 32px; height: 32px; border-radius: 10px; border: 2px solid transparent; cursor: pointer; position: relative; }
+  .theme-dot.sel { border-color: #1a1a1a; }
+  .lock-icon { position: absolute; top: -3px; right: -3px; width: 12px; height: 12px; background: #888; color: white; border-radius: 50%; font-size: 7px; display: flex; align-items: center; justify-content: center; }
+
+  /* Color presets */
+  .color-row { display: flex; gap: 6px; }
+  .color-dot { width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; }
+  .color-dot.sel { border-color: #1a1a1a; }
+
+  /* Section divider */
+  .sdiv { height: 1px; background: #eee; margin: 4px 0; }
+
+  .page-title { font-size: 22px; font-weight: 800; color: #1a1a1a; padding: 12px 0 14px; }
+</style>
+</head>
+<body>
+
+<!-- ========== OPTION A: Grouped Cards ========== -->
+<div class="opt-wrap">
+  <span class="opt-label">A - Grouped Cards</span>
+  <div class="phone">
+    <div class="sbar">2:00</div>
+    <div class="scroll">
+      <div class="page-title">Settings</div>
+
+      <!-- Hero -->
+      <div class="hero hero-grad">
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <div class="avatar avatar-w">RT</div>
+          <div style="flex: 1;">
+            <div style="font-size: 14px; font-weight: 700; color: white;">Guest</div>
+            <div style="font-size: 10px; color: rgba(255,255,255,0.6);">Sign in to sync</div>
+          </div>
+          <div class="chip" style="background: rgba(255,255,255,0.15); color: white;">Free</div>
+        </div>
+      </div>
+
+      <!-- Reading -->
+      <div class="card">
+        <div class="eyebrow">Reading</div>
+        <div class="stitle-sm">Reader</div>
+        <div class="row">
+          <div class="row-icon" style="background: rgba(46,175,110,0.1); color: #2EAF6E;">&#8681;</div>
+          <div class="row-text"><div class="row-title">Auto-save words</div></div>
+          <div class="toggle on"></div>
+        </div>
+        <div class="row">
+          <div class="row-icon" style="background: rgba(46,175,110,0.1); color: #2EAF6E;">&#9758;</div>
+          <div class="row-text"><div class="row-title">Long-press lookup</div></div>
+          <div class="toggle on"></div>
+        </div>
+        <div class="row">
+          <div class="row-icon" style="background: rgba(100,100,255,0.1); color: #6464FF;">&#9638;</div>
+          <div class="row-text">
+            <div class="row-title">Popup size</div>
+            <div class="row-sub">Normal</div>
+          </div>
+          <span class="chevron">&#10095;</span>
+        </div>
+        <div class="row">
+          <div class="row-icon" style="background: rgba(255,180,100,0.1); color: #E8A33A;">&#9724;</div>
+          <div class="row-text">
+            <div class="row-title">Highlight color</div>
+          </div>
+          <div class="color-row">
+            <div class="color-dot sel" style="background: #2EAF6E;"></div>
+            <div class="color-dot" style="background: #FFD60A;"></div>
+            <div class="color-dot" style="background: #FFAC8E;"></div>
+            <div class="color-dot" style="background: #C4B5FD;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Appearance -->
+      <div class="card">
+        <div class="eyebrow">Appearance</div>
+        <div class="stitle-sm">Theme & Language</div>
+        <div class="row">
+          <div class="row-icon" style="background: rgba(46,175,110,0.1); color: #2EAF6E;">&#127912;</div>
+          <div class="row-text"><div class="row-title">Theme</div><div class="row-sub">Studio</div></div>
+          <span class="chevron">&#10095;</span>
+        </div>
+        <div style="padding: 6px 0;">
+          <div class="theme-row">
+            <div class="theme-dot sel" style="background: #2EAF6E;"></div>
+            <div class="theme-dot" style="background: #6BAED6;"></div>
+            <div class="theme-dot" style="background: #C4956A; position: relative;"><div class="lock-icon">&#128274;</div></div>
+            <div class="theme-dot" style="background: #5B8A72; position: relative;"><div class="lock-icon">&#128274;</div></div>
+          </div>
+        </div>
+        <div class="sdiv"></div>
+        <div style="padding: 8px 0 2px;">
+          <div style="font-size: 11px; font-weight: 600; color: #888; margin-bottom: 6px;">Language</div>
+          <div class="seg-row">
+            <div class="seg-btn active">English</div>
+            <div class="seg-btn inactive">한국어</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Subscription -->
+      <div class="card">
+        <div class="eyebrow">Plan</div>
+        <div class="stitle-sm">Subscription</div>
+        <div class="row">
+          <div class="row-icon" style="background: rgba(255,200,50,0.1); color: #E8A33A;">&#10024;</div>
+          <div class="row-text">
+            <div class="row-title">Free Plan</div>
+            <div class="row-sub">Upgrade for themes & AI</div>
+          </div>
+          <div style="font-size: 11px; font-weight: 700; color: #2EAF6E; padding: 6px 12px; background: rgba(46,175,110,0.08); border-radius: 8px;">Upgrade</div>
+        </div>
+      </div>
+
+      <!-- App Info -->
+      <div style="text-align: center; padding: 16px 0 8px;">
+        <div style="font-size: 10px; color: #aaa; font-weight: 600;">ReadTap v1.0</div>
+      </div>
+    </div>
+    <div class="tbar">
+      <div class="ti"><span class="tic">&#9751;</span>Home</div>
+      <div class="ti"><span class="tic">&#9776;</span>Library</div>
+      <div class="ti"><span class="tic">&#9993;</span>Words</div>
+      <div class="ti ac"><span class="tic">&#9881;</span>Settings</div>
+    </div>
+  </div>
+  <div class="desc">그룹 카드. 관련 설정을 카드로 묶음. 깔끔한 iOS 스타일</div>
+</div>
+
+<!-- ========== OPTION B: Flat List + Hero ========== -->
+<div class="opt-wrap">
+  <span class="opt-label">B - Flat Sections</span>
+  <div class="phone">
+    <div class="sbar">2:00</div>
+    <div class="scroll">
+      <div class="page-title">Settings</div>
+
+      <!-- Hero compact -->
+      <div class="hero hero-soft" style="padding: 16px;">
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <div class="avatar avatar-g">RT</div>
+          <div style="flex: 1;">
+            <div style="font-size: 14px; font-weight: 800; color: #1a1a1a;">Guest</div>
+            <div style="font-size: 10px; color: #888;">Free plan · Sign in to sync</div>
+          </div>
+          <span class="chevron">&#10095;</span>
+        </div>
+      </div>
+
+      <!-- Reader section -->
+      <div style="padding: 4px 0 6px;"><div class="eyebrow" style="padding-left: 4px;">Reader</div></div>
+      <div class="card-sm">
+        <div class="row" style="padding: 8px 0;">
+          <div class="row-text"><div class="row-title">Auto-save words</div></div>
+          <div class="toggle on"></div>
+        </div>
+        <div class="row" style="padding: 8px 0;">
+          <div class="row-text"><div class="row-title">Long-press lookup</div></div>
+          <div class="toggle on"></div>
+        </div>
+        <div class="row" style="padding: 8px 0;">
+          <div class="row-text"><div class="row-title">Popup size</div><div class="row-sub">Normal</div></div>
+          <span class="chevron">&#10095;</span>
+        </div>
+        <div class="row" style="padding: 8px 0;">
+          <div class="row-text"><div class="row-title">Highlight color</div></div>
+          <div class="color-row">
+            <div class="color-dot sel" style="background: #2EAF6E; width: 20px; height: 20px;"></div>
+            <div class="color-dot" style="background: #FFD60A; width: 20px; height: 20px;"></div>
+            <div class="color-dot" style="background: #FFAC8E; width: 20px; height: 20px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Appearance -->
+      <div style="padding: 4px 0 6px;"><div class="eyebrow" style="padding-left: 4px;">Appearance</div></div>
+      <div class="card-sm">
+        <div class="row" style="padding: 8px 0;">
+          <div class="row-text"><div class="row-title">Theme</div><div class="row-sub">Studio</div></div>
+          <div class="theme-row" style="gap: 5px;">
+            <div class="theme-dot sel" style="width: 22px; height: 22px; border-radius: 7px; background: #2EAF6E;"></div>
+            <div class="theme-dot" style="width: 22px; height: 22px; border-radius: 7px; background: #6BAED6;"></div>
+            <div class="theme-dot" style="width: 22px; height: 22px; border-radius: 7px; background: #C4956A;"></div>
+            <div class="theme-dot" style="width: 22px; height: 22px; border-radius: 7px; background: #5B8A72;"></div>
+          </div>
+        </div>
+        <div class="row" style="padding: 8px 0;">
+          <div class="row-text"><div class="row-title">Language</div></div>
+          <div class="seg-row" style="width: 140px;">
+            <div class="seg-btn active" style="font-size: 10px; padding: 5px 0;">EN</div>
+            <div class="seg-btn inactive" style="font-size: 10px; padding: 5px 0;">KR</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Plan -->
+      <div style="padding: 4px 0 6px;"><div class="eyebrow" style="padding-left: 4px;">Plan</div></div>
+      <div class="card-sm">
+        <div class="row" style="padding: 8px 0;">
+          <div class="row-text"><div class="row-title">Free Plan</div><div class="row-sub">Upgrade for themes & AI translation</div></div>
+          <div style="font-size: 10px; font-weight: 700; color: white; padding: 5px 10px; background: #2EAF6E; border-radius: 8px;">Upgrade</div>
+        </div>
+      </div>
+
+      <div style="text-align: center; padding: 14px 0;"><div style="font-size: 10px; color: #aaa;">ReadTap v1.0</div></div>
+    </div>
+    <div class="tbar">
+      <div class="ti"><span class="tic">&#9751;</span>Home</div>
+      <div class="ti"><span class="tic">&#9776;</span>Library</div>
+      <div class="ti"><span class="tic">&#9993;</span>Words</div>
+      <div class="ti ac"><span class="tic">&#9881;</span>Settings</div>
+    </div>
+  </div>
+  <div class="desc">플랫 리스트. 아이콘 없이 텍스트 중심. 컴팩트하고 가벼움</div>
+</div>
+
+<!-- ========== OPTION C: Modern Minimal ========== -->
+<div class="opt-wrap">
+  <span class="opt-label">C - Modern Minimal</span>
+  <div class="phone">
+    <div class="sbar">2:00</div>
+    <div class="scroll">
+      <div class="page-title">Settings</div>
+
+      <!-- Account row -->
+      <div class="card" style="padding: 14px;">
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <div style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #2EAF6E, #1E8F5E); display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; font-weight: 800;">R</div>
+          <div style="flex: 1;">
+            <div style="font-size: 15px; font-weight: 800; color: #1a1a1a;">ReadTap</div>
+            <div style="font-size: 11px; color: #888;">Guest · Free plan</div>
+          </div>
+          <div class="chip chip-g">Sign In</div>
+        </div>
+      </div>
+
+      <!-- All settings in one scrollable list -->
+      <div class="card">
+        <div class="row">
+          <div class="row-text"><div class="row-title">Auto-save words</div></div>
+          <div class="toggle on"></div>
+        </div>
+        <div class="row">
+          <div class="row-text"><div class="row-title">Long-press lookup</div></div>
+          <div class="toggle on"></div>
+        </div>
+        <div class="row">
+          <div class="row-text"><div class="row-title">Popup size</div></div>
+          <div class="chip chip-m">Normal</div>
+        </div>
+        <div class="row">
+          <div class="row-text"><div class="row-title">Highlight color</div></div>
+          <div style="width: 20px; height: 20px; border-radius: 50%; background: #2EAF6E; border: 2px solid #1a1a1a;"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row">
+          <div class="row-text"><div class="row-title">Theme</div></div>
+          <div style="display: flex; gap: 4px; align-items: center;">
+            <div style="width: 18px; height: 18px; border-radius: 6px; background: #2EAF6E; border: 2px solid #1a1a1a;"></div>
+            <span style="font-size: 11px; font-weight: 600; color: #888;">Studio</span>
+            <span class="chevron">&#10095;</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="row-text"><div class="row-title">Language</div></div>
+          <div class="seg-row" style="width: 130px;">
+            <div class="seg-btn active" style="font-size: 10px; padding: 5px 0;">English</div>
+            <div class="seg-btn inactive" style="font-size: 10px; padding: 5px 0;">한국어</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row" style="border-bottom: none;">
+          <div style="flex: 1;">
+            <div style="font-size: 13px; font-weight: 700; color: #1a1a1a;">Upgrade to Premium</div>
+            <div style="font-size: 10px; color: #888; margin-top: 2px;">Themes, AI translation, highlights</div>
+          </div>
+          <div style="font-size: 11px; font-weight: 700; color: white; padding: 6px 14px; background: linear-gradient(135deg, #2EAF6E, #1E8F5E); border-radius: 10px;">Go Pro</div>
+        </div>
+      </div>
+
+      <div style="text-align: center; padding: 16px 0;"><div style="font-size: 10px; color: #bbb;">v1.0 · ReadTap</div></div>
+    </div>
+    <div class="tbar">
+      <div class="ti"><span class="tic">&#9751;</span>Home</div>
+      <div class="ti"><span class="tic">&#9776;</span>Library</div>
+      <div class="ti"><span class="tic">&#9993;</span>Words</div>
+      <div class="ti ac"><span class="tic">&#9881;</span>Settings</div>
+    </div>
+  </div>
+  <div class="desc">모던 미니멀. 아이콘 없음. 카드 3장으로 모든 설정 압축</div>
+</div>
+
+<!-- ========== OPTION D: iOS-Native Grouped ========== -->
+<div class="opt-wrap">
+  <span class="opt-label">D - iOS Native</span>
+  <div class="phone">
+    <div class="sbar">2:00</div>
+    <div class="scroll">
+      <div class="page-title">Settings</div>
+
+      <!-- Account -->
+      <div class="card" style="padding: 16px;">
+        <div style="display: flex; gap: 14px; align-items: center; margin-bottom: 12px;">
+          <div style="width: 50px; height: 50px; border-radius: 50%; background: #f0f1f2; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; color: #888;">RT</div>
+          <div>
+            <div style="font-size: 16px; font-weight: 800; color: #1a1a1a;">Guest User</div>
+            <div style="font-size: 11px; color: #2EAF6E; font-weight: 600;">Sign in &#10095;</div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <div style="flex: 1; text-align: center; padding: 10px; background: #f5f7f8; border-radius: 12px;">
+            <div style="font-size: 16px; font-weight: 800; color: #1a1a1a;">47</div>
+            <div style="font-size: 9px; color: #888; font-weight: 600;">Words</div>
+          </div>
+          <div style="flex: 1; text-align: center; padding: 10px; background: #f5f7f8; border-radius: 12px;">
+            <div style="font-size: 16px; font-weight: 800; color: #1a1a1a;">2</div>
+            <div style="font-size: 9px; color: #888; font-weight: 600;">Books</div>
+          </div>
+          <div style="flex: 1; text-align: center; padding: 10px; background: #f5f7f8; border-radius: 12px;">
+            <div style="font-size: 16px; font-weight: 800; color: #1a1a1a;">7</div>
+            <div style="font-size: 9px; color: #888; font-weight: 600;">Streak</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reader -->
+      <div style="padding: 2px 4px 6px;"><span class="eyebrow">Reader</span></div>
+      <div class="card-sm">
+        <div class="row" style="padding: 9px 0;">
+          <div class="row-icon" style="background: #2EAF6E; color: white; border-radius: 8px;">&#8681;</div>
+          <div class="row-text"><div class="row-title">Auto-save</div></div>
+          <div class="toggle on"></div>
+        </div>
+        <div class="row" style="padding: 9px 0;">
+          <div class="row-icon" style="background: #6464FF; color: white; border-radius: 8px;">&#9758;</div>
+          <div class="row-text"><div class="row-title">Long-press lookup</div></div>
+          <div class="toggle on"></div>
+        </div>
+        <div class="row" style="padding: 9px 0;">
+          <div class="row-icon" style="background: #E8A33A; color: white; border-radius: 8px;">&#9638;</div>
+          <div class="row-text"><div class="row-title">Popup size</div><div class="row-sub">Normal</div></div>
+          <span class="chevron">&#10095;</span>
+        </div>
+        <div class="row" style="padding: 9px 0;">
+          <div class="row-icon" style="background: #FF6B8A; color: white; border-radius: 8px;">&#9724;</div>
+          <div class="row-text"><div class="row-title">Highlight color</div></div>
+          <div class="color-row" style="gap: 4px;">
+            <div class="color-dot sel" style="background: #2EAF6E; width: 18px; height: 18px;"></div>
+            <div class="color-dot" style="background: #FFD60A; width: 18px; height: 18px;"></div>
+            <div class="color-dot" style="background: #C4B5FD; width: 18px; height: 18px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Appearance -->
+      <div style="padding: 2px 4px 6px;"><span class="eyebrow">Appearance</span></div>
+      <div class="card-sm">
+        <div class="row" style="padding: 9px 0;">
+          <div class="row-icon" style="background: #5B8A72; color: white; border-radius: 8px;">&#127912;</div>
+          <div class="row-text"><div class="row-title">Theme</div><div class="row-sub">Studio</div></div>
+          <span class="chevron">&#10095;</span>
+        </div>
+        <div class="row" style="padding: 9px 0;">
+          <div class="row-icon" style="background: #6BAED6; color: white; border-radius: 8px;">A</div>
+          <div class="row-text"><div class="row-title">Language</div><div class="row-sub">English</div></div>
+          <span class="chevron">&#10095;</span>
+        </div>
+      </div>
+
+      <!-- Premium -->
+      <div style="padding: 2px 4px 6px;"><span class="eyebrow">Premium</span></div>
+      <div class="card-sm" style="background: linear-gradient(135deg, rgba(46,175,110,0.06), rgba(46,175,110,0.02));">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 4px 0;">
+          <div style="font-size: 22px;">&#10024;</div>
+          <div style="flex: 1;">
+            <div style="font-size: 13px; font-weight: 700; color: #1a1a1a;">Go Premium</div>
+            <div style="font-size: 10px; color: #888;">Themes, highlights, AI</div>
+          </div>
+          <div style="font-size: 11px; font-weight: 700; color: white; padding: 6px 14px; background: #2EAF6E; border-radius: 10px;">Upgrade</div>
+        </div>
+      </div>
+    </div>
+    <div class="tbar">
+      <div class="ti"><span class="tic">&#9751;</span>Home</div>
+      <div class="ti"><span class="tic">&#9776;</span>Library</div>
+      <div class="ti"><span class="tic">&#9993;</span>Words</div>
+      <div class="ti ac"><span class="tic">&#9881;</span>Settings</div>
+    </div>
+  </div>
+  <div class="desc">iOS 네이티브 느낌. 컬러 아이콘 + 통계 헤더. Apple Settings 스타일</div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReadTap Word Detail — Round 4</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700;9..40,800&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+  body{background:#08080c;min-height:100vh;font-family:'DM Sans','Noto Sans KR',sans-serif;color:#fff}
+  .hdr{text-align:center;padding:60px 20px 10px}
+  .hdr h1{font-size:28px;font-weight:800;letter-spacing:-.5px}
+  .hdr p{font-size:13px;color:#555;margin-top:6px;letter-spacing:3px;text-transform:uppercase}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(375px,1fr));gap:48px;max-width:1680px;margin:0 auto;padding:40px 40px 80px}
+  .wrap{display:flex;flex-direction:column;align-items:center;gap:18px}
+  .lbl{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#555;text-align:center}
+  .lbl span{display:block;font-size:18px;font-weight:800;color:#999;letter-spacing:-.3px;text-transform:none;margin-top:4px}
+  .lbl .desc{display:block;font-size:11px;font-weight:400;color:#444;letter-spacing:0;text-transform:none;margin-top:6px;line-height:1.5;max-width:340px}
+  .dev{width:375px;height:812px;border-radius:44px;overflow:hidden;position:relative;box-shadow:0 0 0 1px rgba(255,255,255,0.05),0 40px 80px rgba(0,0,0,0.5)}
+  .sb{height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 8px;position:relative;z-index:20}
+  .sb-t{font-size:15px;font-weight:600}
+  .sb-r{display:flex;gap:5px;align-items:center}
+  .sb-d{width:3px;height:3px;border-radius:50%;background:currentColor}
+  .sb-pill{width:25px;height:12px;border-radius:3px;border:1.5px solid currentColor;position:relative}
+  .sb-pill::after{content:'';position:absolute;right:1px;top:1.5px;bottom:1.5px;left:4px;border-radius:1px;background:currentColor}
+  .sc{position:absolute;top:0;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .sc::-webkit-scrollbar{display:none}
+  @keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .ani>*{animation:fu .35s ease both}
+  .ani>*:nth-child(1){animation-delay:.04s}.ani>*:nth-child(2){animation-delay:.08s}.ani>*:nth-child(3){animation-delay:.12s}.ani>*:nth-child(4){animation-delay:.16s}.ani>*:nth-child(5){animation-delay:.20s}.ani>*:nth-child(6){animation-delay:.24s}.ani>*:nth-child(7){animation-delay:.28s}.ani>*:nth-child(8){animation-delay:.32s}
+  :root{--ink:#1F2733;--muted:#6A7482;--eyebrow:#808D9B;--accent:#1a8a4a;--amber:#C49340;--bg-top:#F7F8FA;--bg-bottom:#EAEFF3;--card:#fff;--border:rgba(31,39,51,0.06);--fill:#EBF0F2}
+
+  .nav{display:flex;align-items:center;gap:10px;padding:64px 20px 0;margin-bottom:16px}
+  .nav-back{width:32px;height:32px;border-radius:10px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--muted);cursor:pointer}
+  .nav-title{font-size:15px;font-weight:700;color:var(--ink);flex:1}
+  .nav-sub{font-size:11px;color:var(--muted)}
+  .cover{border-radius:10px;overflow:hidden;flex-shrink:0;box-shadow:0 3px 8px rgba(0,0,0,0.08);display:flex;align-items:flex-end;padding:5px;background:linear-gradient(135deg,#3a356a,#1e1b4a)}
+  .cover span{font-size:6px;font-weight:800;color:rgba(255,255,255,.8);line-height:1.2}
+
+  /* ═══ P — Inline Expand ═══ */
+  .p{background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom))}.p .sb{color:var(--ink)}
+
+  .p .book-bar{display:flex;gap:12px;align-items:center;padding:0 20px;margin-bottom:14px}
+  .p .book-bar .cover{width:44px;height:58px}
+  .p .bb-info{flex:1}
+  .p .bb-title{font-size:14px;font-weight:700;color:var(--ink)}
+  .p .bb-sub{font-size:11px;color:var(--muted);margin-top:1px}
+
+  .p .words{padding:0 20px 40px}
+  .p .w-closed{display:flex;align-items:center;gap:10px;padding:14px 0;border-bottom:1px solid var(--border);cursor:pointer}
+  .p .w-closed .ww{font-size:15px;font-weight:700;color:var(--ink);flex:1}
+  .p .w-closed .wm{font-size:12px;color:var(--muted);max-width:100px;text-align:right}
+  .p .w-closed .chev{font-size:11px;color:var(--muted);opacity:.3}
+
+  .p .w-open{padding:14px 0 18px;border-bottom:1px solid var(--border)}
+  .p .wo-word{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-.3px;margin-bottom:6px}
+  .p .wo-mean{font-size:14px;color:var(--muted);line-height:1.5;margin-bottom:10px}
+  .p .wo-sentence{font-size:12px;color:var(--ink);padding:10px 14px;background:var(--fill);border-radius:10px;line-height:1.5;margin-bottom:10px;border-left:3px solid var(--accent)}
+  .p .wo-sentence em{font-style:normal;font-weight:800;color:var(--accent)}
+  .p .wo-tags{display:flex;gap:6px}
+  .p .wo-tag{font-size:9px;font-weight:700;padding:4px 9px;border-radius:6px}
+  .p .wo-tag.page{background:var(--fill);color:var(--eyebrow)}
+  .p .wo-tag.new{background:rgba(26,138,74,0.06);color:var(--accent)}
+  .p .wo-tag.time{background:var(--fill);color:var(--muted)}
+  .p .wo-actions{display:flex;gap:8px;margin-top:12px}
+  .p .wo-btn{padding:8px 14px;border-radius:10px;font-size:11px;font-weight:700;border:none;cursor:pointer;font-family:'DM Sans',sans-serif}
+  .p .wo-btn.know{background:var(--accent);color:#fff}
+  .p .wo-btn.open{background:var(--fill);color:var(--ink)}
+
+  /* ═══ Q — Timeline Words ═══ */
+  .q{background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom))}.q .sb{color:var(--ink)}
+
+  .q .book-bar{display:flex;gap:12px;align-items:center;padding:0 20px;margin-bottom:16px}
+  .q .book-bar .cover{width:44px;height:58px}
+  .q .bb-info{flex:1}
+  .q .bb-title{font-size:14px;font-weight:700;color:var(--ink)}
+  .q .bb-sub{font-size:11px;color:var(--muted);margin-top:1px}
+
+  .q .tl{padding:0 20px 40px;position:relative}
+  .q .tl::before{content:'';position:absolute;left:29px;top:0;bottom:40px;width:2px;background:var(--fill);border-radius:1px}
+  .q .tl-group{position:relative;margin-bottom:16px}
+  .q .tl-date{display:flex;align-items:center;gap:10px;margin-bottom:8px;position:relative}
+  .q .tl-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;z-index:1;box-shadow:0 0 0 3px rgba(26,138,74,0.08)}
+  .q .tl-dot.past{background:var(--fill);box-shadow:none}
+  .q .tl-label{font-size:11px;font-weight:700;color:var(--ink)}
+  .q .tl-label small{font-weight:500;color:var(--muted);margin-left:3px}
+  .q .tl-cards{padding-left:18px;display:flex;flex-direction:column;gap:6px}
+  .q .tl-card{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--card);border-radius:12px;border:1px solid var(--border)}
+  .q .tc-word{font-size:14px;font-weight:700;color:var(--ink);flex:1}
+  .q .tc-mean{font-size:11px;color:var(--muted);max-width:110px;text-align:right}
+
+  /* ═══ R — Swipe Cards Stack ═══ */
+  .r{background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom))}.r .sb{color:var(--ink)}
+  .r .body{padding:0 20px 40px;display:flex;flex-direction:column;align-items:center}
+  .r .book-line{display:flex;align-items:center;gap:8px;margin-bottom:20px;align-self:flex-start}
+  .r .book-line .cover{width:32px;height:42px;border-radius:6px}
+  .r .bl-text{font-size:13px;font-weight:600;color:var(--muted)}
+
+  .r .stack{position:relative;width:300px;height:380px;margin-bottom:20px}
+  .r .stack-card{position:absolute;width:100%;background:var(--card);border-radius:24px;border:1px solid var(--border);padding:28px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.06)}
+  .r .stack-card.back{top:12px;left:6px;right:6px;width:auto;opacity:.6;transform:scale(0.95)}
+  .r .stack-card.front{top:0;left:0}
+  .r .sc-badge{display:inline-block;font-size:9px;font-weight:700;padding:4px 12px;border-radius:8px;background:rgba(26,138,74,0.06);color:var(--accent);margin-bottom:16px}
+  .r .sc-word{font-size:28px;font-weight:800;color:var(--ink);letter-spacing:-.5px}
+  .r .sc-divider{width:40px;height:2px;border-radius:1px;background:var(--fill);margin:18px auto}
+  .r .sc-mean{font-size:15px;color:var(--muted);line-height:1.5}
+  .r .sc-sentence{font-size:12px;color:var(--ink);padding:12px 16px;background:var(--fill);border-radius:12px;line-height:1.5;margin-top:16px;text-align:left;border-left:3px solid var(--accent)}
+  .r .sc-sentence em{font-style:normal;font-weight:800;color:var(--accent)}
+  .r .sc-meta{display:flex;gap:6px;justify-content:center;margin-top:14px}
+  .r .sc-chip{font-size:9px;font-weight:700;padding:3px 9px;border-radius:6px;background:var(--fill);color:var(--eyebrow)}
+
+  .r .dots{display:flex;gap:8px;justify-content:center;margin-bottom:10px}
+  .r .dot{width:8px;height:8px;border-radius:50%;background:var(--fill)}
+  .r .dot.on{width:24px;border-radius:4px;background:var(--accent)}
+  .r .dot-text{font-size:11px;color:var(--muted);text-align:center;margin-bottom:16px}
+
+  .r .actions{display:flex;gap:10px;width:100%;max-width:300px}
+  .r .act{flex:1;padding:13px;border-radius:14px;text-align:center;font-size:12px;font-weight:700;border:none;cursor:pointer;font-family:'DM Sans',sans-serif}
+  .r .act.skip{background:var(--fill);color:var(--muted)}
+  .r .act.know{background:var(--accent);color:#fff;box-shadow:0 4px 12px rgba(26,138,74,0.2)}
+
+  /* ═══ S — Dual Pane ═══ */
+  .s{background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom))}.s .sb{color:var(--ink)}
+
+  .s .book-bar{display:flex;gap:12px;align-items:center;padding:0 20px;margin-bottom:4px}
+  .s .book-bar .cover{width:40px;height:54px}
+  .s .bb-info{flex:1}
+  .s .bb-title{font-size:14px;font-weight:700;color:var(--ink)}
+  .s .bb-sub{font-size:11px;color:var(--muted);margin-top:1px}
+
+  .s .divider{height:1px;background:var(--border);margin:12px 20px}
+
+  .s .word-scroll{padding:0 20px;margin-bottom:12px;display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .s .word-scroll::-webkit-scrollbar{display:none}
+  .s .ws-chip{flex-shrink:0;padding:8px 16px;border-radius:12px;font-size:13px;font-weight:700;color:var(--muted);background:var(--card);border:1px solid var(--border);cursor:pointer}
+  .s .ws-chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  .s .detail{padding:0 20px 40px}
+  .s .d-word{font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.4px;margin-bottom:8px}
+  .s .d-mean{font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:12px}
+  .s .d-sentence{font-size:12px;color:var(--ink);padding:12px 14px;background:var(--fill);border-radius:10px;line-height:1.5;border-left:3px solid var(--accent);margin-bottom:12px}
+  .s .d-sentence em{font-style:normal;font-weight:800;color:var(--accent)}
+  .s .d-tags{display:flex;gap:6px;margin-bottom:14px}
+  .s .d-tag{font-size:9px;font-weight:700;padding:4px 9px;border-radius:6px}
+  .s .d-tag.page{background:var(--fill);color:var(--eyebrow)}
+  .s .d-tag.new{background:rgba(26,138,74,0.06);color:var(--accent)}
+  .s .d-tag.time{background:var(--fill);color:var(--muted)}
+  .s .d-actions{display:flex;gap:8px}
+  .s .d-btn{padding:10px 18px;border-radius:12px;font-size:12px;font-weight:700;border:none;cursor:pointer;font-family:'DM Sans',sans-serif}
+  .s .d-btn.know{background:var(--accent);color:#fff;box-shadow:0 4px 12px rgba(26,138,74,0.15)}
+  .s .d-btn.open{background:var(--fill);color:var(--ink)}
+
+  /* ═══ T — Kanban Columns ═══ */
+  .t{background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom))}.t .sb{color:var(--ink)}
+
+  .t .book-line{display:flex;align-items:center;gap:8px;padding:0 20px;margin-bottom:14px}
+  .t .book-line .cover{width:36px;height:48px;border-radius:8px}
+  .t .bl-title{font-size:14px;font-weight:700;color:var(--ink);flex:1}
+  .t .bl-cnt{font-size:11px;color:var(--muted)}
+
+  .t .cols{display:flex;gap:8px;padding:0 20px 40px;height:calc(100% - 160px)}
+  .t .col{flex:1;display:flex;flex-direction:column}
+  .t .col-head{font-size:10px;font-weight:700;color:var(--eyebrow);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+  .t .col-head .cnt{font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px}
+  .t .col-head .cnt.amber{background:rgba(196,147,64,0.06);color:var(--amber)}
+  .t .col-head .cnt.green{background:rgba(26,138,74,0.06);color:var(--accent)}
+  .t .col-cards{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
+  .t .col-cards::-webkit-scrollbar{display:none}
+  .t .cc{padding:10px;background:var(--card);border-radius:12px;border:1px solid var(--border);cursor:pointer}
+  .t .cc-word{font-size:13px;font-weight:700;color:var(--ink)}
+  .t .cc-mean{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.3}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>Word Detail</h1>
+  <p>Round 4</p>
+</div>
+
+<div class="grid">
+
+<!-- ═══ P — Inline Expand ═══ -->
+<div class="wrap">
+  <div class="lbl">Option P<span>Inline Expand</span>
+    <span class="desc">접힌 상태에서 단어+뜻. 탭하면 인라인 확장: 큰 단어+문장+태그+액션 버튼. 아코디언 느낌.</span>
+  </div>
+  <div class="dev p">
+    <div class="sc">
+      <div class="sb"><span class="sb-t">9:37</span><div class="sb-r"><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div>&nbsp;&nbsp;<div class="sb-pill"></div></div></div>
+      <div class="ani">
+        <div class="nav"><div class="nav-back">‹</div><div class="nav-title">1 Course Overview</div><div class="nav-sub">2 words</div></div>
+        <div class="book-bar"><div class="cover" style="width:44px;height:58px"><span>Co.</span></div><div class="bb-info"><div class="bb-title">1 Course Overview</div><div class="bb-sub">2 words · page 4</div></div></div>
+        <div class="words">
+          <div class="w-open">
+            <div class="wo-word">FindingPrime</div>
+            <div class="wo-mean">소수 찾기 — a function or algorithm to determine prime numbers</div>
+            <div class="wo-sentence">"The <em>FindingPrime</em> algorithm iterates through all integers up to the square root of n."</div>
+            <div class="wo-tags"><div class="wo-tag page">Page 4</div><div class="wo-tag new">New</div><div class="wo-tag time">2 hr ago</div></div>
+            <div class="wo-actions"><button class="wo-btn know">I know this</button><button class="wo-btn open">Open page</button></div>
+          </div>
+          <div class="w-closed"><span class="ww">Finding</span><span class="wm">찾기</span><span class="chev">›</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Q — Timeline Words ═══ -->
+<div class="wrap">
+  <div class="lbl">Option Q<span>Timeline</span>
+    <span class="desc">저장 시간순 타임라인. 날짜 노드 + 단어 카드. 언제 어떤 단어를 저장했는지 히스토리.</span>
+  </div>
+  <div class="dev q">
+    <div class="sc">
+      <div class="sb"><span class="sb-t">9:37</span><div class="sb-r"><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div>&nbsp;&nbsp;<div class="sb-pill"></div></div></div>
+      <div class="ani">
+        <div class="nav"><div class="nav-back">‹</div><div class="nav-title">1 Course Overview</div><div class="nav-sub">2 words</div></div>
+        <div class="book-bar"><div class="cover" style="width:44px;height:58px"><span>Co.</span></div><div class="bb-info"><div class="bb-title">1 Course Overview</div><div class="bb-sub">2 words across 1 day</div></div></div>
+        <div class="tl">
+          <div class="tl-group">
+            <div class="tl-date"><div class="tl-dot"></div><div class="tl-label">Today<small>Mar 25 · 2 words</small></div></div>
+            <div class="tl-cards">
+              <div class="tl-card"><span class="tc-word">FindingPrime</span><span class="tc-mean">소수 찾기</span></div>
+              <div class="tl-card"><span class="tc-word">Finding</span><span class="tc-mean">찾기</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ R — Swipe Cards Stack ═══ -->
+<div class="wrap">
+  <div class="lbl">Option R<span>Card Stack</span>
+    <span class="desc">카드 스택. 앞장에 단어 크게 + 뜻 + 문장. 뒤에 다음 카드 살짝 보임. Skip/Know 버튼. 플래시카드 진화형.</span>
+  </div>
+  <div class="dev r">
+    <div class="sc">
+      <div class="sb"><span class="sb-t">9:37</span><div class="sb-r"><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div>&nbsp;&nbsp;<div class="sb-pill"></div></div></div>
+      <div class="ani">
+        <div class="nav"><div class="nav-back">‹</div><div class="nav-title">1 Course Overview</div></div>
+        <div class="body">
+          <div class="book-line"><div class="cover" style="width:32px;height:42px;border-radius:6px"><span>Co.</span></div><span class="bl-text">2 words</span></div>
+          <div class="stack">
+            <div class="stack-card back" style="top:14px"><div class="sc-word" style="font-size:20px;opacity:.5">Finding</div></div>
+            <div class="stack-card front">
+              <div class="sc-badge">New · Page 4</div>
+              <div class="sc-word">FindingPrime</div>
+              <div class="sc-divider"></div>
+              <div class="sc-mean">소수 찾기</div>
+              <div class="sc-sentence">"The <em>FindingPrime</em> algorithm iterates through all integers..."</div>
+              <div class="sc-meta"><div class="sc-chip">Page 4</div><div class="sc-chip">2 hr ago</div></div>
+            </div>
+          </div>
+          <div class="dots"><div class="dot on"></div><div class="dot"></div></div>
+          <div class="dot-text">1 of 2</div>
+          <div class="actions"><button class="act skip">Still learning</button><button class="act know">I know this</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ S — Dual Pane ═══ -->
+<div class="wrap">
+  <div class="lbl">Option S<span>Word Chips + Detail</span>
+    <span class="desc">상단 책 정보 + 가로 스크롤 단어 칩. 아래에 선택 단어 상세(큰 단어+뜻+문장+액션). 칩으로 빠르게 전환.</span>
+  </div>
+  <div class="dev s">
+    <div class="sc">
+      <div class="sb"><span class="sb-t">9:37</span><div class="sb-r"><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div>&nbsp;&nbsp;<div class="sb-pill"></div></div></div>
+      <div class="ani">
+        <div class="nav"><div class="nav-back">‹</div><div class="nav-title">1 Course Overview</div></div>
+        <div class="book-bar"><div class="cover" style="width:40px;height:54px"><span>Co.</span></div><div class="bb-info"><div class="bb-title">1 Course Overview</div><div class="bb-sub">2 words · page 4</div></div></div>
+        <div class="divider"></div>
+        <div class="word-scroll">
+          <div class="ws-chip on">FindingPrime</div>
+          <div class="ws-chip">Finding</div>
+        </div>
+        <div class="detail">
+          <div class="d-word">FindingPrime</div>
+          <div class="d-mean">소수 찾기 — a function or algorithm used to determine whether a given number is a prime number</div>
+          <div class="d-sentence">"The <em>FindingPrime</em> algorithm iterates through all integers up to the square root of n."</div>
+          <div class="d-tags"><div class="d-tag page">Page 4</div><div class="d-tag new">New</div><div class="d-tag time">2 hr ago</div></div>
+          <div class="d-actions"><button class="d-btn know">I know this</button><button class="d-btn open">Open page</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ T — Kanban Columns ═══ -->
+<div class="wrap">
+  <div class="lbl">Option T<span>Kanban</span>
+    <span class="desc">Unknown / Known 두 열 칸반. 단어 카드를 드래그해서 열 이동. 트렐로 느낌. 상태 관리 직관적.</span>
+  </div>
+  <div class="dev t">
+    <div class="sc">
+      <div class="sb"><span class="sb-t">9:37</span><div class="sb-r"><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div>&nbsp;&nbsp;<div class="sb-pill"></div></div></div>
+      <div class="ani">
+        <div class="nav"><div class="nav-back">‹</div><div class="nav-title">1 Course Overview</div></div>
+        <div class="book-line"><div class="cover" style="width:36px;height:48px;border-radius:8px"><span>Co.</span></div><span class="bl-title">1 Course Overview</span><span class="bl-cnt">2 words</span></div>
+        <div class="cols">
+          <div class="col">
+            <div class="col-head">Unknown <span class="cnt amber">2</span></div>
+            <div class="col-cards">
+              <div class="cc"><div class="cc-word">FindingPrime</div><div class="cc-mean">소수 찾기</div></div>
+              <div class="cc"><div class="cc-word">Finding</div><div class="cc-mean">찾기</div></div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="col-head">Known <span class="cnt green">0</span></div>
+            <div class="col-cards">
+              <div style="font-size:12px;color:var(--muted);text-align:center;padding:20px 0">Drag words here<br>when you learn them</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

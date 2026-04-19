@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Today Card — More Concepts (Green=Learned)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    background: #e8e8ed;
+    padding: 40px 20px;
+    display: flex; flex-wrap: wrap; gap: 40px; justify-content: center;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .label { font-size: 12px; font-weight: 700; color: #888; letter-spacing: 1.5px; text-transform: uppercase; }
+  .card-frame {
+    width: 345px; background: #fff; border-radius: 22px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden;
+  }
+  :root {
+    --green: #1fad61; --blue: #5b8fb9; --orange: #e8a33a;
+    --t: #1a2534; --m: #6b7580; --l: #9ca3ab; --bd: #f0f1f3;
+  }
+
+  /* ══════ G — Dual Progress Stacked ══════ */
+  .concept-g .card { padding: 22px; }
+  .concept-g .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .concept-g .top h3 { font-size: 15px; font-weight: 800; color: var(--t); }
+  .concept-g .streak { font-size: 11px; font-weight: 700; color: var(--green); background: rgba(31,173,97,0.08); padding: 4px 10px; border-radius: 8px; }
+  .concept-g .nums { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
+  .concept-g .nums .big { font-size: 32px; font-weight: 900; color: var(--green); letter-spacing: -1px; }
+  .concept-g .nums .sep { font-size: 16px; color: var(--l); font-weight: 600; }
+  .concept-g .nums .total { font-size: 32px; font-weight: 900; color: var(--t); letter-spacing: -1px; }
+  .concept-g .nums .unit { font-size: 12px; color: var(--m); font-weight: 600; margin-left: 4px; }
+  .concept-g .sub-text { font-size: 11px; color: var(--m); margin-bottom: 12px; }
+  .concept-g .sub-text strong { color: var(--t); }
+  .concept-g .thick-bar { height: 10px; background: var(--bd); border-radius: 5px; overflow: hidden; margin-bottom: 14px; position: relative; }
+  .concept-g .thick-bar .fill { height: 100%; border-radius: 5px; background: linear-gradient(90deg, var(--green), #2ec872); }
+  .concept-g .divider { height: 1px; background: var(--bd); margin-bottom: 12px; }
+  .concept-g .reading { display: flex; align-items: center; gap: 10px; }
+  .concept-g .reading .icon { font-size: 14px; }
+  .concept-g .reading .info { flex: 1; }
+  .concept-g .reading .bar-label { display: flex; justify-content: space-between; font-size: 10px; font-weight: 600; margin-bottom: 3px; }
+  .concept-g .mini-bar { height: 4px; background: var(--bd); border-radius: 2px; overflow: hidden; }
+  .concept-g .mini-bar .fill { height: 100%; border-radius: 2px; background: var(--orange); }
+
+  /* ══════ H — Two-Tone Bar ══════ */
+  .concept-h .card { padding: 22px; }
+  .concept-h .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .concept-h .top h3 { font-size: 15px; font-weight: 800; color: var(--t); }
+  .concept-h .streak { font-size: 11px; font-weight: 700; color: var(--green); background: rgba(31,173,97,0.08); padding: 4px 10px; border-radius: 8px; }
+  .concept-h .row { display: flex; gap: 10px; margin-bottom: 14px; }
+  .concept-h .stat-pill {
+    flex: 1; display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px; border-radius: 12px; background: rgba(0,0,0,0.02);
+  }
+  .concept-h .stat-pill .num { font-size: 18px; font-weight: 800; }
+  .concept-h .stat-pill .lbl { font-size: 9px; font-weight: 600; color: var(--m); }
+  .concept-h .two-tone { position: relative; height: 12px; background: var(--bd); border-radius: 6px; overflow: hidden; margin-bottom: 6px; }
+  .concept-h .two-tone .saved-bg { position: absolute; top: 0; left: 0; height: 100%; background: rgba(91,143,185,0.2); border-radius: 6px; }
+  .concept-h .two-tone .learned-fill { position: absolute; top: 0; left: 0; height: 100%; background: var(--green); border-radius: 6px; }
+  .concept-h .legend { display: flex; gap: 14px; font-size: 9px; font-weight: 600; color: var(--m); margin-bottom: 14px; }
+  .concept-h .legend .d { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 3px; vertical-align: middle; }
+  .concept-h .reading-row { display: flex; align-items: center; gap: 8px; }
+  .concept-h .reading-row .lbl { font-size: 10px; font-weight: 600; color: var(--m); }
+  .concept-h .reading-row .bar { flex: 1; height: 5px; background: var(--bd); border-radius: 3px; overflow: hidden; }
+  .concept-h .reading-row .bar .fill { height: 100%; border-radius: 3px; background: var(--orange); }
+  .concept-h .reading-row .pct { font-size: 10px; font-weight: 700; color: var(--orange); }
+
+  /* ══════ I — Minimal Text + Bar ══════ */
+  .concept-i .card { padding: 22px; }
+  .concept-i .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .concept-i .top h3 { font-size: 15px; font-weight: 800; color: var(--t); }
+  .concept-i .streak { font-size: 11px; font-weight: 700; color: var(--green); background: rgba(31,173,97,0.08); padding: 4px 10px; border-radius: 8px; }
+  .concept-i .text-line { font-size: 13px; color: var(--m); line-height: 1.7; margin-bottom: 12px; }
+  .concept-i .text-line .g { color: var(--green); font-weight: 800; }
+  .concept-i .text-line .b { color: var(--blue); font-weight: 800; }
+  .concept-i .text-line .dark { color: var(--t); font-weight: 800; }
+  .concept-i .progress-block { margin-bottom: 10px; }
+  .concept-i .bar-top { display: flex; justify-content: space-between; font-size: 10px; font-weight: 600; margin-bottom: 5px; }
+  .concept-i .bar { height: 8px; background: rgba(91,143,185,0.12); border-radius: 4px; overflow: hidden; }
+  .concept-i .bar .fill { height: 100%; border-radius: 4px; background: var(--green); }
+  .concept-i .remain { font-size: 10px; color: var(--l); text-align: right; margin-top: 3px; }
+  .concept-i .reading-row { display: flex; align-items: center; gap: 8px; padding-top: 10px; border-top: 1px solid var(--bd); }
+  .concept-i .reading-row .lbl { font-size: 10px; font-weight: 600; color: var(--m); min-width: 70px; }
+  .concept-i .reading-row .bar { flex: 1; height: 4px; background: var(--bd); border-radius: 2px; overflow: hidden; }
+  .concept-i .reading-row .bar .fill { background: var(--orange); }
+  .concept-i .reading-row .pct { font-size: 10px; font-weight: 700; color: var(--m); width: 30px; text-align: right; }
+
+  /* ══════ J — Segmented Bar ══════ */
+  .concept-j .card { padding: 22px; }
+  .concept-j .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .concept-j .top h3 { font-size: 15px; font-weight: 800; color: var(--t); }
+  .concept-j .streak { font-size: 11px; font-weight: 700; color: var(--green); background: rgba(31,173,97,0.08); padding: 4px 10px; border-radius: 8px; }
+  .concept-j .stat-grid { display: flex; gap: 6px; margin-bottom: 14px; }
+  .concept-j .sg-item { flex: 1; text-align: center; padding: 8px 4px; border-radius: 10px; }
+  .concept-j .sg-item .num { font-size: 18px; font-weight: 800; }
+  .concept-j .sg-item .lbl { font-size: 8px; font-weight: 700; margin-top: 1px; }
+  .concept-j .sg-item.saved { background: rgba(91,143,185,0.06); }
+  .concept-j .sg-item.saved .num { color: var(--blue); }
+  .concept-j .sg-item.saved .lbl { color: var(--blue); }
+  .concept-j .sg-item.learned { background: rgba(31,173,97,0.06); }
+  .concept-j .sg-item.learned .num { color: var(--green); }
+  .concept-j .sg-item.learned .lbl { color: var(--green); }
+  .concept-j .sg-item.remain { background: rgba(0,0,0,0.02); }
+  .concept-j .sg-item.remain .num { color: var(--l); }
+  .concept-j .sg-item.remain .lbl { color: var(--l); }
+  .concept-j .seg-bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; margin-bottom: 6px; gap: 2px; }
+  .concept-j .seg-bar .seg { border-radius: 3px; }
+  .concept-j .seg-legend { display: flex; gap: 12px; font-size: 9px; font-weight: 600; color: var(--m); margin-bottom: 12px; }
+  .concept-j .seg-legend .d { width: 6px; height: 6px; border-radius: 2px; display: inline-block; margin-right: 3px; vertical-align: middle; }
+  .concept-j .reading-row { display: flex; align-items: center; gap: 8px; }
+  .concept-j .reading-row .lbl { font-size: 10px; font-weight: 600; color: var(--m); }
+  .concept-j .reading-row .bar { flex: 1; height: 5px; background: var(--bd); border-radius: 3px; overflow: hidden; }
+  .concept-j .reading-row .bar .fill { height: 100%; border-radius: 3px; background: var(--orange); }
+  .concept-j .reading-row .pct { font-size: 10px; font-weight: 700; color: var(--orange); }
+
+  /* ══════ K — Card in Card ══════ */
+  .concept-k .card { padding: 22px; }
+  .concept-k .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .concept-k .top h3 { font-size: 15px; font-weight: 800; color: var(--t); }
+  .concept-k .streak { font-size: 11px; font-weight: 700; color: var(--green); background: rgba(31,173,97,0.08); padding: 4px 10px; border-radius: 8px; }
+  .concept-k .inner {
+    background: linear-gradient(135deg, rgba(31,173,97,0.04), rgba(31,173,97,0.01));
+    border: 1px solid rgba(31,173,97,0.12);
+    border-radius: 16px; padding: 16px; margin-bottom: 12px;
+  }
+  .concept-k .inner-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .concept-k .inner-top .left { display: flex; align-items: baseline; gap: 4px; }
+  .concept-k .inner-top .left .big { font-size: 28px; font-weight: 900; color: var(--green); }
+  .concept-k .inner-top .left .of { font-size: 14px; color: var(--m); font-weight: 600; }
+  .concept-k .inner-top .tag { font-size: 10px; font-weight: 700; color: var(--green); background: rgba(31,173,97,0.1); padding: 3px 8px; border-radius: 6px; }
+  .concept-k .inner-bar { height: 8px; background: rgba(31,173,97,0.1); border-radius: 4px; overflow: hidden; margin-bottom: 6px; }
+  .concept-k .inner-bar .fill { height: 100%; border-radius: 4px; background: var(--green); }
+  .concept-k .inner-hint { font-size: 10px; color: var(--m); }
+  .concept-k .inner-hint strong { color: var(--t); }
+  .concept-k .saved-line {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px; background: rgba(91,143,185,0.05);
+    border-radius: 10px; margin-bottom: 10px;
+  }
+  .concept-k .saved-line .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--blue); flex-shrink: 0; }
+  .concept-k .saved-line span { font-size: 11px; font-weight: 600; color: var(--m); }
+  .concept-k .saved-line strong { color: var(--blue); font-weight: 800; }
+  .concept-k .reading-row { display: flex; align-items: center; gap: 8px; }
+  .concept-k .reading-row .lbl { font-size: 10px; font-weight: 600; color: var(--m); }
+  .concept-k .reading-row .bar { flex: 1; height: 5px; background: var(--bd); border-radius: 3px; overflow: hidden; }
+  .concept-k .reading-row .bar .fill { height: 100%; border-radius: 3px; background: var(--orange); }
+  .concept-k .reading-row .pct { font-size: 10px; font-weight: 700; color: var(--orange); }
+
+  /* ══════ L — Donut + List ══════ */
+  .concept-l .card { padding: 22px; }
+  .concept-l .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .concept-l .top h3 { font-size: 15px; font-weight: 800; color: var(--t); }
+  .concept-l .streak { font-size: 11px; font-weight: 700; color: var(--green); background: rgba(31,173,97,0.08); padding: 4px 10px; border-radius: 8px; }
+  .concept-l .main { display: flex; gap: 18px; align-items: center; }
+  .concept-l .donut-area { position: relative; width: 90px; height: 90px; flex-shrink: 0; }
+  .concept-l .donut-bg {
+    width: 90px; height: 90px; border-radius: 50%;
+    background: conic-gradient(var(--green) 0% 15%, rgba(91,143,185,0.2) 15% 100%);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .concept-l .donut-hole {
+    width: 62px; height: 62px; border-radius: 50%; background: #fff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .concept-l .donut-hole .pct { font-size: 18px; font-weight: 900; color: var(--green); }
+  .concept-l .donut-hole .lbl { font-size: 8px; font-weight: 600; color: var(--m); }
+  .concept-l .list { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+  .concept-l .list-item { display: flex; align-items: center; gap: 8px; }
+  .concept-l .list-item .dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+  .concept-l .list-item .info { flex: 1; font-size: 12px; color: var(--m); }
+  .concept-l .list-item .val { font-size: 14px; font-weight: 800; }
+</style>
+</head>
+<body>
+
+<!-- G — Big Num + Thick Bar -->
+<div class="wrap concept-g">
+  <div class="label">G — Hero Number</div>
+  <div class="card-frame"><div class="card">
+    <div class="top"><h3>오늘</h3><div class="streak">3 일 연속</div></div>
+    <div class="nums">
+      <span class="big">5</span>
+      <span class="sep">/</span>
+      <span class="total">32</span>
+      <span class="unit">학습 완료</span>
+    </div>
+    <div class="sub-text"><strong>27</strong>개 남은 학습</div>
+    <div class="thick-bar"><div class="fill" style="width:15%"></div></div>
+    <div class="divider"></div>
+    <div class="reading">
+      <span class="icon">⏱</span>
+      <div class="info">
+        <div class="bar-label"><span style="color:var(--m)">읽기 11/20분</span><span style="color:var(--orange)">55%</span></div>
+        <div class="mini-bar"><div class="fill" style="width:55%"></div></div>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- H — Two-Tone Overlay -->
+<div class="wrap concept-h">
+  <div class="label">H — Two-Tone Bar</div>
+  <div class="card-frame"><div class="card">
+    <div class="top"><h3>오늘</h3><div class="streak">3 일 연속</div></div>
+    <div class="row">
+      <div class="stat-pill">
+        <div><div class="num" style="color:var(--blue)">32</div><div class="lbl">저장</div></div>
+      </div>
+      <div class="stat-pill">
+        <div><div class="num" style="color:var(--green)">5</div><div class="lbl">학습 완료</div></div>
+      </div>
+      <div class="stat-pill">
+        <div><div class="num" style="color:var(--l)">27</div><div class="lbl">남음</div></div>
+      </div>
+    </div>
+    <div class="two-tone">
+      <div class="saved-bg" style="width:100%"></div>
+      <div class="learned-fill" style="width:15%"></div>
+    </div>
+    <div class="legend">
+      <span><span class="d" style="background:var(--green)"></span>학습 완료 5</span>
+      <span><span class="d" style="background:rgba(91,143,185,0.25)"></span>남은 학습 27</span>
+    </div>
+    <div class="reading-row">
+      <span class="lbl">⏱ 읽기 11/20분</span>
+      <div class="bar"><div class="fill" style="width:55%"></div></div>
+      <span class="pct">55%</span>
+    </div>
+  </div></div>
+</div>
+
+<!-- I — Minimal Text -->
+<div class="wrap concept-i">
+  <div class="label">I — Minimal Text</div>
+  <div class="card-frame"><div class="card">
+    <div class="top"><h3>오늘</h3><div class="streak">3 일 연속</div></div>
+    <div class="text-line">
+      <span class="b">32</span>개 저장 · <span class="g">5</span>개 학습 완료 · <span class="dark">27</span>개 남음
+    </div>
+    <div class="progress-block">
+      <div class="bar-top"><span style="color:var(--m)">학습 진행률</span><span style="color:var(--green)">5/32 · 15%</span></div>
+      <div class="bar"><div class="fill" style="width:15%"></div></div>
+      <div class="remain">27개 더 학습하면 완료</div>
+    </div>
+    <div class="reading-row">
+      <span class="lbl">⏱ 읽기 11/20분</span>
+      <div class="bar"><div class="fill" style="width:55%"></div></div>
+      <span class="pct">55%</span>
+    </div>
+  </div></div>
+</div>
+
+<!-- J — Segmented Bar -->
+<div class="wrap concept-j">
+  <div class="label">J — Segment Bar</div>
+  <div class="card-frame"><div class="card">
+    <div class="top"><h3>오늘</h3><div class="streak">3 일 연속</div></div>
+    <div class="stat-grid">
+      <div class="sg-item saved"><div class="num">32</div><div class="lbl">저장</div></div>
+      <div class="sg-item learned"><div class="num">5</div><div class="lbl">학습 완료</div></div>
+      <div class="sg-item remain"><div class="num">27</div><div class="lbl">남음</div></div>
+    </div>
+    <div class="seg-bar">
+      <div class="seg" style="flex:5;background:var(--green)"></div>
+      <div class="seg" style="flex:27;background:rgba(91,143,185,0.15)"></div>
+    </div>
+    <div class="seg-legend">
+      <span><span class="d" style="background:var(--green)"></span>학습 완료</span>
+      <span><span class="d" style="background:rgba(91,143,185,0.2)"></span>남은 학습</span>
+    </div>
+    <div class="reading-row">
+      <span class="lbl">⏱ 읽기 11/20분</span>
+      <div class="bar"><div class="fill" style="width:55%"></div></div>
+      <span class="pct">55%</span>
+    </div>
+  </div></div>
+</div>
+
+<!-- K — Card in Card -->
+<div class="wrap concept-k">
+  <div class="label">K — Nested Card</div>
+  <div class="card-frame"><div class="card">
+    <div class="top"><h3>오늘</h3><div class="streak">3 일 연속</div></div>
+    <div class="inner">
+      <div class="inner-top">
+        <div class="left">
+          <span class="big">5</span><span class="of">/ 32</span>
+        </div>
+        <div class="tag">15% 완료</div>
+      </div>
+      <div class="inner-bar"><div class="fill" style="width:15%"></div></div>
+      <div class="inner-hint"><strong>27</strong>개 더 학습하면 오늘 단어 완료</div>
+    </div>
+    <div class="saved-line">
+      <div class="dot"></div>
+      <span>오늘 <strong>32</strong>개 단어 저장</span>
+    </div>
+    <div class="reading-row">
+      <span class="lbl">⏱ 읽기 11/20분</span>
+      <div class="bar"><div class="fill" style="width:55%"></div></div>
+      <span class="pct">55%</span>
+    </div>
+  </div></div>
+</div>
+
+<!-- L — Donut -->
+<div class="wrap concept-l">
+  <div class="label">L — Donut Chart</div>
+  <div class="card-frame"><div class="card">
+    <div class="top"><h3>오늘</h3><div class="streak">3 일 연속</div></div>
+    <div class="main">
+      <div class="donut-area">
+        <div class="donut-bg">
+          <div class="donut-hole">
+            <div class="pct">15%</div>
+            <div class="lbl">학습 완료</div>
+          </div>
+        </div>
+      </div>
+      <div class="list">
+        <div class="list-item">
+          <div class="dot" style="background:var(--blue)"></div>
+          <span class="info">저장</span>
+          <span class="val" style="color:var(--blue)">32</span>
+        </div>
+        <div class="list-item">
+          <div class="dot" style="background:var(--green)"></div>
+          <span class="info">학습 완료</span>
+          <span class="val" style="color:var(--green)">5</span>
+        </div>
+        <div class="list-item">
+          <div class="dot" style="background:var(--bd)"></div>
+          <span class="info">남은 학습</span>
+          <span class="val" style="color:var(--l)">27</span>
+        </div>
+        <div class="list-item">
+          <div class="dot" style="background:var(--orange)"></div>
+          <span class="info">읽기</span>
+          <span class="val" style="color:var(--orange)">11분</span>
+        </div>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+</body>
+</html>

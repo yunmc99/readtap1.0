@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReadTap Premium Comparison Concepts 2</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    background: #0a0a0a;
+    color: #fff;
+    min-height: 100vh;
+    padding: 40px 20px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: #666;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 40px;
+  }
+  .concept-label {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #555;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin: 60px 0 24px;
+    padding-top: 40px;
+    border-top: 1px solid #1a1a1a;
+  }
+  .concept-label:first-of-type { border-top: none; margin-top: 20px; }
+  .concept-title {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 700;
+    color: #eee;
+    margin-bottom: 8px;
+  }
+  .concept-desc {
+    text-align: center;
+    font-size: 13px;
+    color: #777;
+    margin-bottom: 32px;
+    max-width: 380px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.5;
+  }
+  .phone {
+    width: 375px;
+    height: 760px;
+    margin: 0 auto;
+    border-radius: 44px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .phone-screen {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .phone-screen::-webkit-scrollbar { display: none; }
+  .status-bar {
+    height: 54px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  .close-btn {
+    position: absolute;
+    top: 56px;
+    right: 20px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    z-index: 30;
+  }
+
+  /* Shared */
+  .pos-badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    margin-right: 3px;
+  }
+  .syn-chip {
+    display: inline-block;
+    font-size: 8px;
+    font-weight: 600;
+    padding: 3px 7px;
+    border-radius: 4px;
+  }
+
+  /* ==================== CONCEPT E — Stacked Flip ==================== */
+  .concept-e .phone-screen {
+    background: linear-gradient(180deg, #FAFAF7 0%, #F3F1EC 100%);
+  }
+  .concept-e .status-bar { color: #1a1a1a; background: #FAFAF7; }
+  .concept-e .close-btn { background: rgba(0,0,0,0.06); color: #999; }
+
+  .flip-header {
+    text-align: center;
+    padding: 16px 24px 20px;
+  }
+  .flip-header .icon-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .flip-icon-box {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+  .flip-icon-box.old { background: #f0efeb; }
+  .flip-icon-box.new { background: linear-gradient(135deg, rgba(31,173,97,0.15), rgba(31,173,97,0.05)); }
+  .flip-arrow { font-size: 16px; color: #1FAD61; }
+  .flip-header h2 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1a1a1a;
+    line-height: 1.3;
+  }
+  .flip-header h2 em { font-style: normal; color: #1FAD61; }
+  .flip-header p {
+    font-size: 12px;
+    color: #999;
+    margin-top: 4px;
+  }
+
+  .flip-stack {
+    padding: 0 20px;
+    position: relative;
+  }
+
+  /* The "before" card — slightly rotated, behind */
+  .flip-card-behind {
+    background: #fff;
+    border: 1px solid #e8e5e0;
+    border-radius: 18px;
+    padding: 16px 18px;
+    transform: rotate(-1.5deg) translateY(8px);
+    position: relative;
+    z-index: 1;
+    opacity: 0.6;
+  }
+  .flip-card-behind .fc-label {
+    font-size: 9px;
+    font-weight: 700;
+    color: #ccc;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .flip-card-behind .fc-word {
+    font-size: 18px;
+    font-weight: 800;
+    color: #bbb;
+    margin-bottom: 6px;
+  }
+  .flip-card-behind .fc-meaning {
+    font-size: 11px;
+    color: #ccc;
+    line-height: 1.5;
+  }
+  .flip-card-behind .fc-btn-row {
+    margin-top: 8px;
+    display: flex;
+    gap: 6px;
+  }
+  .flip-card-behind .fc-btn {
+    font-size: 9px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 5px;
+    background: #f5f5f3;
+    color: #ccc;
+  }
+
+  /* The "after" card — on top, prominent */
+  .flip-card-front {
+    background: #fff;
+    border: 1.5px solid rgba(31,173,97,0.2);
+    border-radius: 18px;
+    padding: 18px;
+    position: relative;
+    z-index: 2;
+    margin-top: -30px;
+    transform: rotate(0.5deg);
+    box-shadow: 0 8px 30px rgba(31,173,97,0.1), 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .flip-card-front .fc-label {
+    font-size: 9px;
+    font-weight: 700;
+    color: #1FAD61;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .flip-card-front .fc-word {
+    font-size: 20px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+  }
+  .flip-card-front .fc-pos-row {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+  .flip-card-front .pos-badge.noun { background: rgba(31,173,97,0.1); color: #1FAD61; }
+  .flip-card-front .pos-badge.verb { background: rgba(64,168,222,0.1); color: #40A8DE; }
+  .flip-card-front .fc-meaning {
+    font-size: 12px;
+    color: #444;
+    line-height: 1.6;
+    margin-bottom: 10px;
+  }
+  .flip-card-front .fc-sentence {
+    background: rgba(31,173,97,0.04);
+    border: 0.5px solid rgba(31,173,97,0.12);
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+  }
+  .flip-card-front .fc-sentence-label {
+    font-size: 8px;
+    font-weight: 700;
+    color: #1FAD61;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+  .flip-card-front .fc-sentence-text {
+    font-size: 10px;
+    color: #777;
+    line-height: 1.5;
+  }
+  .flip-card-front .fc-sentence-text b { color: #1FAD61; font-weight: 700; }
+
+  .flip-card-front .fc-syn-section {
+    padding-top: 8px;
+    border-top: 1px solid #f0f0ee;
+  }
+  .flip-card-front .fc-syn-label {
+    font-size: 8px;
+    font-weight: 700;
+    color: #aaa;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+  .flip-card-front .fc-syn-chips {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .flip-card-front .syn-chip.green {
+    background: rgba(31,173,97,0.06);
+    color: #1FAD61;
+    border: 0.5px solid rgba(31,173,97,0.15);
+  }
+  .flip-card-front .syn-chip.red {
+    background: rgba(222,100,64,0.06);
+    color: #c45a30;
+    border: 0.5px solid rgba(222,100,64,0.15);
+  }
+
+  .flip-card-front .fc-btn-row {
+    margin-top: 10px;
+    display: flex;
+    gap: 6px;
+  }
+  .flip-card-front .fc-btn {
+    font-size: 9px;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 6px;
+  }
+  .flip-card-front .fc-btn.accent {
+    background: rgba(31,173,97,0.1);
+    color: #1FAD61;
+  }
+
+  .flip-stats {
+    display: flex;
+    gap: 8px;
+    padding: 20px 20px 0;
+  }
+  .flip-stat {
+    flex: 1;
+    background: #fff;
+    border: 1px solid #e8e5e0;
+    border-radius: 14px;
+    padding: 14px;
+    text-align: center;
+  }
+  .flip-stat .fs-num {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1FAD61;
+  }
+  .flip-stat .fs-label {
+    font-size: 9px;
+    color: #999;
+    font-weight: 600;
+    margin-top: 2px;
+  }
+
+  .flip-cta {
+    padding: 20px 24px;
+    text-align: center;
+  }
+  .flip-cta-btn {
+    width: 100%;
+    padding: 15px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #1FAD61, #17935A);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    box-shadow: 0 4px 16px rgba(31,173,97,0.3);
+    margin-bottom: 8px;
+  }
+  .flip-cta-hint {
+    font-size: 10px;
+    color: #bbb;
+  }
+
+
+  /* ==================== CONCEPT F — Feature Showcase Carousel ==================== */
+  .concept-f .phone-screen {
+    background: linear-gradient(180deg, #F6F5F2 0%, #EFEДЕ8 100%);
+  }
+  .concept-f .status-bar { color: #1a1a1a; background: #F6F5F2; }
+  .concept-f .close-btn { background: rgba(0,0,0,0.06); color: #999; }
+
+  .carousel-header {
+    text-align: center;
+    padding: 16px 24px 16px;
+  }
+  .carousel-header h2 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1a1a1a;
+    line-height: 1.3;
+  }
+  .carousel-header h2 em { font-style: normal; color: #1FAD61; }
+  .carousel-header p {
+    font-size: 12px;
+    color: #999;
+    margin-top: 4px;
+  }
+
+  .carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .carousel-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ddd;
+  }
+  .carousel-dot.active {
+    width: 20px;
+    border-radius: 3px;
+    background: #1FAD61;
+  }
+
+  .feature-showcase {
+    padding: 0 20px;
+  }
+  .showcase-card {
+    background: #fff;
+    border-radius: 20px;
+    border: 1px solid #e8e5e0;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  .showcase-top {
+    padding: 16px 18px;
+    display: flex;
+    gap: 10px;
+  }
+  .showcase-before, .showcase-after {
+    flex: 1;
+    border-radius: 12px;
+    padding: 12px;
+  }
+  .showcase-before {
+    background: #faf9f6;
+    border: 1px solid #eee;
+  }
+  .showcase-after {
+    background: linear-gradient(135deg, rgba(31,173,97,0.05), rgba(31,173,97,0.01));
+    border: 1px solid rgba(31,173,97,0.15);
+  }
+  .showcase-tag {
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .showcase-tag.before-tag { color: #ccc; }
+  .showcase-tag.after-tag { color: #1FAD61; }
+
+  .showcase-word {
+    font-size: 13px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+  }
+  .showcase-text {
+    font-size: 9px;
+    line-height: 1.5;
+  }
+  .showcase-text.muted { color: #bbb; }
+  .showcase-text.rich { color: #555; }
+
+  .showcase-mid-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    flex-shrink: 0;
+    width: 20px;
+    font-size: 12px;
+    color: #1FAD61;
+  }
+
+  .showcase-bottom {
+    background: rgba(31,173,97,0.03);
+    border-top: 1px solid rgba(31,173,97,0.08);
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .showcase-bottom-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(31,173,97,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .showcase-bottom-text .sbt-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a1a1a;
+  }
+  .showcase-bottom-text .sbt-sub {
+    font-size: 10px;
+    color: #999;
+    margin-top: 1px;
+  }
+
+  /* Additional feature cards (compact) */
+  .more-features {
+    padding: 0 20px;
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .more-feat-card {
+    flex: 1;
+    background: #fff;
+    border: 1px solid #e8e5e0;
+    border-radius: 14px;
+    padding: 14px;
+    text-align: center;
+  }
+  .more-feat-card .mf-icon {
+    font-size: 20px;
+    margin-bottom: 6px;
+  }
+  .more-feat-card .mf-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 2px;
+  }
+  .more-feat-card .mf-sub {
+    font-size: 9px;
+    color: #999;
+    line-height: 1.3;
+  }
+
+  .carousel-cta {
+    padding: 8px 24px 20px;
+    text-align: center;
+  }
+  .carousel-cta-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #1FAD61, #17935A);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    box-shadow: 0 4px 16px rgba(31,173,97,0.3);
+    margin-bottom: 6px;
+  }
+  .carousel-cta-sub {
+    font-size: 10px;
+    color: #bbb;
+  }
+
+
+  /* ==================== CONCEPT G — Chat Bubble Style ==================== */
+  .concept-g .phone-screen {
+    background: linear-gradient(180deg, #F7F6F3 0%, #F0EEE9 100%);
+  }
+  .concept-g .status-bar { color: #1a1a1a; background: #F7F6F3; }
+  .concept-g .close-btn { background: rgba(0,0,0,0.06); color: #999; }
+
+  .chat-header {
+    text-align: center;
+    padding: 16px 24px 20px;
+  }
+  .chat-header h2 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1a1a1a;
+    line-height: 1.3;
+  }
+  .chat-header h2 em { font-style: normal; color: #1FAD61; }
+  .chat-header p {
+    font-size: 12px;
+    color: #999;
+    margin-top: 4px;
+  }
+
+  .chat-conversation {
+    padding: 0 16px;
+  }
+  .chat-row {
+    display: flex;
+    margin-bottom: 8px;
+  }
+  .chat-row.user { justify-content: flex-end; }
+  .chat-row.system { justify-content: flex-start; }
+
+  .chat-bubble {
+    max-width: 260px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    position: relative;
+  }
+  .chat-bubble.user-bubble {
+    background: #1FAD61;
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+  .chat-bubble.user-bubble .cb-text {
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .chat-bubble.user-bubble .cb-sub {
+    font-size: 9px;
+    opacity: 0.7;
+    margin-top: 2px;
+  }
+
+  .chat-bubble.free-bubble {
+    background: #fff;
+    border: 1px solid #e8e5e0;
+    border-bottom-left-radius: 4px;
+  }
+  .chat-bubble.premium-bubble {
+    background: linear-gradient(135deg, rgba(31,173,97,0.06), #fff);
+    border: 1.5px solid rgba(31,173,97,0.2);
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 2px 12px rgba(31,173,97,0.08);
+  }
+
+  .cb-tag {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .cb-tag.free-tag { color: #ccc; }
+  .cb-tag.prem-tag { color: #1FAD61; }
+
+  .cb-word {
+    font-size: 16px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+  }
+  .cb-meaning {
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .cb-meaning.muted { color: #999; }
+  .cb-meaning.rich { color: #444; }
+
+  .cb-extra {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(31,173,97,0.1);
+  }
+  .cb-extra-label {
+    font-size: 7px;
+    font-weight: 700;
+    color: #1FAD61;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .cb-extra-chips {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap;
+  }
+  .cb-chip {
+    font-size: 8px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .cb-chip.syn { background: rgba(31,173,97,0.08); color: #1FAD61; }
+  .cb-chip.ant { background: rgba(222,100,64,0.08); color: #c45a30; }
+
+  .cb-sentence-box {
+    background: rgba(31,173,97,0.04);
+    border-radius: 6px;
+    padding: 6px 8px;
+    margin-top: 6px;
+  }
+  .cb-sentence-box .cbs-label {
+    font-size: 7px;
+    font-weight: 700;
+    color: #1FAD61;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .cb-sentence-box .cbs-text {
+    font-size: 9px;
+    color: #777;
+    line-height: 1.5;
+  }
+  .cb-sentence-box .cbs-text b { color: #1FAD61; font-weight: 700; }
+
+  .chat-upgrade-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+  }
+  .chat-upgrade-divider .line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(31,173,97,0.2), transparent);
+  }
+  .chat-upgrade-divider .label {
+    font-size: 9px;
+    font-weight: 700;
+    color: #1FAD61;
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+
+  .chat-cta {
+    padding: 16px 20px 24px;
+    text-align: center;
+  }
+  .chat-cta-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #1FAD61, #17935A);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    box-shadow: 0 4px 16px rgba(31,173,97,0.3);
+    margin-bottom: 6px;
+  }
+  .chat-cta-hint {
+    font-size: 10px;
+    color: #bbb;
+  }
+
+
+  /* ==================== CONCEPT H — Magnifying Glass / Zoom ==================== */
+  .concept-h .phone-screen {
+    background: #111;
+  }
+  .concept-h .status-bar { color: #fff; background: #111; }
+  .concept-h .close-btn { background: rgba(255,255,255,0.08); color: #666; }
+
+  .zoom-header {
+    text-align: center;
+    padding: 16px 24px 20px;
+  }
+  .zoom-header h2 {
+    font-size: 24px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.3;
+  }
+  .zoom-header h2 em {
+    font-style: normal;
+    background: linear-gradient(135deg, #1FAD61, #4AE68A);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .zoom-header p {
+    font-size: 12px;
+    color: #555;
+    margin-top: 6px;
+  }
+
+  .zoom-container {
+    padding: 0 16px;
+    position: relative;
+  }
+
+  /* Fake reader background */
+  .fake-reader {
+    background: rgba(255,255,255,0.03);
+    border-radius: 16px;
+    padding: 20px 16px;
+    font-size: 12px;
+    color: #444;
+    line-height: 2;
+    position: relative;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .fake-reader .highlight-word {
+    background: rgba(31,173,97,0.2);
+    color: #4AE68A;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* Free popup (small, dimmed) */
+  .zoom-free-popup {
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%) scale(0.9);
+    background: rgba(30,30,30,0.95);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    padding: 12px 14px;
+    width: 200px;
+    opacity: 0.4;
+    z-index: 2;
+  }
+  .zoom-free-popup .zfp-label {
+    font-size: 8px;
+    font-weight: 700;
+    color: #555;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .zoom-free-popup .zfp-word {
+    font-size: 15px;
+    font-weight: 800;
+    color: #888;
+    margin-bottom: 4px;
+  }
+  .zoom-free-popup .zfp-meaning {
+    font-size: 10px;
+    color: #666;
+    line-height: 1.5;
+  }
+
+  /* Premium popup (large, glowing, overlapping) */
+  .zoom-premium-popup {
+    position: relative;
+    margin-top: -20px;
+    background: rgba(20,20,20,0.98);
+    border: 1.5px solid rgba(31,173,97,0.3);
+    border-radius: 18px;
+    padding: 18px;
+    z-index: 5;
+    box-shadow:
+      0 0 40px rgba(31,173,97,0.12),
+      0 8px 30px rgba(0,0,0,0.3);
+  }
+  .zoom-premium-popup .zpp-label {
+    font-size: 8px;
+    font-weight: 700;
+    color: #1FAD61;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .zoom-premium-popup .zpp-word {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 6px;
+  }
+  .zoom-premium-popup .zpp-pos {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+  .zoom-premium-popup .zpp-pos .pos-badge {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 5px;
+  }
+  .zoom-premium-popup .pos-badge.noun { background: rgba(31,173,97,0.15); color: #4AE68A; }
+  .zoom-premium-popup .pos-badge.adj { background: rgba(180,109,72,0.15); color: #e8a87c; }
+  .zoom-premium-popup .zpp-meaning {
+    font-size: 13px;
+    color: #ccc;
+    line-height: 1.6;
+    margin-bottom: 10px;
+  }
+  .zoom-premium-popup .zpp-sentence {
+    background: rgba(31,173,97,0.06);
+    border: 0.5px solid rgba(31,173,97,0.15);
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+  }
+  .zoom-premium-popup .zpp-sentence-label {
+    font-size: 7px;
+    font-weight: 700;
+    color: #1FAD61;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+  .zoom-premium-popup .zpp-sentence-text {
+    font-size: 10px;
+    color: #888;
+    line-height: 1.5;
+  }
+  .zoom-premium-popup .zpp-sentence-text b { color: #4AE68A; font-weight: 700; }
+
+  .zoom-premium-popup .zpp-syn {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+  }
+  .zoom-premium-popup .zpp-syn-label {
+    font-size: 8px;
+    font-weight: 700;
+    color: #555;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    width: 100%;
+  }
+  .zoom-premium-popup .syn-chip.g {
+    background: rgba(31,173,97,0.1);
+    color: #4AE68A;
+    border: 0.5px solid rgba(31,173,97,0.2);
+    font-size: 9px;
+    padding: 3px 8px;
+    border-radius: 5px;
+  }
+  .zoom-premium-popup .syn-chip.r {
+    background: rgba(222,100,64,0.1);
+    color: #e88a5a;
+    border: 0.5px solid rgba(222,100,64,0.2);
+    font-size: 9px;
+    padding: 3px 8px;
+    border-radius: 5px;
+  }
+
+  .zoom-cta {
+    padding: 20px 20px;
+    text-align: center;
+  }
+  .zoom-cta-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #1FAD61, #17935A);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    box-shadow: 0 4px 24px rgba(31,173,97,0.35);
+    margin-bottom: 8px;
+  }
+  .zoom-cta-sub {
+    font-size: 10px;
+    color: #444;
+  }
+</style>
+</head>
+<body>
+
+<h1>ReadTap Premium — Concepts Round 2</h1>
+
+<!-- ===================== CONCEPT E ===================== -->
+<div class="concept-label">CONCEPT E</div>
+<div class="concept-title">Stacked Cards</div>
+<div class="concept-desc">Free 팝업 카드 위에 Premium 팝업 카드가 겹쳐 올라오는 구조. 물리적으로 "업그레이드" 느낌을 줌</div>
+
+<div class="phone concept-e">
+  <div class="phone-screen">
+    <div class="status-bar">9:41</div>
+    <div class="close-btn">✕</div>
+
+    <div class="flip-header">
+      <div class="icon-row">
+        <div class="flip-icon-box old">📖</div>
+        <div class="flip-arrow">→</div>
+        <div class="flip-icon-box new">✨</div>
+      </div>
+      <h2>같은 단어,<br>완전히 다른 <em>경험</em></h2>
+      <p>Premium 팝업은 이만큼 달라요</p>
+    </div>
+
+    <div class="flip-stack">
+      <!-- Behind card (free) -->
+      <div class="flip-card-behind">
+        <div class="fc-label">현재 팝업</div>
+        <div class="fc-word">meticulous</div>
+        <div class="fc-meaning">꼼꼼한, 세심한</div>
+        <div class="fc-btn-row">
+          <div class="fc-btn">📖 저장</div>
+        </div>
+      </div>
+
+      <!-- Front card (premium) -->
+      <div class="flip-card-front">
+        <div class="fc-label">✦ Premium 팝업</div>
+        <div class="fc-word">meticulous</div>
+        <div class="fc-pos-row">
+          <span class="pos-badge noun" style="background:rgba(180,109,72,0.1);color:#B46D48">Adjective</span>
+        </div>
+        <div class="fc-meaning">
+          매우 주의를 기울이는; 세부 사항에 대해 극도로 정확하고 신중한
+        </div>
+        <div class="fc-sentence">
+          <div class="fc-sentence-label">문장 번역</div>
+          <div class="fc-sentence-text">She was <b>meticulous</b> in her research → 그녀는 연구에 <b>매우 꼼꼼</b>했다</div>
+        </div>
+        <div class="fc-syn-section">
+          <div class="fc-syn-label">Synonyms</div>
+          <div class="fc-syn-chips">
+            <span class="syn-chip green">thorough</span>
+            <span class="syn-chip green">precise</span>
+            <span class="syn-chip green">careful</span>
+            <span class="syn-chip green">diligent</span>
+          </div>
+        </div>
+        <div class="fc-syn-section" style="border-top:1px solid #f0f0ee;margin-top:8px;padding-top:8px">
+          <div class="fc-syn-label">Antonyms</div>
+          <div class="fc-syn-chips">
+            <span class="syn-chip red">careless</span>
+            <span class="syn-chip red">sloppy</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flip-stats">
+      <div class="flip-stat">
+        <div class="fs-num">4×</div>
+        <div class="fs-label">더 많은 정보</div>
+      </div>
+      <div class="flip-stat">
+        <div class="fs-num">2</div>
+        <div class="fs-label">페이지 팝업</div>
+      </div>
+      <div class="flip-stat">
+        <div class="fs-num">∞</div>
+        <div class="fs-label">유의어·반의어</div>
+      </div>
+    </div>
+
+    <div class="flip-cta">
+      <button class="flip-cta-btn">7일 무료 체험 시작</button>
+      <div class="flip-cta-hint">무료 체험 · 자동 결제 없음</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================== CONCEPT F ===================== -->
+<div class="concept-label">CONCEPT F</div>
+<div class="concept-title">Feature Showcase</div>
+<div class="concept-desc">각 Premium 기능을 카드 형태로 하나씩 보여주면서 before/after를 미니 비교로 포함</div>
+
+<div class="phone concept-f">
+  <div class="phone-screen">
+    <div class="status-bar">9:41</div>
+    <div class="close-btn">✕</div>
+
+    <div class="carousel-header">
+      <h2>단어 검색이<br><em>이렇게</em> 달라져요</h2>
+      <p>Premium이 제공하는 3가지 핵심 기능</p>
+    </div>
+
+    <!-- Feature 1: Accurate Meaning -->
+    <div class="feature-showcase">
+      <div class="showcase-card">
+        <div class="showcase-top">
+          <div class="showcase-before">
+            <div class="showcase-tag before-tag">현재</div>
+            <div class="showcase-word">nostalgia</div>
+            <div class="showcase-text muted">향수, 그리움</div>
+          </div>
+          <div class="showcase-mid-arrow">→</div>
+          <div class="showcase-after">
+            <div class="showcase-tag after-tag">✦ Premium</div>
+            <div class="showcase-word">nostalgia</div>
+            <div style="margin-bottom:3px">
+              <span class="pos-badge" style="font-size:7px;background:rgba(31,173,97,0.1);color:#1FAD61">Noun</span>
+            </div>
+            <div class="showcase-text rich">과거에 대한 감상적인 그리움; 행복했던 시절로 돌아가고 싶은 마음</div>
+          </div>
+        </div>
+        <div class="showcase-bottom">
+          <div class="showcase-bottom-icon">✨</div>
+          <div class="showcase-bottom-text">
+            <div class="sbt-title">AI 정확 번역</div>
+            <div class="sbt-sub">문맥에 맞는 자연스러운 뜻풀이</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 2: Sentence Translation -->
+      <div class="showcase-card">
+        <div class="showcase-top">
+          <div class="showcase-before">
+            <div class="showcase-tag before-tag">현재</div>
+            <div class="showcase-text muted" style="padding:8px 0;text-align:center;font-size:10px">문장 번역 없음</div>
+          </div>
+          <div class="showcase-mid-arrow">→</div>
+          <div class="showcase-after">
+            <div class="showcase-tag after-tag">✦ Premium</div>
+            <div style="background:rgba(31,173,97,0.04);border-radius:6px;padding:6px 8px;margin-top:2px">
+              <div style="font-size:7px;font-weight:700;color:#1FAD61;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px">문장 번역</div>
+              <div style="font-size:8px;color:#777;line-height:1.5">A wave of <b style="color:#1FAD61">nostalgia</b> washed over him → <b style="color:#1FAD61">향수</b>가 그를 휩쓸었다</div>
+            </div>
+          </div>
+        </div>
+        <div class="showcase-bottom">
+          <div class="showcase-bottom-icon">📝</div>
+          <div class="showcase-bottom-text">
+            <div class="sbt-title">문장 번역</div>
+            <div class="sbt-sub">단어가 포함된 문장도 함께 번역</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 3: Synonyms -->
+      <div class="showcase-card">
+        <div class="showcase-top">
+          <div class="showcase-before">
+            <div class="showcase-tag before-tag">현재</div>
+            <div class="showcase-text muted" style="padding:8px 0;text-align:center;font-size:10px">유의어 없음</div>
+          </div>
+          <div class="showcase-mid-arrow">→</div>
+          <div class="showcase-after">
+            <div class="showcase-tag after-tag">✦ Premium</div>
+            <div style="margin-top:4px">
+              <div style="font-size:7px;font-weight:700;color:#1FAD61;letter-spacing:1px;margin-bottom:4px">SYNONYMS</div>
+              <div style="display:flex;gap:3px;flex-wrap:wrap">
+                <span class="syn-chip" style="background:rgba(31,173,97,0.06);color:#1FAD61;border:0.5px solid rgba(31,173,97,0.15)">longing</span>
+                <span class="syn-chip" style="background:rgba(31,173,97,0.06);color:#1FAD61;border:0.5px solid rgba(31,173,97,0.15)">yearning</span>
+                <span class="syn-chip" style="background:rgba(31,173,97,0.06);color:#1FAD61;border:0.5px solid rgba(31,173,97,0.15)">wistfulness</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="showcase-bottom">
+          <div class="showcase-bottom-icon">🔄</div>
+          <div class="showcase-bottom-text">
+            <div class="sbt-title">유의어 · 반의어</div>
+            <div class="sbt-sub">관련 어휘를 함께 학습</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="carousel-cta">
+      <button class="carousel-cta-btn">7일 무료 체험 시작</button>
+      <div class="carousel-cta-sub">무료 체험 후 자동 결제 없음 · 언제든 취소</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================== CONCEPT G ===================== -->
+<div class="concept-label">CONCEPT G</div>
+<div class="concept-title">Chat Bubble</div>
+<div class="concept-desc">유저가 단어를 물어보고, Free/Premium 응답을 채팅 버블로 비교. 대화형으로 자연스러운 비교 경험</div>
+
+<div class="phone concept-g">
+  <div class="phone-screen">
+    <div class="status-bar">9:41</div>
+    <div class="close-btn">✕</div>
+
+    <div class="chat-header">
+      <h2><em>"eloquent"</em>를<br>탭하면?</h2>
+      <p>같은 질문, 다른 대답</p>
+    </div>
+
+    <div class="chat-conversation">
+      <!-- User asks -->
+      <div class="chat-row user">
+        <div class="chat-bubble user-bubble">
+          <div class="cb-text">eloquent</div>
+          <div class="cb-sub">단어를 탭했어요</div>
+        </div>
+      </div>
+
+      <!-- Free response -->
+      <div class="chat-row system">
+        <div class="chat-bubble free-bubble">
+          <div class="cb-tag free-tag">현재 응답</div>
+          <div class="cb-word">eloquent</div>
+          <div class="cb-meaning muted">유창한, 웅변적인</div>
+        </div>
+      </div>
+
+      <!-- Upgrade divider -->
+      <div class="chat-upgrade-divider">
+        <div class="line"></div>
+        <div class="label">✦ Premium이라면?</div>
+        <div class="line"></div>
+      </div>
+
+      <!-- Premium response -->
+      <div class="chat-row system">
+        <div class="chat-bubble premium-bubble">
+          <div class="cb-tag prem-tag">✦ Premium 응답</div>
+          <div class="cb-word">eloquent</div>
+          <div style="margin-bottom:4px">
+            <span class="pos-badge" style="font-size:8px;background:rgba(180,109,72,0.1);color:#B46D48">Adjective</span>
+          </div>
+          <div class="cb-meaning rich">
+            생각이나 감정을 유창하고 설득력 있게 표현하는; 감동을 주는 말솜씨
+          </div>
+          <div class="cb-sentence-box">
+            <div class="cbs-label">문장 번역</div>
+            <div class="cbs-text">Her <b>eloquent</b> speech moved everyone → 그녀의 <b>유창한</b> 연설은 모두를 감동시켰다</div>
+          </div>
+          <div class="cb-extra">
+            <div class="cb-extra-label">Synonyms</div>
+            <div class="cb-extra-chips">
+              <span class="cb-chip syn">articulate</span>
+              <span class="cb-chip syn">fluent</span>
+              <span class="cb-chip syn">expressive</span>
+            </div>
+          </div>
+          <div class="cb-extra" style="border-top:1px solid rgba(222,100,64,0.08)">
+            <div class="cb-extra-label" style="color:#c45a30">Antonyms</div>
+            <div class="cb-extra-chips">
+              <span class="cb-chip ant">inarticulate</span>
+              <span class="cb-chip ant">tongue-tied</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-cta">
+      <button class="chat-cta-btn">7일 무료 체험 시작</button>
+      <div class="chat-cta-hint">무료 체험 · 자동 결제 없음 · 언제든 취소</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================== CONCEPT H ===================== -->
+<div class="concept-label">CONCEPT H</div>
+<div class="concept-title">In-Context Reader</div>
+<div class="concept-desc">실제 리더 화면 위에 Free 팝업(흐릿)과 Premium 팝업(선명+글로우)을 겹쳐서 보여줌. 실사용 맥락에서의 차이를 강조</div>
+
+<div class="phone concept-h">
+  <div class="phone-screen">
+    <div class="status-bar">9:41</div>
+    <div class="close-btn">✕</div>
+
+    <div class="zoom-header">
+      <h2>읽는 중에<br><em>바로</em> 확인하세요</h2>
+      <p>단어를 탭하면 이만큼 다릅니다</p>
+    </div>
+
+    <div class="zoom-container">
+      <!-- Fake reader text -->
+      <div class="fake-reader">
+        The old lighthouse keeper had always been known for his <span class="highlight-word">sagacious</span> advice. Sailors from distant ports would seek him out, trusting his wisdom forged by decades at sea...
+      </div>
+
+      <!-- Free popup (dimmed, small) -->
+      <div class="zoom-free-popup">
+        <div class="zfp-label">현재</div>
+        <div class="zfp-word">sagacious</div>
+        <div class="zfp-meaning">현명한, 통찰력 있는</div>
+      </div>
+
+      <!-- Premium popup (large, glowing) -->
+      <div class="zoom-premium-popup">
+        <div class="zpp-label">✦ Premium</div>
+        <div class="zpp-word">sagacious</div>
+        <div class="zpp-pos">
+          <span class="pos-badge adj">Adjective</span>
+        </div>
+        <div class="zpp-meaning">
+          뛰어난 판단력과 통찰력을 가진; 현명하고 분별력 있는
+        </div>
+        <div class="zpp-sentence">
+          <div class="zpp-sentence-label">문장 번역</div>
+          <div class="zpp-sentence-text">known for his <b>sagacious</b> advice → 그의 <b>현명한</b> 조언으로 유명한</div>
+        </div>
+        <div class="zpp-syn">
+          <div class="zpp-syn-label">Synonyms</div>
+          <span class="syn-chip g">wise</span>
+          <span class="syn-chip g">shrewd</span>
+          <span class="syn-chip g">astute</span>
+          <span class="syn-chip g">perceptive</span>
+        </div>
+        <div class="zpp-syn" style="margin-top:6px">
+          <div class="zpp-syn-label">Antonyms</div>
+          <span class="syn-chip r">foolish</span>
+          <span class="syn-chip r">naive</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="zoom-cta">
+      <button class="zoom-cta-btn">7일 무료 체험 시작</button>
+      <div class="zoom-cta-sub">무료 체험 후 자동 결제 없음</div>
+    </div>
+  </div>
+</div>
+
+<div style="height:80px"></div>
+
+</body>
+</html>

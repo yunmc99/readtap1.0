@@ -1,0 +1,19 @@
+{
+  "name": "readtap-translation-server",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Cloudflare Workers translation server for ReadTap",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:prod": "wrangler deploy --env production"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "wrangler": "^4.65.0"
+  }
+}

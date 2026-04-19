@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synonym & Antonym — Trigger + Display Concepts</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', sans-serif;
+    background: #f0f0f5;
+    color: #1e2330;
+    padding: 32px 16px;
+  }
+  h1 { font-size: 20px; font-weight: 800; text-align: center; margin-bottom: 4px; }
+  .subtitle { text-align: center; font-size: 12px; color: #6b7080; margin-bottom: 12px; }
+  .flow-desc {
+    text-align: center; font-size: 11px; color: #8b90a0;
+    max-width: 500px; margin: 0 auto 32px; line-height: 1.6;
+    background: rgba(31,189,97,0.06); padding: 12px 16px; border-radius: 12px;
+  }
+  .flow-desc b { color: #1fbd61; }
+
+  .section-title {
+    font-size: 14px; font-weight: 700; text-align: center;
+    margin: 40px 0 16px; padding-top: 20px;
+    border-top: 1px solid rgba(0,0,0,0.06);
+  }
+  .section-subtitle {
+    font-size: 11px; color: #8b90a0; text-align: center; margin: -10px 0 20px;
+  }
+
+  .row {
+    display: flex; flex-wrap: wrap; gap: 20px;
+    justify-content: center; max-width: 1100px; margin: 0 auto 20px;
+  }
+  .concept { width: 240px; flex-shrink: 0; }
+  .concept-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: #8b90a0; margin-bottom: 8px; text-align: center;
+  }
+  .concept-desc {
+    font-size: 10px; color: #a0a4b0; text-align: center;
+    margin-top: 8px; line-height: 1.5;
+  }
+  .pro-badge {
+    display: inline-block; font-size: 8px; font-weight: 700;
+    background: linear-gradient(135deg, #1fbd61, #0ea5e9);
+    color: #fff; padding: 2px 5px; border-radius: 4px;
+    letter-spacing: 0.5px; vertical-align: middle; margin-left: 4px;
+  }
+
+  /* Popup base */
+  .popup {
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    border-radius: 22px;
+    border: 0.8px solid rgba(255,255,255,0.7);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
+    padding: 14px; width: 240px; position: relative;
+    overflow: hidden;
+  }
+  .popup .word { font-size: 18px; font-weight: 800; letter-spacing: -0.2px; }
+  .popup .meaning { font-size: 13px; font-weight: 500; color: #6b7080; margin-top: 4px; line-height: 1.4; }
+  .divider { height: 1px; background: rgba(107,112,128,0.08); margin: 8px 0; }
+
+  /* POS block (premium meaning) */
+  .pos-block {
+    padding: 8px 10px; border-radius: 10px;
+    background: rgba(107,112,128,0.03); margin-top: 6px;
+  }
+  .pos-tag {
+    font-size: 9px; font-weight: 700; color: #1fbd61;
+    padding: 2px 6px; border-radius: 5px;
+    background: rgba(31,189,97,0.1); display: inline-block; margin-bottom: 4px;
+  }
+  .pos-meaning {
+    font-size: 12px; font-weight: 500; color: #3a3f50;
+    display: flex; align-items: center; gap: 5px; margin-top: 2px;
+  }
+  .pos-meaning .check { color: #1fbd61; font-size: 12px; }
+  .pos-meaning.dim { color: #b0b4c0; text-decoration: line-through; }
+  .pos-meaning.dim .check { color: #d0d3dc; }
+
+  /* Colors */
+  .accent { color: #1fbd61; }
+  .orange { color: #e67e22; }
+  .section-label {
+    font-size: 9px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.8px; margin-bottom: 5px;
+  }
+  .tags { display: flex; flex-wrap: wrap; gap: 5px; }
+  .tag {
+    font-size: 11px; font-weight: 500; padding: 4px 9px;
+    border-radius: 7px; border: 0.6px solid transparent; line-height: 1.3;
+  }
+  .tag.syn { background: rgba(31,189,97,0.08); color: #1fbd61; border-color: rgba(31,189,97,0.12); }
+  .tag.ant { background: rgba(230,126,34,0.08); color: #e67e22; border-color: rgba(230,126,34,0.12); }
+
+  /* Trigger buttons */
+  .trigger-btn {
+    display: flex; align-items: center; gap: 5px;
+    padding: 7px 10px; border-radius: 10px;
+    font-size: 10px; font-weight: 600;
+    margin-top: 8px; cursor: pointer;
+    border: 0.6px solid; transition: all 0.2s;
+  }
+
+  /* Arrow indicator */
+  .arrow { font-size: 18px; color: #ccc; text-align: center; margin: 8px 0; }
+
+  /* Loading skeleton */
+  .skeleton-row { display: flex; gap: 6px; margin-top: 6px; }
+  .skeleton {
+    height: 8px; border-radius: 4px;
+    background: linear-gradient(90deg, rgba(107,112,128,0.08), rgba(107,112,128,0.15), rgba(107,112,128,0.08));
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+  /* Page dots */
+  .page-dots {
+    display: flex; justify-content: center; gap: 5px; margin-top: 8px;
+  }
+  .dot {
+    width: 6px; height: 6px; border-radius: 3px;
+    background: rgba(107,112,128,0.15);
+  }
+  .dot.active { background: #1fbd61; width: 16px; }
+
+  /* Inline compact */
+  .inline-label {
+    font-size: 8px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; display: inline;
+  }
+  .inline-text { font-size: 11px; font-weight: 500; color: #6b7080; }
+
+  /* Card block */
+  .card-block {
+    padding: 8px 10px; border-radius: 10px; margin-top: 6px;
+  }
+
+  /* Action row */
+  .action-row {
+    display: flex; gap: 5px; margin-top: 4px;
+  }
+  .action-btn {
+    flex: 1; text-align: center; font-size: 11px; font-weight: 600;
+    padding: 6px 0; border-radius: 8px;
+  }
+  .action-btn.primary { background: #1fbd61; color: #fff; }
+  .action-btn.secondary { background: rgba(107,112,128,0.06); color: #3a3f50; border: 0.6px solid rgba(107,112,128,0.1); }
+
+  /* Swipe indicator */
+  .swipe-indicator {
+    position: absolute; right: 6px; top: 50%;
+    transform: translateY(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    color: rgba(107,112,128,0.25);
+  }
+  .swipe-indicator .chevron { font-size: 10px; }
+
+  /* Dark mode */
+  .dark-row { background: #1a1a2e; border-radius: 20px; padding: 24px 16px; margin-top: 12px; }
+  .dark-row .concept-label { color: #6b7080; }
+  .popup.dark {
+    background: rgba(40,42,58,0.92); border-color: rgba(255,255,255,0.12);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .popup.dark .word { color: rgba(255,255,255,0.95); }
+  .popup.dark .meaning { color: rgba(255,255,255,0.5); }
+  .popup.dark .divider { background: rgba(255,255,255,0.06); }
+  .popup.dark .pos-block { background: rgba(255,255,255,0.04); }
+  .popup.dark .pos-meaning { color: rgba(255,255,255,0.8); }
+  .popup.dark .inline-text { color: rgba(255,255,255,0.5); }
+  .popup.dark .tag.syn { background: rgba(31,189,97,0.15); color: #4ee882; border-color: rgba(31,189,97,0.2); }
+  .popup.dark .tag.ant { background: rgba(230,126,34,0.15); color: #f0a060; border-color: rgba(230,126,34,0.2); }
+  .popup.dark .action-btn.secondary { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8); border-color: rgba(255,255,255,0.08); }
+  .popup.dark .card-block.syn-card { background: rgba(31,189,97,0.06); }
+  .popup.dark .card-block.ant-card { background: rgba(230,126,34,0.06); }
+  .popup.dark .card-text { color: rgba(255,255,255,0.65); }
+</style>
+</head>
+<body>
+
+<h1>Synonym & Antonym — Trigger + Display</h1>
+<p class="subtitle">프리미엄 유의어·반의어 UX 플로우 시안</p>
+
+<div class="flow-desc">
+  <b>핵심 원칙:</b> 유저가 단어 조회 → 뜻(POS) 먼저 표시 → 유저가 <b>원할 때만</b> 유의어·반의어 요청<br>
+  → 그때 API call → 토큰 사용 최소화
+</div>
+
+<!-- ============================================ -->
+<!-- SECTION 1: TRIGGER METHOD -->
+<!-- ============================================ -->
+<div class="section-title">1. Trigger — 유저가 유의어·반의어를 요청하는 방식</div>
+<p class="section-subtitle">팝업 하단에 어떤 형태로 "더 보기" 를 제공할 것인가</p>
+
+<div class="row">
+
+  <!-- Trigger 1: Bottom Button -->
+  <div class="concept">
+    <div class="concept-label">Trigger 1. 하단 버튼</div>
+    <div class="popup">
+      <div class="word">contract</div>
+      <div class="pos-block">
+        <span class="pos-tag">명사 Noun</span>
+        <div class="pos-meaning"><span class="check">&#10003;</span> 계약서</div>
+        <div class="pos-meaning"><span class="check">&#10003;</span> 약정</div>
+      </div>
+      <div class="pos-block">
+        <span class="pos-tag">동사 Verb</span>
+        <div class="pos-meaning"><span class="check">&#10003;</span> 계약하다</div>
+        <div class="pos-meaning"><span class="check">&#10003;</span> 수축하다</div>
+      </div>
+      <div class="trigger-btn" style="background:rgba(31,189,97,0.06); border-color:rgba(31,189,97,0.1); color:#1fbd61;">
+        <span style="font-size:11px">📖</span>
+        유의어 · 반의어 보기
+        <span style="margin-left:auto; font-size:8px; opacity:0.6">▸</span>
+      </div>
+      <div class="divider"></div>
+      <div class="action-row">
+        <div class="action-btn secondary">조정</div>
+        <div class="action-btn primary">저장</div>
+        <div class="action-btn secondary">입력</div>
+      </div>
+    </div>
+    <div class="concept-desc">POS 뜻 아래에 버튼 하나.<br>탭하면 API call → 결과 표시</div>
+  </div>
+
+  <!-- Trigger 2: Swipe Page -->
+  <div class="concept">
+    <div class="concept-label">Trigger 2. 스와이프 페이지</div>
+    <div class="popup" style="overflow:visible">
+      <div class="word">contract</div>
+      <div class="pos-block">
+        <span class="pos-tag">명사 Noun</span>
+        <div class="pos-meaning"><span class="check">&#10003;</span> 계약서</div>
+        <div class="pos-meaning"><span class="check">&#10003;</span> 약정</div>
+      </div>
+      <div class="pos-block">
+        <span class="pos-tag">동사 Verb</span>
+        <div class="pos-meaning"><span class="check">&#10003;</span> 계약하다</div>
+      </div>
+      <div class="divider"></div>
+      <div class="action-row">
+        <div class="action-btn secondary">조정</div>
+        <div class="action-btn primary">저장</div>
+        <div class="action-btn secondary">입력</div>
+      </div>
+      <div class="page-dots">
+        <div class="dot active"></div>
+        <div class="dot"></div>
+      </div>
+      <div class="swipe-indicator">
+        <span class="chevron">›</span>
+      </div>
+    </div>
+    <div class="concept-desc">좌로 스와이프하면 2페이지로 전환.<br>페이지 도트로 힌트. 제스처 기반</div>
+  </div>
+
+  <!-- Trigger 3: Mini fab -->
+  <div class="concept">
+    <div class="concept-label">Trigger 3. 작은 아이콘 버튼</div>
+    <div class="popup">
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <div class="word">contract</div>
+        <div style="width:26px;height:26px;border-radius:8px;background:rgba(31,189,97,0.08);display:flex;align-items:center;justify-content:center;cursor:pointer;border:0.6px solid rgba(31,189,97,0.12)">
+          <span style="font-size:13px;color:#1fbd61">⇄</span>
+        </div>
+      </div>
+      <div class="pos-block">
+        <span class="pos-tag">명사 Noun</span>
+        <div class="pos-meaning"><span class="check">&#10003;</span> 계약서</div>
+        <div class="pos-meaning"><span class="check">&#10003;</span> 약정</div>
+      </div>
+      <div class="pos-block">
+        <span class="pos-tag">동사 Verb</span>
+        <div class="pos-meaning"><span class="check">&#10003;</span> 계약하다</div>
+      </div>
+      <div class="divider"></div>
+      <div class="action-row">
+        <div class="action-btn secondary">조정</div>
+        <div class="action-btn primary">저장</div>
+        <div class="action-btn secondary">입력</div>
+      </div>
+    </div>
+    <div class="concept-desc">단어 옆에 작은 아이콘 버튼.<br>공간 차지 최소. 탭해서 열기</div>
+  </div>
+
+</div>
+
+<!-- ============================================ -->
+<!-- SECTION 2: LOADING STATE -->
+<!-- ============================================ -->
+<div class="section-title">2. Loading — API 호출 중 상태</div>
+<p class="section-subtitle">유저가 트리거를 누른 후 → OpenAI 응답 대기 중</p>
+
+<div class="row">
+  <div class="concept">
+    <div class="concept-label">로딩 — 스켈레톤</div>
+    <div class="popup">
+      <div class="word">contract</div>
+      <div style="margin-top:10px">
+        <div class="section-label accent">유의어</div>
+        <div class="skeleton-row">
+          <div class="skeleton" style="width:52px"></div>
+          <div class="skeleton" style="width:38px"></div>
+          <div class="skeleton" style="width:44px"></div>
+        </div>
+        <div style="margin-top:12px">
+          <div class="section-label orange">반의어</div>
+          <div class="skeleton-row">
+            <div class="skeleton" style="width:46px"></div>
+            <div class="skeleton" style="width:56px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="concept-desc">쉬머 애니메이션 스켈레톤.<br>레이아웃 미리 보여줘서 CLS 방지</div>
+  </div>
+
+  <div class="concept">
+    <div class="concept-label">로딩 — 스피너</div>
+    <div class="popup">
+      <div class="word">contract</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:12px;justify-content:center;padding:16px 0">
+        <div style="width:16px;height:16px;border:2px solid rgba(31,189,97,0.15);border-top-color:#1fbd61;border-radius:50%;animation:spin 0.8s linear infinite"></div>
+        <span style="font-size:11px;font-weight:500;color:#8b90a0">불러오는 중...</span>
+      </div>
+    </div>
+    <div class="concept-desc">간단한 스피너 + 텍스트.<br>기존 팝업 로딩과 통일</div>
+  </div>
+</div>
+<style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+
+<!-- ============================================ -->
+<!-- SECTION 3: DISPLAY STYLES (after API returns) -->
+<!-- ============================================ -->
+<div class="section-title">3. Display — 결과 표시 방식</div>
+<p class="section-subtitle">API 응답 후 유의어·반의어를 어떻게 보여줄 것인가</p>
+
+<div class="row">
+
+  <!-- Display A: Flow Chips (inline in popup) -->
+  <div class="concept">
+    <div class="concept-label">A. 칩 태그 (팝업 내부)</div>
+    <div class="popup">
+      <div class="word">contract</div>
+      <div class="pos-block">
+        <span class="pos-tag">명사</span>
+        <div class="pos-meaning"><span class="check">&#10003;</span> 계약서, 약정</div>
+      </div>
+      <div style="margin-top:10px">
+        <div class="section-label accent">유의어</div>
+        <div class="tags">
+          <span class="tag syn">agreement</span>
+          <span class="tag syn">pact</span>
+          <span class="tag syn">deal</span>
+          <span class="tag syn">covenant</span>
+        </div>
+      </div>
+      <div style="margin-top:8px">
+        <div class="section-label orange">반의어</div>
+        <div class="tags">
+          <span class="tag ant">breach</span>
+          <span class="tag ant">dissolution</span>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="action-row">
+        <div class="action-btn secondary">조정</div>
+        <div class="action-btn primary">저장</div>
+      </div>
+    </div>
+    <div class="concept-desc">팝업 안에 바로 표시.<br>칩 색상으로 즉시 구분 가능</div>
+  </div>
+
+  <!-- Display B: Card blocks -->
+  <div class="concept">
+    <div class="concept-label">B. 카드 블록 (팝업 내부)</div>
+    <div class="popup">
+      <div class="word">resilient</div>
+      <div class="pos-block">
+        <span class="pos-tag">형용사</span>
+        <div class="pos-meaning"><span class="check">&#10003;</span> 회복력 있는</div>
+        <div class="pos-meaning"><span class="check">&#10003;</span> 탄력 있는</div>
+      </div>
+      <div class="card-block syn-card" style="background:rgba(31,189,97,0.04)">
+        <div class="section-label accent" style="margin-bottom:3px">유의어</div>
+        <div class="card-text" style="font-size:11px;font-weight:500;color:#4a4f60;line-height:1.5">
+          tough · sturdy · flexible · adaptable
+        </div>
+      </div>
+      <div class="card-block ant-card" style="background:rgba(230,126,34,0.04)">
+        <div class="section-label orange" style="margin-bottom:3px">반의어</div>
+        <div class="card-text" style="font-size:11px;font-weight:500;color:#4a4f60;line-height:1.5">
+          fragile · brittle · weak
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="action-row">
+        <div class="action-btn secondary">조정</div>
+        <div class="action-btn primary">저장</div>
+      </div>
+    </div>
+    <div class="concept-desc">카드로 감싸서 깔끔한 분리.<br>중간점(·)으로 단어 구분. 미니멀</div>
+  </div>
+
+  <!-- Display C: Compact Inline -->
+  <div class="concept">
+    <div class="concept-label">C. 컴팩트 인라인</div>
+    <div class="popup">
+      <div class="word">serene</div>
+      <div class="pos-block">
+        <span class="pos-tag">형용사</span>
+        <div class="pos-meaning"><span class="check">&#10003;</span> 고요한, 평온한</div>
+      </div>
+      <div style="margin-top:8px; padding:8px 0;">
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:5px">
+          <span class="inline-label accent" style="background:rgba(31,189,97,0.08);padding:2px 5px;border-radius:4px">SYN</span>
+          <span class="inline-text">calm, peaceful, tranquil</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:6px">
+          <span class="inline-label orange" style="background:rgba(230,126,34,0.06);padding:2px 5px;border-radius:4px">ANT</span>
+          <span class="inline-text">agitated, turbulent</span>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="action-row">
+        <div class="action-btn secondary">조정</div>
+        <div class="action-btn primary">저장</div>
+      </div>
+    </div>
+    <div class="concept-desc">가장 컴팩트. 팝업 크기 최소 유지.<br>SYN/ANT 배지 + 콤마 구분</div>
+  </div>
+
+  <!-- Display D: Bottom Sheet -->
+  <div class="concept">
+    <div class="concept-label">D. 바텀 시트 (팝업 위 오버레이)</div>
+    <div style="position:relative; height:340px">
+      <div class="popup" style="position:absolute;top:0;left:0;opacity:0.3;filter:blur(1px)">
+        <div class="word">vivid</div>
+        <div class="pos-block">
+          <span class="pos-tag">형용사</span>
+          <div class="pos-meaning"><span class="check">&#10003;</span> 생생한</div>
+          <div class="pos-meaning"><span class="check">&#10003;</span> 선명한</div>
+        </div>
+      </div>
+      <div class="popup" style="position:absolute;bottom:0;left:0;border-radius:22px;box-shadow:0 -4px 20px rgba(0,0,0,0.1)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:14px;font-weight:700">유의어 · 반의어</span>
+          <span style="width:22px;height:22px;border-radius:11px;background:rgba(107,112,128,0.1);display:flex;align-items:center;justify-content:center;font-size:12px;color:#8b90a0;cursor:pointer">✕</span>
+        </div>
+        <div style="height:1px;background:rgba(0,0,0,0.05);margin-bottom:10px"></div>
+        <div class="section-label accent">유의어</div>
+        <div class="tags" style="margin-bottom:10px">
+          <span class="tag syn">bright</span>
+          <span class="tag syn">striking</span>
+          <span class="tag syn">vibrant</span>
+          <span class="tag syn">intense</span>
+        </div>
+        <div class="section-label orange">반의어</div>
+        <div class="tags">
+          <span class="tag ant">dull</span>
+          <span class="tag ant">faded</span>
+          <span class="tag ant">pale</span>
+        </div>
+      </div>
+    </div>
+    <div class="concept-desc">팝업 위에 시트가 올라옴.<br>닫기 버튼으로 원래 팝업 복귀</div>
+  </div>
+
+</div>
+
+<!-- ============================================ -->
+<!-- SECTION 4: FULL FLOW -->
+<!-- ============================================ -->
+<div class="section-title">4. Full Flow 예시 — 추천 조합</div>
+<p class="section-subtitle">Trigger + Loading + Display 가 합쳐진 전체 플로우</p>
+
+<div class="row" style="align-items:flex-start">
+
+  <!-- Flow: Button + Inline Chips -->
+  <div class="concept" style="width:260px">
+    <div class="concept-label" style="color:#1fbd61">추천 1: 버튼 → 칩 (팝업 확장)</div>
+    <!-- Step 1 -->
+    <div class="popup" style="margin-bottom:4px">
+      <div class="word">ephemeral <span class="pro-badge">PRO</span></div>
+      <div class="pos-block">
+        <span class="pos-tag">형용사</span>
+        <div class="pos-meaning"><span class="check">&#10003;</span> 덧없는</div>
+        <div class="pos-meaning"><span class="check">&#10003;</span> 일시적인</div>
+      </div>
+      <div class="trigger-btn" style="background:rgba(31,189,97,0.06);border-color:rgba(31,189,97,0.1);color:#1fbd61">
+        <span style="font-size:11px">📖</span> 유의어 · 반의어 <span style="margin-left:auto;font-size:8px;opacity:0.5">▸</span>
+      </div>
+      <div class="divider"></div>
+      <div class="action-row">
+        <div class="action-btn secondary">조정</div>
+        <div class="action-btn primary">저장</div>
+        <div class="action-btn secondary">입력</div>
+      </div>
+    </div>
+    <div class="arrow">↓ 탭</div>
+    <!-- Step 2 -->
+    <div class="popup" style="margin-bottom:4px">
+      <div class="word">ephemeral</div>
+      <div class="pos-block">
+        <span class="pos-tag">형용사</span>
+        <div class="pos-meaning"><span class="check">&#10003;</span> 덧없는, 일시적인</div>
+      </div>
+      <div style="margin-top:8px">
+        <div class="section-label accent">유의어</div>
+        <div class="tags">
+          <span class="tag syn">fleeting</span>
+          <span class="tag syn">transient</span>
+          <span class="tag syn">brief</span>
+          <span class="tag syn">momentary</span>
+        </div>
+      </div>
+      <div style="margin-top:8px">
+        <div class="section-label orange">반의어</div>
+        <div class="tags">
+          <span class="tag ant">eternal</span>
+          <span class="tag ant">permanent</span>
+          <span class="tag ant">lasting</span>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="action-row">
+        <div class="action-btn secondary">조정</div>
+        <div class="action-btn primary">저장</div>
+        <div class="action-btn secondary">입력</div>
+      </div>
+    </div>
+    <div class="concept-desc">팝업이 아래로 확장되며 칩 표시.<br>한눈에 전체 정보 확인 가능</div>
+  </div>
+
+  <!-- Flow: Swipe + Page 2 -->
+  <div class="concept" style="width:260px">
+    <div class="concept-label" style="color:#3b82f6">추천 2: 스와이프 → 2페이지</div>
+    <!-- Step 1 -->
+    <div class="popup" style="margin-bottom:4px">
+      <div class="word">ephemeral <span class="pro-badge">PRO</span></div>
+      <div class="pos-block">
+        <span class="pos-tag">형용사</span>
+        <div class="pos-meaning"><span class="check">&#10003;</span> 덧없는</div>
+        <div class="pos-meaning"><span class="check">&#10003;</span> 일시적인</div>
+      </div>
+      <div class="divider"></div>
+      <div class="action-row">
+        <div class="action-btn secondary">조정</div>
+        <div class="action-btn primary">저장</div>
+        <div class="action-btn secondary">입력</div>
+      </div>
+      <div class="page-dots">
+        <div class="dot active"></div>
+        <div class="dot"></div>
+      </div>
+    </div>
+    <div class="arrow">← 스와이프</div>
+    <!-- Step 2 -->
+    <div class="popup" style="margin-bottom:4px">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <span style="font-size:8px;color:#8b90a0;cursor:pointer">◂ 뜻</span>
+        <span style="font-size:13px;font-weight:700">유의어 · 반의어</span>
+      </div>
+      <div class="section-label accent" style="margin-top:4px">유의어</div>
+      <div class="tags" style="margin-bottom:10px">
+        <span class="tag syn">fleeting</span>
+        <span class="tag syn">transient</span>
+        <span class="tag syn">brief</span>
+        <span class="tag syn">momentary</span>
+      </div>
+      <div class="section-label orange">반의어</div>
+      <div class="tags">
+        <span class="tag ant">eternal</span>
+        <span class="tag ant">permanent</span>
+        <span class="tag ant">lasting</span>
+      </div>
+      <div class="page-dots">
+        <div class="dot"></div>
+        <div class="dot active"></div>
+      </div>
+    </div>
+    <div class="concept-desc">같은 팝업 크기 유지. 페이지 전환.<br>뜻 ↔ 유의어 자유롭게 오가기</div>
+  </div>
+
+  <!-- Flow: Button + Bottom Sheet -->
+  <div class="concept" style="width:260px">
+    <div class="concept-label" style="color:#8b5cf6">추천 3: 버튼 → 바텀시트</div>
+    <!-- Step 1 -->
+    <div class="popup" style="margin-bottom:4px">
+      <div class="word">ephemeral <span class="pro-badge">PRO</span></div>
+      <div class="pos-block">
+        <span class="pos-tag">형용사</span>
+        <div class="pos-meaning"><span class="check">&#10003;</span> 덧없는</div>
+        <div class="pos-meaning"><span class="check">&#10003;</span> 일시적인</div>
+      </div>
+      <div class="trigger-btn" style="background:rgba(139,92,246,0.06);border-color:rgba(139,92,246,0.1);color:#8b5cf6">
+        <span style="font-size:11px">📖</span> 유의어 · 반의어 <span style="margin-left:auto;font-size:8px;opacity:0.5">▴</span>
+      </div>
+      <div class="divider"></div>
+      <div class="action-row">
+        <div class="action-btn secondary">조정</div>
+        <div class="action-btn primary">저장</div>
+        <div class="action-btn secondary">입력</div>
+      </div>
+    </div>
+    <div class="arrow">↓ 탭</div>
+    <!-- Step 2: overlay -->
+    <div style="position:relative; height:200px;">
+      <div class="popup" style="position:absolute;top:0;left:0;opacity:0.2;filter:blur(1px);width:240px">
+        <div class="word">ephemeral</div>
+        <div style="height:60px"></div>
+      </div>
+      <div class="popup" style="position:absolute;bottom:0;left:0;box-shadow:0 -4px 24px rgba(0,0,0,0.12)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:13px;font-weight:700">유의어 · 반의어</span>
+          <span style="font-size:12px;color:#8b90a0;cursor:pointer">✕</span>
+        </div>
+        <div style="height:1px;background:rgba(0,0,0,0.05);margin-bottom:8px"></div>
+        <div class="section-label accent">유의어</div>
+        <div class="tags" style="margin-bottom:8px">
+          <span class="tag syn">fleeting</span>
+          <span class="tag syn">transient</span>
+          <span class="tag syn">brief</span>
+        </div>
+        <div class="section-label orange">반의어</div>
+        <div class="tags">
+          <span class="tag ant">eternal</span>
+          <span class="tag ant">permanent</span>
+        </div>
+      </div>
+    </div>
+    <div class="concept-desc">팝업 위에 시트 오버레이.<br>원래 팝업은 유지. 닫으면 복귀</div>
+  </div>
+
+</div>
+
+<!-- Dark Mode Full Flow -->
+<div class="dark-row" style="margin-top:32px">
+  <h2 style="color:#fff;font-size:14px;font-weight:700;text-align:center;margin-bottom:16px">Dark Mode — Full Flow</h2>
+  <div class="row">
+    <div class="concept" style="width:260px">
+      <div class="concept-label">추천 1 Dark: 버튼 → 칩</div>
+      <div class="popup dark">
+        <div class="word">ephemeral</div>
+        <div class="pos-block">
+          <span class="pos-tag">형용사</span>
+          <div class="pos-meaning"><span class="check" style="color:#4ee882">&#10003;</span> 덧없는, 일시적인</div>
+        </div>
+        <div style="margin-top:8px">
+          <div class="section-label" style="color:#4ee882">유의어</div>
+          <div class="tags">
+            <span class="tag syn">fleeting</span>
+            <span class="tag syn">transient</span>
+            <span class="tag syn">brief</span>
+          </div>
+        </div>
+        <div style="margin-top:8px">
+          <div class="section-label" style="color:#f0a060">반의어</div>
+          <div class="tags">
+            <span class="tag ant">eternal</span>
+            <span class="tag ant">permanent</span>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="action-row">
+          <div class="action-btn secondary">조정</div>
+          <div class="action-btn primary">저장</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="concept" style="width:260px">
+      <div class="concept-label">추천 2 Dark: 스와이프 2페이지</div>
+      <div class="popup dark">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+          <span style="font-size:8px;color:rgba(255,255,255,0.35);cursor:pointer">◂ 뜻</span>
+          <span style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.9)">유의어 · 반의어</span>
+        </div>
+        <div style="margin-top:6px">
+          <div class="section-label" style="color:#4ee882">유의어</div>
+          <div class="tags" style="margin-bottom:10px">
+            <span class="tag syn">fleeting</span>
+            <span class="tag syn">transient</span>
+            <span class="tag syn">brief</span>
+            <span class="tag syn">momentary</span>
+          </div>
+        </div>
+        <div>
+          <div class="section-label" style="color:#f0a060">반의어</div>
+          <div class="tags">
+            <span class="tag ant">eternal</span>
+            <span class="tag ant">permanent</span>
+            <span class="tag ant">lasting</span>
+          </div>
+        </div>
+        <div class="page-dots" style="margin-top:10px">
+          <div class="dot" style="background:rgba(255,255,255,0.15)"></div>
+          <div class="dot active"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Korean examples -->
+<div class="section-title">한국어 단어 예시</div>
+<div class="row">
+  <div class="concept" style="width:260px">
+    <div class="concept-label">추천 1 — 한국어</div>
+    <div class="popup">
+      <div class="word">행복</div>
+      <div class="pos-block">
+        <span class="pos-tag">명사</span>
+        <div class="pos-meaning"><span class="check">&#10003;</span> happiness, joy</div>
+      </div>
+      <div style="margin-top:8px">
+        <div class="section-label accent">유의어</div>
+        <div class="tags">
+          <span class="tag syn">기쁨</span>
+          <span class="tag syn">환희</span>
+          <span class="tag syn">즐거움</span>
+          <span class="tag syn">만족</span>
+        </div>
+      </div>
+      <div style="margin-top:8px">
+        <div class="section-label orange">반의어</div>
+        <div class="tags">
+          <span class="tag ant">불행</span>
+          <span class="tag ant">슬픔</span>
+          <span class="tag ant">고통</span>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="action-row">
+        <div class="action-btn secondary">조정</div>
+        <div class="action-btn primary">저장</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="concept" style="width:260px">
+    <div class="concept-label">추천 2 — 한국어</div>
+    <div class="popup">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <span style="font-size:8px;color:#8b90a0;cursor:pointer">◂ 뜻</span>
+        <span style="font-size:13px;font-weight:700">유의어 · 반의어</span>
+      </div>
+      <div class="section-label accent" style="margin-top:4px">유의어</div>
+      <div class="tags" style="margin-bottom:10px">
+        <span class="tag syn">기쁨</span>
+        <span class="tag syn">환희</span>
+        <span class="tag syn">즐거움</span>
+        <span class="tag syn">만족</span>
+        <span class="tag syn">복</span>
+      </div>
+      <div class="section-label orange">반의어</div>
+      <div class="tags">
+        <span class="tag ant">불행</span>
+        <span class="tag ant">슬픔</span>
+        <span class="tag ant">고통</span>
+      </div>
+      <div class="page-dots">
+        <div class="dot"></div>
+        <div class="dot active"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Words Tab Switcher - Design Options</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'DM Sans', -apple-system, sans-serif;
+    background: #e8ecee;
+    padding: 32px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    justify-content: center;
+  }
+  .option-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .option-label {
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #444;
+    background: #fff;
+    padding: 4px 14px;
+    border-radius: 6px;
+  }
+  .phone {
+    width: 375px;
+    height: 260px;
+    background: #F1F4F5;
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    padding: 20px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .desc {
+    font-size: 11px;
+    color: #888;
+    max-width: 340px;
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  /* Shared calendar placeholder */
+  .calendar-placeholder {
+    background: rgba(255,255,255,0.88);
+    border-radius: 14px;
+    border: 1px solid rgba(0,0,0,0.06);
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #aaa;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  /* ===== Option A: Underline Tabs ===== */
+  .opt-a .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid rgba(0,0,0,0.06);
+  }
+  .opt-a .tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px 0 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #999;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s;
+  }
+  .opt-a .tab.active {
+    color: #1a1a1a;
+  }
+  .opt-a .tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 20%;
+    width: 60%;
+    height: 2.5px;
+    background: #2EAF6E;
+    border-radius: 2px;
+  }
+
+  /* ===== Option B: Segmented with sliding indicator ===== */
+  .opt-b .tabs {
+    display: flex;
+    background: rgba(255,255,255,0.7);
+    border-radius: 12px;
+    padding: 4px;
+    border: 1px solid rgba(0,0,0,0.06);
+    position: relative;
+  }
+  .opt-b .tab {
+    flex: 1;
+    text-align: center;
+    padding: 9px 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: #999;
+    cursor: pointer;
+    z-index: 1;
+    transition: color 0.2s;
+  }
+  .opt-b .tab.active {
+    color: #1a1a1a;
+  }
+  .opt-b .slider {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: calc(50% - 4px);
+    height: calc(100% - 8px);
+    background: white;
+    border-radius: 9px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    transition: transform 0.25s ease;
+  }
+  .opt-b .slider.right {
+    transform: translateX(calc(100% + 4px));
+  }
+
+  /* ===== Option C: Pill pills left-aligned ===== */
+  .opt-c .tabs {
+    display: flex;
+    gap: 8px;
+  }
+  .opt-c .tab {
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .opt-c .tab.active {
+    background: #1a1a1a;
+    color: white;
+  }
+  .opt-c .tab.inactive {
+    background: rgba(255,255,255,0.7);
+    color: #888;
+    border: 1px solid rgba(0,0,0,0.06);
+  }
+
+  /* ===== Option D: Icon + text tabs ===== */
+  .opt-d .tabs {
+    display: flex;
+    gap: 12px;
+  }
+  .opt-d .tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .opt-d .tab .icon {
+    font-size: 15px;
+  }
+  .opt-d .tab.active {
+    background: #2EAF6E;
+    color: white;
+    box-shadow: 0 2px 8px rgba(46,175,110,0.25);
+  }
+  .opt-d .tab.inactive {
+    background: rgba(255,255,255,0.6);
+    color: #888;
+    border: 1px solid rgba(0,0,0,0.06);
+  }
+
+  /* ===== Option E: Full-width Segmented Control (iOS native feel) ===== */
+  .opt-e .tabs {
+    display: flex;
+    background: rgba(0,0,0,0.06);
+    border-radius: 10px;
+    padding: 3px;
+    position: relative;
+  }
+  .opt-e .tab {
+    flex: 1;
+    text-align: center;
+    padding: 8px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #666;
+    cursor: pointer;
+    z-index: 1;
+    transition: color 0.2s;
+  }
+  .opt-e .tab.active {
+    color: #1a1a1a;
+  }
+  .opt-e .slider {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: calc(50% - 3px);
+    height: calc(100% - 6px);
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: transform 0.25s ease;
+  }
+  .opt-e .slider.right {
+    transform: translateX(calc(100% + 3px));
+  }
+
+  /* ===== Option F: Inline text toggle ===== */
+  .opt-f .tabs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 20px;
+    font-weight: 800;
+    color: #1a1a1a;
+  }
+  .opt-f .tab {
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .opt-f .tab.active {
+    color: #1a1a1a;
+  }
+  .opt-f .tab.inactive {
+    color: #ccc;
+  }
+  .opt-f .divider {
+    color: #ddd;
+    margin: 0 6px;
+    font-weight: 400;
+  }
+
+  /* ===== Option G: Chip with count ===== */
+  .opt-g .tabs {
+    display: flex;
+    gap: 8px;
+  }
+  .opt-g .tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .opt-g .tab.active {
+    background: rgba(46,175,110,0.12);
+    color: #2EAF6E;
+    border: 1.5px solid rgba(46,175,110,0.25);
+  }
+  .opt-g .tab.inactive {
+    background: rgba(255,255,255,0.6);
+    color: #888;
+    border: 1.5px solid rgba(0,0,0,0.06);
+  }
+  .opt-g .count {
+    font-size: 11px;
+    font-weight: 800;
+    background: rgba(46,175,110,0.18);
+    color: #2EAF6E;
+    padding: 2px 6px;
+    border-radius: 6px;
+  }
+  .opt-g .tab.inactive .count {
+    background: rgba(0,0,0,0.06);
+    color: #aaa;
+  }
+
+  /* ===== Option H: Top bar with title + switcher ===== */
+  .opt-h .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .opt-h .title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1a1a1a;
+  }
+  .opt-h .switcher {
+    display: flex;
+    background: rgba(0,0,0,0.05);
+    border-radius: 8px;
+    padding: 2px;
+  }
+  .opt-h .tab {
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .opt-h .tab.active {
+    background: white;
+    color: #1a1a1a;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .opt-h .tab.inactive {
+    color: #888;
+  }
+</style>
+</head>
+<body>
+
+<!-- Option A: Underline Tabs -->
+<div class="option-wrapper">
+  <span class="option-label">Option A</span>
+  <div class="phone opt-a">
+    <div class="tabs">
+      <div class="tab active">By Date</div>
+      <div class="tab">By Book</div>
+    </div>
+    <div class="calendar-placeholder">Calendar / Book list area</div>
+  </div>
+  <div class="desc">Underline indicator - 깔끔하고 미니멀. 콘텐츠 위에 자연스럽게 붙어서 붕 뜨는 느낌 없음</div>
+</div>
+
+<!-- Option B: Segmented Slider -->
+<div class="option-wrapper">
+  <span class="option-label">Option B</span>
+  <div class="phone opt-b">
+    <div class="tabs">
+      <div class="slider"></div>
+      <div class="tab active">By Date</div>
+      <div class="tab">By Book</div>
+    </div>
+    <div class="calendar-placeholder">Calendar / Book list area</div>
+  </div>
+  <div class="desc">Rounded segmented control - 슬라이딩 인디케이터. 부드럽고 현대적. 현재보다 더 컴팩트</div>
+</div>
+
+<!-- Option C: Pill Chips -->
+<div class="option-wrapper">
+  <span class="option-label">Option C</span>
+  <div class="phone opt-c">
+    <div class="tabs">
+      <div class="tab active">By Date</div>
+      <div class="tab inactive">By Book</div>
+    </div>
+    <div class="calendar-placeholder">Calendar / Book list area</div>
+  </div>
+  <div class="desc">현재와 비슷한 pill 스타일이지만 좌측 정렬 + 다크 active. 검정+흰색 대비로 명확</div>
+</div>
+
+<!-- Option D: Icon + Text -->
+<div class="option-wrapper">
+  <span class="option-label">Option D</span>
+  <div class="phone opt-d">
+    <div class="tabs">
+      <div class="tab active"><span class="icon">&#128197;</span> By Date</div>
+      <div class="tab inactive"><span class="icon">&#128218;</span> By Book</div>
+    </div>
+    <div class="calendar-placeholder">Calendar / Book list area</div>
+  </div>
+  <div class="desc">아이콘 + 텍스트 pill. 초록색 active 배경 + 그림자. 시각적으로 직관적</div>
+</div>
+
+<!-- Option E: iOS Native Segmented -->
+<div class="option-wrapper">
+  <span class="option-label">Option E</span>
+  <div class="phone opt-e">
+    <div class="tabs">
+      <div class="slider"></div>
+      <div class="tab active">By Date</div>
+      <div class="tab">By Book</div>
+    </div>
+    <div class="calendar-placeholder">Calendar / Book list area</div>
+  </div>
+  <div class="desc">iOS 네이티브 Segmented Control 느낌. 회색 배경 + 흰 슬라이더. 가장 플랫폼 일관적</div>
+</div>
+
+<!-- Option F: Inline Text Toggle -->
+<div class="option-wrapper">
+  <span class="option-label">Option F</span>
+  <div class="phone opt-f">
+    <div class="tabs">
+      <div class="tab active">By Date</div>
+      <div class="divider">/</div>
+      <div class="tab inactive">By Book</div>
+    </div>
+    <div class="calendar-placeholder">Calendar / Book list area</div>
+  </div>
+  <div class="desc">타이틀처럼 크게 보이는 인라인 텍스트 토글. 탭 제목이자 전환 버튼 역할 겸용</div>
+</div>
+
+<!-- Option G: Chip with Count -->
+<div class="option-wrapper">
+  <span class="option-label">Option G</span>
+  <div class="phone opt-g">
+    <div class="tabs">
+      <div class="tab active">By Date <span class="count">3</span></div>
+      <div class="tab inactive">By Book <span class="count">2</span></div>
+    </div>
+    <div class="calendar-placeholder">Calendar / Book list area</div>
+  </div>
+  <div class="desc">카운트 뱃지 포함 칩. 초록 테두리 active. 오늘 단어 수 / 책 수를 바로 확인 가능</div>
+</div>
+
+<!-- Option H: Title + Mini Switcher -->
+<div class="option-wrapper">
+  <span class="option-label">Option H</span>
+  <div class="phone opt-h">
+    <div class="header">
+      <div class="title">Words</div>
+      <div class="switcher">
+        <div class="tab active">Date</div>
+        <div class="tab inactive">Book</div>
+      </div>
+    </div>
+    <div class="calendar-placeholder">Calendar / Book list area</div>
+  </div>
+  <div class="desc">"Words" 타이틀 좌측 + 우측에 작은 스위처. 페이지 타이틀과 모드 전환이 한 줄에</div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings Premium Card — 3 Concepts</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    background: #f0f0f5;
+    padding: 40px 20px;
+    display: flex; flex-wrap: wrap; gap: 48px; justify-content: center;
+    -webkit-font-smoothing: antialiased;
+  }
+  .concept-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .concept-label {
+    font-size: 13px; font-weight: 700; color: #888;
+    letter-spacing: 1.5px; text-transform: uppercase;
+  }
+  .phone {
+    width: 375px; height: 540px;
+    background: linear-gradient(180deg, #edf5f0 0%, #f4faf6 50%, #eef6f1 100%);
+    border-radius: 44px; overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.06);
+    position: relative; display: flex; flex-direction: column;
+    padding: 20px;
+  }
+  .section-label {
+    font-size: 10px; font-weight: 600; color: #9ca3ab;
+    letter-spacing: 0.5px; margin-bottom: 8px; padding-left: 4px;
+  }
+  /* Simulated cards above */
+  .placeholder-card {
+    background: #fff; border-radius: 20px;
+    padding: 16px; margin-bottom: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .theme-row {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .theme-row .label { font-size: 13px; font-weight: 700; color: #1a2534; }
+  .theme-row .value {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: #6b7580;
+  }
+  .theme-dot { width: 18px; height: 18px; border-radius: 5px; background: #1fad61; }
+  .theme-dots { display: flex; gap: 6px; margin-top: 10px; }
+  .theme-dots .dot {
+    width: 34px; height: 34px; border-radius: 10px;
+    border: 2px solid transparent;
+  }
+  .lang-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(0,0,0,0.04);
+  }
+  .lang-row .label { font-size: 13px; font-weight: 700; color: #1a2534; }
+  .lang-toggle {
+    display: flex; background: #f2f3f5; border-radius: 8px; overflow: hidden;
+  }
+  .lang-toggle span {
+    padding: 6px 14px; font-size: 12px; font-weight: 600; color: #6b7580;
+  }
+  .lang-toggle span.active {
+    background: #fff; color: #1a2534; border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .version {
+    text-align: center; font-size: 10px; color: #c0c4ca;
+    margin-top: 10px;
+  }
+
+  :root {
+    --accent: #1fad61;
+    --text: #1a2534;
+    --muted: #6b7580;
+  }
+
+  /* ══════ CONCEPT A — Gradient Banner ══════ */
+  .concept-a .premium-card {
+    background: linear-gradient(135deg, #1fad61 0%, #15c765 100%);
+    border-radius: 20px; padding: 18px 20px;
+    color: #fff; position: relative; overflow: hidden;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(31,173,97,0.25);
+  }
+  .concept-a .premium-card::before {
+    content: ''; position: absolute;
+    top: -20px; right: -10px;
+    width: 80px; height: 80px;
+    background: rgba(255,255,255,0.1); border-radius: 50%;
+  }
+  .concept-a .premium-top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .concept-a .premium-top h3 {
+    font-size: 15px; font-weight: 700;
+  }
+  .concept-a .premium-top .arrow {
+    font-size: 14px; opacity: 0.7;
+  }
+  .concept-a .premium-sub {
+    font-size: 12px; opacity: 0.85; margin-bottom: 12px;
+  }
+  .concept-a .premium-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(255,255,255,0.2);
+    padding: 5px 12px; border-radius: 8px;
+    font-size: 11px; font-weight: 600;
+  }
+
+  /* ══════ CONCEPT B — Minimal Row + Accent ══════ */
+  .concept-b .premium-card {
+    background: #fff; border-radius: 20px;
+    padding: 0; overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .concept-b .premium-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 18px;
+    cursor: pointer;
+  }
+  .concept-b .premium-icon {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: linear-gradient(135deg, #1fad61 0%, #17c96a 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(31,173,97,0.3);
+  }
+  .concept-b .premium-info { flex: 1; }
+  .concept-b .premium-info h3 {
+    font-size: 14px; font-weight: 700; color: var(--text);
+    margin-bottom: 2px;
+  }
+  .concept-b .premium-info p {
+    font-size: 11px; color: var(--muted);
+  }
+  .concept-b .premium-btn {
+    background: var(--accent); color: #fff;
+    font-size: 11px; font-weight: 700;
+    padding: 7px 14px; border-radius: 10px;
+    border: none; cursor: pointer;
+  }
+  .concept-b .premium-features {
+    display: flex; gap: 0; border-top: 1px solid rgba(0,0,0,0.04);
+  }
+  .concept-b .pf-item {
+    flex: 1; text-align: center; padding: 10px 4px;
+    border-right: 1px solid rgba(0,0,0,0.04);
+  }
+  .concept-b .pf-item:last-child { border-right: none; }
+  .concept-b .pf-item .emoji { font-size: 16px; margin-bottom: 3px; }
+  .concept-b .pf-item span {
+    display: block; font-size: 10px; color: var(--muted); font-weight: 500;
+  }
+
+  /* ══════ CONCEPT C — Card + Progress ══════ */
+  .concept-c .premium-card {
+    background: #fff; border-radius: 20px;
+    padding: 18px 20px; overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    border: 1.5px solid rgba(31,173,97,0.15);
+    cursor: pointer;
+  }
+  .concept-c .premium-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .concept-c .premium-header .left {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .concept-c .premium-header .spark {
+    font-size: 18px;
+  }
+  .concept-c .premium-header h3 {
+    font-size: 14px; font-weight: 700; color: var(--text);
+  }
+  .concept-c .premium-header .status {
+    font-size: 10px; font-weight: 700;
+    padding: 4px 10px; border-radius: 8px;
+  }
+  .concept-c .premium-header .status.free {
+    background: #f2f3f5; color: var(--muted);
+  }
+  .concept-c .premium-header .status.trial {
+    background: rgba(31,173,97,0.1); color: var(--accent);
+  }
+  .concept-c .premium-desc {
+    font-size: 12px; color: var(--muted); margin-bottom: 14px;
+    line-height: 1.4;
+  }
+  .concept-c .premium-cta {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .concept-c .price-hint {
+    font-size: 12px; color: var(--muted);
+  }
+  .concept-c .price-hint strong {
+    color: var(--text); font-weight: 700;
+  }
+  .concept-c .cta-btn {
+    background: var(--accent); color: #fff;
+    font-size: 12px; font-weight: 700;
+    padding: 8px 18px; border-radius: 10px;
+    border: none; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(31,173,97,0.25);
+  }
+
+  /* Trial active variant for C */
+  .concept-c.trial .premium-card {
+    border-color: rgba(31,173,97,0.25);
+  }
+  .concept-c.trial .trial-progress {
+    margin-bottom: 12px;
+  }
+  .concept-c.trial .trial-bar-bg {
+    height: 4px; background: #f0f1f3; border-radius: 2px;
+    overflow: hidden; margin-top: 6px;
+  }
+  .concept-c.trial .trial-bar {
+    height: 100%; width: 43%; /* 3/7 days */
+    background: var(--accent); border-radius: 2px;
+  }
+  .concept-c.trial .trial-label {
+    display: flex; justify-content: space-between;
+    font-size: 10px; color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ A — Gradient Banner ═══ -->
+<div class="concept-wrap concept-a">
+  <div class="concept-label">A — Gradient Banner</div>
+  <div class="phone">
+    <!-- Theme/Language card (context) -->
+    <div class="placeholder-card">
+      <div class="theme-row">
+        <span class="label">테마</span>
+        <div class="value"><div class="theme-dot"></div> 스튜디오 ›</div>
+      </div>
+      <div class="theme-dots">
+        <div class="dot" style="background:#1a6b3d; border-color:#1fad61;border-width:2px;border-style:solid;"></div>
+        <div class="dot" style="background:#4098dc;"></div>
+        <div class="dot" style="background:#b46c48;"></div>
+        <div class="dot" style="background:#3d6b56;"></div>
+      </div>
+      <div class="lang-row">
+        <span class="label">언어</span>
+        <div class="lang-toggle">
+          <span>EN</span>
+          <span class="active">KR</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Premium card -->
+    <div class="premium-card">
+      <div class="premium-top">
+        <h3>✨ Premium으로 업그레이드</h3>
+        <span class="arrow">›</span>
+      </div>
+      <div class="premium-sub">정확한 번역 · 품사별 뜻 · 프리미엄 테마</div>
+      <div class="premium-badge">💎 월 $1.99부터</div>
+    </div>
+
+    <div class="version">ReadTap v1.0</div>
+  </div>
+</div>
+
+<!-- ═══ B — Minimal Row + Features ═══ -->
+<div class="concept-wrap concept-b">
+  <div class="concept-label">B — Minimal + Features</div>
+  <div class="phone">
+    <div class="placeholder-card">
+      <div class="theme-row">
+        <span class="label">테마</span>
+        <div class="value"><div class="theme-dot"></div> 스튜디오 ›</div>
+      </div>
+      <div class="theme-dots">
+        <div class="dot" style="background:#1a6b3d; border-color:#1fad61;border-width:2px;border-style:solid;"></div>
+        <div class="dot" style="background:#4098dc;"></div>
+        <div class="dot" style="background:#b46c48;"></div>
+        <div class="dot" style="background:#3d6b56;"></div>
+      </div>
+      <div class="lang-row">
+        <span class="label">언어</span>
+        <div class="lang-toggle">
+          <span>EN</span>
+          <span class="active">KR</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Premium card -->
+    <div class="premium-card">
+      <div class="premium-row">
+        <div class="premium-icon">✨</div>
+        <div class="premium-info">
+          <h3>프리미엄 업그레이드</h3>
+          <p>더 정확한 번역과 프리미엄 테마</p>
+        </div>
+        <button class="premium-btn">업그레이드</button>
+      </div>
+      <div class="premium-features">
+        <div class="pf-item">
+          <div class="emoji">✨</div>
+          <span>정확한 번역</span>
+        </div>
+        <div class="pf-item">
+          <div class="emoji">📋</div>
+          <span>품사별 뜻</span>
+        </div>
+        <div class="pf-item">
+          <div class="emoji">🎨</div>
+          <span>테마</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="version">ReadTap v1.0</div>
+  </div>
+</div>
+
+<!-- ═══ C — Card + Price Hint (Free) ═══ -->
+<div class="concept-wrap concept-c">
+  <div class="concept-label">C — Card + Price</div>
+  <div class="phone">
+    <div class="placeholder-card">
+      <div class="theme-row">
+        <span class="label">테마</span>
+        <div class="value"><div class="theme-dot"></div> 스튜디오 ›</div>
+      </div>
+      <div class="theme-dots">
+        <div class="dot" style="background:#1a6b3d; border-color:#1fad61;border-width:2px;border-style:solid;"></div>
+        <div class="dot" style="background:#4098dc;"></div>
+        <div class="dot" style="background:#b46c48;"></div>
+        <div class="dot" style="background:#3d6b56;"></div>
+      </div>
+      <div class="lang-row">
+        <span class="label">언어</span>
+        <div class="lang-toggle">
+          <span>EN</span>
+          <span class="active">KR</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Premium card — Free user -->
+    <div class="premium-card">
+      <div class="premium-header">
+        <div class="left">
+          <span class="spark">✨</span>
+          <h3>ReadTap Premium</h3>
+        </div>
+        <span class="status free">무료 플랜</span>
+      </div>
+      <div class="premium-desc">
+        문맥 기반 정확한 번역, 품사별 뜻,<br>프리미엄 테마를 잠금 해제하세요
+      </div>
+      <div class="premium-cta">
+        <div class="price-hint"><strong>$1.99</strong> / 월부터</div>
+        <button class="cta-btn">업그레이드</button>
+      </div>
+    </div>
+
+    <div class="version">ReadTap v1.0</div>
+  </div>
+</div>
+
+<!-- ═══ C variant — Trial Active ═══ -->
+<div class="concept-wrap concept-c trial">
+  <div class="concept-label">C — Trial Active</div>
+  <div class="phone">
+    <div class="placeholder-card">
+      <div class="theme-row">
+        <span class="label">테마</span>
+        <div class="value"><div class="theme-dot"></div> 스튜디오 ›</div>
+      </div>
+      <div class="theme-dots">
+        <div class="dot" style="background:#1a6b3d; border-color:#1fad61;border-width:2px;border-style:solid;"></div>
+        <div class="dot" style="background:#4098dc;"></div>
+        <div class="dot" style="background:#b46c48;"></div>
+        <div class="dot" style="background:#3d6b56;"></div>
+      </div>
+      <div class="lang-row">
+        <span class="label">언어</span>
+        <div class="lang-toggle">
+          <span>EN</span>
+          <span class="active">KR</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Premium card — Trial active -->
+    <div class="premium-card">
+      <div class="premium-header">
+        <div class="left">
+          <span class="spark">✨</span>
+          <h3>ReadTap Premium</h3>
+        </div>
+        <span class="status trial">체험 중</span>
+      </div>
+      <div class="trial-progress">
+        <div class="trial-label">
+          <span>3일째 이용 중</span>
+          <span>4일 남음</span>
+        </div>
+        <div class="trial-bar-bg">
+          <div class="trial-bar"></div>
+        </div>
+      </div>
+      <div class="premium-cta">
+        <div class="price-hint">체험 종료 후 <strong>$1.99</strong>/월</div>
+        <button class="cta-btn">구독하기</button>
+      </div>
+    </div>
+
+    <div class="version">ReadTap v1.0</div>
+  </div>
+</div>
+
+</body>
+</html>

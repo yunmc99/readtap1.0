@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="format-detection" content="telephone=no, date=no, address=no, email=no, url=no">
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light">
+  <title>ReadTap</title>
+
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+
+  <style type="text/css">
+    /* ─────────── Reset ─────────── */
+    body, table, td, p, a, li, blockquote {
+      -webkit-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+    }
+    table, td {
+      mso-table-lspace: 0pt;
+      mso-table-rspace: 0pt;
+      border-collapse: collapse;
+    }
+    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
+    body { margin: 0 !important; padding: 0 !important; width: 100% !important; }
+    a { text-decoration: none; }
+
+    /* ─────────── Mobile ─────────── */
+    @media only screen and (max-width: 600px) {
+      .container { width: 100% !important; max-width: 100% !important; }
+      .card { padding: 40px 28px !important; border-radius: 16px !important; }
+      .wordmark { font-size: 30px !important; }
+      .display { font-size: 26px !important; line-height: 1.3 !important; }
+      .body-copy { font-size: 14px !important; }
+      .otp-pad { padding: 24px 18px !important; }
+      .otp-code {
+        font-size: 34px !important;
+        letter-spacing: 10px !important;
+        padding-left: 10px !important;
+      }
+      .gutter { padding: 36px 16px !important; }
+    }
+  </style>
+</head>
+
+<body style="margin:0; padding:0; background-color:#ebfaf0; font-family:Georgia, 'Iowan Old Style', 'Times New Roman', serif; color:#1f2733;">
+
+  <!-- ─────────── Hidden preheader (inbox preview) ─────────── -->
+  {{ if eq .Data.lang "ko" }}
+  <div style="display:none; font-size:1px; color:#ebfaf0; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden; mso-hide:all;">
+    인증 코드 {{ .Token }} — 1시간 동안 유효합니다.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+  </div>
+  {{ else if eq .Data.lang "zh" }}
+  <div style="display:none; font-size:1px; color:#ebfaf0; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden; mso-hide:all;">
+    验证码 {{ .Token }} — 1 小时内有效。&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+  </div>
+  {{ else }}
+  <div style="display:none; font-size:1px; color:#ebfaf0; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden; mso-hide:all;">
+    Verification code {{ .Token }} — valid for 1 hour.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+  </div>
+  {{ end }}
+
+  <!-- ─────────── Outer wrapper (mint background) ─────────── -->
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"
+         style="background-color:#ebfaf0; background-image:linear-gradient(180deg, #ebfaf0 0%, #f5fcf8 60%, #ebfaf0 100%);">
+    <tr>
+      <td class="gutter" align="center" style="padding:64px 24px;">
+
+        <!-- ─────────── Container ─────────── -->
+        <table role="presentation" class="container" border="0" cellpadding="0" cellspacing="0" width="560"
+               style="width:560px; max-width:560px;">
+
+          <!-- ── Top Eyebrow (universal) ── -->
+          <tr>
+            <td align="center" style="padding-bottom:18px;">
+              <span style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+                           font-size:10px; font-weight:700; letter-spacing:3px;
+                           color:#178449; text-transform:uppercase;">
+                A note from ReadTap
+              </span>
+            </td>
+          </tr>
+
+          <!-- ─────────── White Card ─────────── -->
+          <tr>
+            <td>
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"
+                     style="background-color:#ffffff; border-radius:20px;
+                            border:1px solid rgba(31,173,97,0.10);
+                            box-shadow:0 18px 50px rgba(31,173,97,0.10), 0 4px 12px rgba(31,39,51,0.04);">
+
+                <tr>
+                  <td class="card" style="padding:52px 56px;">
+
+                    <!-- ── Wordmark (universal) ── -->
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td align="center" style="padding-bottom:6px;">
+                          <span class="wordmark"
+                                style="font-family:Georgia, 'Iowan Old Style', 'Hoefler Text', serif;
+                                       font-size:38px; font-weight:700; letter-spacing:-0.8px;">
+                            <span style="color:#1f2733;">Read</span><span style="color:#1fad61;">Tap</span>
+                          </span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td align="center" style="padding-bottom:36px;">
+                          <span style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+                                       font-size:10px; font-weight:600; letter-spacing:4px;
+                                       color:rgba(31,39,51,0.42); text-transform:uppercase;">
+                            읽다 &nbsp;·&nbsp; 学ぶ &nbsp;·&nbsp; Leer
+                          </span>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- ── Editorial Divider (universal) ── -->
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td style="padding-bottom:36px;">
+                          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                            <tr>
+                              <td style="border-top:1px solid rgba(31,39,51,0.08); height:1px; line-height:1px; font-size:1px;">&nbsp;</td>
+                              <td width="14" style="padding:0 14px; vertical-align:middle;">
+                                <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                                  <tr>
+                                    <td width="6" height="6"
+                                        style="background-color:#1fad61; border-radius:50%; line-height:6px; font-size:1px;">&nbsp;</td>
+                                  </tr>
+                                </table>
+                              </td>
+                              <td style="border-top:1px solid rgba(31,39,51,0.08); height:1px; line-height:1px; font-size:1px;">&nbsp;</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- ─────────── Localized: Eyebrow + Headline + Body ─────────── -->
+                    {{ if eq .Data.lang "ko" }}
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td align="center" style="padding-bottom:10px;">
+                          <span style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+                                       font-size:11px; font-weight:700; letter-spacing:2.8px;
+                                       color:#178449; text-transform:uppercase;">
+                            Verification &nbsp;·&nbsp; 인증
+                          </span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td align="center" style="padding-bottom:14px;">
+                          <h1 class="display"
+                              style="margin:0; font-family:Georgia, 'Iowan Old Style', 'Hoefler Text', serif;
+                                     font-size:32px; font-weight:400; line-height:1.25;
+                                     color:#1f2733; letter-spacing:-0.4px;">
+                            이메일을 확인해주세요
+                          </h1>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td align="center" style="padding-bottom:36px;">
+                          <p class="body-copy"
+                             style="margin:0 auto; max-width:380px;
+                                    font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+                                    font-size:15px; line-height:1.65; color:#5a6371;">
+                            ReadTap에 오신 걸 환영합니다.<br>
+                            아래 6자리 코드를 앱에 입력해 인증을 완료해주세요.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                    {{ else if eq .Data.lang "zh" }}
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td align="center" style="padding-bottom:10px;">
+                          <span style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+                                       font-size:11px; font-weight:700; letter-spacing:2.8px;
+                                       color:#178449; text-transform:uppercase;">
+                            Verification &nbsp;·&nbsp; 验证
+                          </span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td align="center" style="padding-bottom:14px;">
+                          <h1 class="display"
+                              style="margin:0; font-family:Georgia, 'Iowan Old Style', 'Hoefler Text', serif;
+                                     font-size:32px; font-weight:400; line-height:1.25;
+                                     color:#1f2733; letter-spacing:-0.4px;">
+                            请验证您的邮箱
+                          </h1>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td align="center" style="padding-bottom:36px;">
+                          <p class="body-copy"
+                             style="margin:0 auto; max-width:380px;
+                                    font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+                                    font-size:15px; line-height:1.65; color:#5a6371;">
+                            欢迎加入 ReadTap。<br>
+                            请在应用中输入下方 6 位验证码以完成验证。
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                    {{ else }}
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td align="center" style="padding-bottom:10px;">
+                          <span style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+                                       font-size:11px; font-weight:700; letter-spacing:2.8px;
+                                       color:#178449; text-transform:uppercase;">
+                            Verification
+                          </span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td align="center" style="padding-bottom:14px;">
+                          <h1 class="display"
+                              style="margin:0; font-family:Georgia, 'Iowan Old Style', 'Hoefler Text', serif;
+                                     font-size:32px; font-weight:400; line-height:1.25;
+                                     color:#1f2733; letter-spacing:-0.4px;">
+                            Confirm your email
+                          </h1>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td align="center" style="padding-bottom:36px;">
+                          <p class="body-copy"
+                             style="margin:0 auto; max-width:380px;
+                                    font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+                                    font-size:15px; line-height:1.65; color:#5a6371;">
+                            Welcome to ReadTap.<br>
+                            Enter the 6-digit code below in the app to finish setting up your account.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                    {{ end }}
+
+                    <!-- ─────────── OTP Code Block (universal layout, localized label) ─────────── -->
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td>
+                          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"
+                                 style="background-color:#f0f9f3;
+                                        background-image:linear-gradient(180deg, #f5fcf8 0%, #ebfaf0 100%);
+                                        border:1px solid rgba(31,173,97,0.20);
+                                        border-radius:14px;">
+                            <tr>
+                              <td class="otp-pad" align="center" style="padding:30px 28px 14px 28px;">
+                                <span style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+                                             font-size:10px; font-weight:700; letter-spacing:2.8px;
+                                             color:#178449; text-transform:uppercase;">
+                                  {{ if eq .Data.lang "ko" }}인증 코드{{ else if eq .Data.lang "zh" }}验证码{{ else }}Verification Code{{ end }}
+                                </span>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="otp-pad" align="center" style="padding:0 28px 32px 28px;">
+                                <!-- letter-spacing creates trailing space; padding-left compensates for centering -->
+                                <div class="otp-code"
+                                     style="font-family:'SF Mono', SFMono-Regular, Menlo, Monaco, Consolas, 'Courier New', monospace;
+                                            font-size:46px; font-weight:700;
+                                            color:#178449;
+                                            letter-spacing:14px;
+                                            line-height:1.1;
+                                            padding-left:14px;">
+                                  {{ .Token }}
+                                </div>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- ─────────── Expiry note (localized) ─────────── -->
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td align="center" style="padding:22px 0 40px 0;">
+                          <span style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+                                       font-size:13px; color:#8a929e; line-height:1.6;">
+                            {{ if eq .Data.lang "ko" }}
+                              코드는&nbsp;<span style="color:#1f2733; font-weight:600;">1시간</span>&nbsp;동안 유효합니다.
+                            {{ else if eq .Data.lang "zh" }}
+                              验证码在&nbsp;<span style="color:#1f2733; font-weight:600;">1 小时</span>&nbsp;内有效。
+                            {{ else }}
+                              This code is valid for&nbsp;<span style="color:#1f2733; font-weight:600;">1 hour</span>.
+                            {{ end }}
+                          </span>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- ─────────── Bottom hairline + safety note (localized) ─────────── -->
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td style="border-top:1px solid rgba(31,39,51,0.06); padding-top:26px;">
+                          <p style="margin:0;
+                                    font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+                                    font-size:12px; line-height:1.7; color:#8a929e; text-align:center;">
+                            {{ if eq .Data.lang "ko" }}
+                              이 이메일을 요청하지 않으셨다면 안전하게 무시하셔도 됩니다.<br>
+                              다른 사람이 회원가입을 시도했을 수 있습니다.
+                            {{ else if eq .Data.lang "zh" }}
+                              如果您没有请求此邮件，可以安全地忽略它。<br>
+                              可能是其他人尝试用您的邮箱注册。
+                            {{ else }}
+                              If you didn&rsquo;t request this email, you can safely ignore it.<br>
+                              Someone else may have tried to sign up with your address.
+                            {{ end }}
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ─────────── Footer / Colophon (universal italic tagline) ─────────── -->
+          <tr>
+            <td align="center" style="padding:32px 24px 0 24px;">
+              <p style="margin:0 0 10px 0;
+                        font-family:Georgia, 'Iowan Old Style', 'Hoefler Text', serif;
+                        font-size:14px; font-style:italic; color:#5a6371; line-height:1.5;">
+                {{ if eq .Data.lang "ko" }}
+                  탭 한 번으로 단어가 쌓여요.
+                {{ else if eq .Data.lang "zh" }}
+                  轻轻一点，词汇尽收。
+                {{ else }}
+                  Every word you tap, remembered.
+                {{ end }}
+              </p>
+              <p style="margin:0;
+                        font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+                        font-size:11px; color:#8a929e; letter-spacing:1px; text-transform:uppercase;">
+                © ReadTap
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

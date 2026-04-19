@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week Strip Header Options</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    background: #EFF3F0;
+    padding: 20px;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 18px; color: #333; margin-bottom: 8px; text-align: center; }
+  .subtitle { font-size: 12px; color: #888; text-align: center; margin-bottom: 24px; }
+  .option-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 24px 0 10px;
+  }
+  .current-label {
+    font-size: 11px;
+    color: #999;
+    margin-bottom: 6px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 24px;
+    padding: 16px;
+    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+  }
+
+  /* Week strip (shared across all options) */
+  .week-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0 0;
+  }
+  .week-day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    cursor: pointer;
+  }
+  .week-day .letter { font-size: 10px; font-weight: 600; color: #B0B0B0; }
+  .week-day .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #D8DDD9;
+  }
+  .week-day .dot.has-words { width: 10px; height: 10px; background: rgba(52,168,83,0.3); }
+  .week-day .dot.selected {
+    width: 36px; height: 36px;
+    background: #34A853;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 14px; font-weight: 800;
+  }
+  .week-day .num { font-size: 11px; color: #999; }
+  .week-day .num.today { color: #34A853; font-weight: 700; }
+  .week-day .count { font-size: 10px; font-weight: 800; color: #34A853; }
+  .week-day .letter.sel { color: #34A853; font-weight: 800; }
+
+  /* Connector line */
+  .strip-with-line { position: relative; }
+  .strip-with-line::before {
+    content: '';
+    position: absolute;
+    top: 38px;
+    left: 20px;
+    right: 20px;
+    height: 3px;
+    background: #E8EDE9;
+    border-radius: 2px;
+    z-index: 0;
+  }
+  .strip-with-line .week-day { position: relative; z-index: 1; }
+
+  /* Streak badge */
+  .streak {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(52,168,83,0.08);
+    border-radius: 20px;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #34A853;
+  }
+  .streak .dot-green { width: 6px; height: 6px; border-radius: 50%; background: #6FCF97; }
+
+  /* ===== CURRENT DESIGN ===== */
+  .current-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .current-header .date {
+    font-size: 20px; font-weight: 800; color: #1A1A1A; letter-spacing: -0.8px;
+  }
+  .current-header .saved {
+    font-size: 12px; font-weight: 500; color: #999; margin-top: 2px;
+  }
+
+  /* ===== OPTION A: Minimal Inline ===== */
+  .opt-a-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .opt-a-left {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .opt-a-left .date {
+    font-size: 17px; font-weight: 800; color: #1A1A1A; letter-spacing: -0.5px;
+  }
+  .opt-a-left .divider {
+    width: 1px; height: 14px; background: #DDD; align-self: center;
+  }
+  .opt-a-left .count {
+    font-size: 13px; font-weight: 600; color: #34A853;
+  }
+
+  /* ===== OPTION B: Big Number + Side ===== */
+  .opt-b-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .opt-b-num {
+    font-size: 42px;
+    font-weight: 900;
+    color: #34A853;
+    line-height: 1;
+    letter-spacing: -2px;
+    min-width: 52px;
+    text-align: center;
+  }
+  .opt-b-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+  }
+  .opt-b-info .weekday {
+    font-size: 14px; font-weight: 700; color: #1A1A1A;
+  }
+  .opt-b-info .saved {
+    font-size: 12px; font-weight: 500; color: #999;
+  }
+
+  /* ===== OPTION C: Centered Ring ===== */
+  .opt-c-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .opt-c-ring-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+  .opt-c-ring {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    border: 3.5px solid #E0E5E1;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .opt-c-ring .progress {
+    position: absolute;
+    inset: -3.5px;
+    border-radius: 50%;
+    border: 3.5px solid transparent;
+    border-top-color: #34A853;
+    border-right-color: #34A853;
+    transform: rotate(-45deg);
+  }
+  .opt-c-ring .num {
+    font-size: 22px; font-weight: 900; color: #1A1A1A; letter-spacing: -1px;
+  }
+  .opt-c-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .opt-c-meta .weekday { font-size: 13px; font-weight: 700; color: #1A1A1A; }
+  .opt-c-meta .saved { font-size: 11px; color: #999; font-weight: 500; }
+
+  /* ===== OPTION D: Tag-style ===== */
+  .opt-d-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .tag.date-tag {
+    background: #34A853;
+    color: #fff;
+  }
+  .tag.count-tag {
+    background: rgba(52,168,83,0.1);
+    color: #34A853;
+  }
+  .tag.streak-tag {
+    background: rgba(52,168,83,0.06);
+    color: #34A853;
+    font-weight: 600;
+    font-size: 11px;
+    margin-left: auto;
+  }
+  .tag.streak-tag .dot-green { width: 5px; height: 5px; border-radius: 50%; background: #6FCF97; }
+
+  /* ===== OPTION E: Date left-aligned with accent bar ===== */
+  .opt-e-header {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .opt-e-bar {
+    width: 4px;
+    border-radius: 4px;
+    background: #34A853;
+    flex-shrink: 0;
+  }
+  .opt-e-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .opt-e-left {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .opt-e-left .weekday {
+    font-size: 11px;
+    font-weight: 600;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .opt-e-left .date-num {
+    font-size: 26px;
+    font-weight: 900;
+    color: #1A1A1A;
+    letter-spacing: -1.5px;
+    line-height: 1.1;
+  }
+  .opt-e-left .saved {
+    font-size: 12px;
+    font-weight: 500;
+    color: #34A853;
+  }
+
+  .divider-line {
+    height: 1px;
+    background: #F0F0F0;
+    margin: 2px 0 4px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Week Strip Header Options</h1>
+<p class="subtitle">Tap/scroll to compare — same week strip, different headers</p>
+
+<!-- ===== CURRENT ===== -->
+<p class="current-label">Current Design</p>
+<div class="card" style="opacity: 0.6;">
+  <div class="current-header">
+    <div>
+      <div class="date">Wed 25</div>
+      <div class="saved">5 words saved</div>
+    </div>
+    <div class="streak"><span class="dot-green"></span> 0 day streak</div>
+  </div>
+  <div class="week-strip strip-with-line">
+    <div class="week-day"><span class="letter">S</span><span class="dot"></span><span class="num">22</span></div>
+    <div class="week-day"><span class="letter">M</span><span class="dot"></span><span class="num">23</span></div>
+    <div class="week-day"><span class="letter">T</span><span class="dot"></span><span class="num">24</span></div>
+    <div class="week-day"><span class="letter sel">W</span><span class="dot selected">25</span><span class="count">5</span></div>
+    <div class="week-day"><span class="letter">T</span><span class="dot"></span><span class="num">26</span></div>
+    <div class="week-day"><span class="letter">F</span><span class="dot"></span><span class="num">27</span></div>
+    <div class="week-day"><span class="letter">S</span><span class="dot"></span><span class="num">28</span></div>
+  </div>
+</div>
+
+<!-- ===== OPTION A ===== -->
+<p class="option-label">A — Minimal Inline</p>
+<div class="card">
+  <div class="opt-a-header">
+    <div class="opt-a-left">
+      <span class="date">Wednesday 25</span>
+      <span class="divider"></span>
+      <span class="count">5 words</span>
+    </div>
+    <div class="streak"><span class="dot-green"></span> 0 day</div>
+  </div>
+  <div class="week-strip strip-with-line">
+    <div class="week-day"><span class="letter">S</span><span class="dot"></span><span class="num">22</span></div>
+    <div class="week-day"><span class="letter">M</span><span class="dot"></span><span class="num">23</span></div>
+    <div class="week-day"><span class="letter">T</span><span class="dot"></span><span class="num">24</span></div>
+    <div class="week-day"><span class="letter sel">W</span><span class="dot selected">25</span><span class="count">5</span></div>
+    <div class="week-day"><span class="letter">T</span><span class="dot"></span><span class="num">26</span></div>
+    <div class="week-day"><span class="letter">F</span><span class="dot"></span><span class="num">27</span></div>
+    <div class="week-day"><span class="letter">S</span><span class="dot"></span><span class="num">28</span></div>
+  </div>
+</div>
+
+<!-- ===== OPTION B ===== -->
+<p class="option-label">B — Big Number Hero</p>
+<div class="card">
+  <div class="opt-b-header">
+    <div class="opt-b-num">25</div>
+    <div class="opt-b-info">
+      <span class="weekday">Wednesday</span>
+      <span class="saved">5 words saved</span>
+    </div>
+    <div class="streak"><span class="dot-green"></span> 0 day</div>
+  </div>
+  <div class="divider-line"></div>
+  <div class="week-strip strip-with-line">
+    <div class="week-day"><span class="letter">S</span><span class="dot"></span><span class="num">22</span></div>
+    <div class="week-day"><span class="letter">M</span><span class="dot"></span><span class="num">23</span></div>
+    <div class="week-day"><span class="letter">T</span><span class="dot"></span><span class="num">24</span></div>
+    <div class="week-day"><span class="letter sel">W</span><span class="dot selected">25</span><span class="count">5</span></div>
+    <div class="week-day"><span class="letter">T</span><span class="dot"></span><span class="num">26</span></div>
+    <div class="week-day"><span class="letter">F</span><span class="dot"></span><span class="num">27</span></div>
+    <div class="week-day"><span class="letter">S</span><span class="dot"></span><span class="num">28</span></div>
+  </div>
+</div>
+
+<!-- ===== OPTION C ===== -->
+<p class="option-label">C — Center Ring + Progress</p>
+<div class="card">
+  <div class="opt-c-header">
+    <div class="opt-c-ring-row">
+      <div style="flex:1"></div>
+      <div class="opt-c-ring">
+        <div class="progress"></div>
+        <span class="num">25</span>
+      </div>
+      <div style="flex:1; display:flex; justify-content:flex-end;">
+        <div class="streak"><span class="dot-green"></span> 0 day</div>
+      </div>
+    </div>
+    <div class="opt-c-meta">
+      <span class="weekday">Wednesday</span>
+      <span class="saved">5 words saved</span>
+    </div>
+  </div>
+  <div class="week-strip strip-with-line">
+    <div class="week-day"><span class="letter">S</span><span class="dot"></span><span class="num">22</span></div>
+    <div class="week-day"><span class="letter">M</span><span class="dot"></span><span class="num">23</span></div>
+    <div class="week-day"><span class="letter">T</span><span class="dot"></span><span class="num">24</span></div>
+    <div class="week-day"><span class="letter sel">W</span><span class="dot selected">25</span><span class="count">5</span></div>
+    <div class="week-day"><span class="letter">T</span><span class="dot"></span><span class="num">26</span></div>
+    <div class="week-day"><span class="letter">F</span><span class="dot"></span><span class="num">27</span></div>
+    <div class="week-day"><span class="letter">S</span><span class="dot"></span><span class="num">28</span></div>
+  </div>
+</div>
+
+<!-- ===== OPTION D ===== -->
+<p class="option-label">D — Compact Tags</p>
+<div class="card">
+  <div class="opt-d-header">
+    <span class="tag date-tag">Wed 25</span>
+    <span class="tag count-tag">5 words</span>
+    <span class="tag streak-tag"><span class="dot-green"></span> 0 day streak</span>
+  </div>
+  <div class="week-strip strip-with-line">
+    <div class="week-day"><span class="letter">S</span><span class="dot"></span><span class="num">22</span></div>
+    <div class="week-day"><span class="letter">M</span><span class="dot"></span><span class="num">23</span></div>
+    <div class="week-day"><span class="letter">T</span><span class="dot"></span><span class="num">24</span></div>
+    <div class="week-day"><span class="letter sel">W</span><span class="dot selected">25</span><span class="count">5</span></div>
+    <div class="week-day"><span class="letter">T</span><span class="dot"></span><span class="num">26</span></div>
+    <div class="week-day"><span class="letter">F</span><span class="dot"></span><span class="num">27</span></div>
+    <div class="week-day"><span class="letter">S</span><span class="dot"></span><span class="num">28</span></div>
+  </div>
+</div>
+
+<!-- ===== OPTION E ===== -->
+<p class="option-label">E — Accent Bar + Stacked</p>
+<div class="card">
+  <div class="opt-e-header">
+    <div class="opt-e-bar"></div>
+    <div class="opt-e-content">
+      <div class="opt-e-left">
+        <span class="weekday">WEDNESDAY</span>
+        <span class="date-num">25</span>
+        <span class="saved">5 words saved</span>
+      </div>
+      <div class="streak"><span class="dot-green"></span> 0 day</div>
+    </div>
+  </div>
+  <div class="week-strip strip-with-line">
+    <div class="week-day"><span class="letter">S</span><span class="dot"></span><span class="num">22</span></div>
+    <div class="week-day"><span class="letter">M</span><span class="dot"></span><span class="num">23</span></div>
+    <div class="week-day"><span class="letter">T</span><span class="dot"></span><span class="num">24</span></div>
+    <div class="week-day"><span class="letter sel">W</span><span class="dot selected">25</span><span class="count">5</span></div>
+    <div class="week-day"><span class="letter">T</span><span class="dot"></span><span class="num">26</span></div>
+    <div class="week-day"><span class="letter">F</span><span class="dot"></span><span class="num">27</span></div>
+    <div class="week-day"><span class="letter">S</span><span class="dot"></span><span class="num">28</span></div>
+  </div>
+</div>
+
+<div style="height: 40px;"></div>
+
+</body>
+</html>

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReadTap Word Detail — Even More</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700;9..40,800&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+  body{background:#08080c;min-height:100vh;font-family:'DM Sans','Noto Sans KR',sans-serif;color:#fff}
+  .hdr{text-align:center;padding:60px 20px 10px}
+  .hdr h1{font-size:28px;font-weight:800;letter-spacing:-.5px}
+  .hdr p{font-size:13px;color:#555;margin-top:6px;letter-spacing:3px;text-transform:uppercase}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(375px,1fr));gap:48px;max-width:1680px;margin:0 auto;padding:40px 40px 80px}
+  .wrap{display:flex;flex-direction:column;align-items:center;gap:18px}
+  .lbl{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#555;text-align:center}
+  .lbl span{display:block;font-size:18px;font-weight:800;color:#999;letter-spacing:-.3px;text-transform:none;margin-top:4px}
+  .lbl .desc{display:block;font-size:11px;font-weight:400;color:#444;letter-spacing:0;text-transform:none;margin-top:6px;line-height:1.5;max-width:340px}
+  .dev{width:375px;height:812px;border-radius:44px;overflow:hidden;position:relative;box-shadow:0 0 0 1px rgba(255,255,255,0.05),0 40px 80px rgba(0,0,0,0.5)}
+  .sb{height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 8px;position:relative;z-index:20}
+  .sb-t{font-size:15px;font-weight:600}
+  .sb-r{display:flex;gap:5px;align-items:center}
+  .sb-d{width:3px;height:3px;border-radius:50%;background:currentColor}
+  .sb-pill{width:25px;height:12px;border-radius:3px;border:1.5px solid currentColor;position:relative}
+  .sb-pill::after{content:'';position:absolute;right:1px;top:1.5px;bottom:1.5px;left:4px;border-radius:1px;background:currentColor}
+  .sc{position:absolute;top:0;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .sc::-webkit-scrollbar{display:none}
+  @keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .ani>*{animation:fu .35s ease both}
+  .ani>*:nth-child(1){animation-delay:.04s}.ani>*:nth-child(2){animation-delay:.08s}.ani>*:nth-child(3){animation-delay:.12s}.ani>*:nth-child(4){animation-delay:.16s}.ani>*:nth-child(5){animation-delay:.20s}.ani>*:nth-child(6){animation-delay:.24s}.ani>*:nth-child(7){animation-delay:.28s}.ani>*:nth-child(8){animation-delay:.32s}
+  :root{--ink:#1F2733;--muted:#6A7482;--eyebrow:#808D9B;--accent:#1a8a4a;--amber:#C49340;--bg-top:#F7F8FA;--bg-bottom:#EAEFF3;--card:#fff;--border:rgba(31,39,51,0.06);--fill:#EBF0F2}
+
+  .nav{display:flex;align-items:center;gap:10px;padding:64px 20px 0;margin-bottom:16px}
+  .nav-back{width:32px;height:32px;border-radius:10px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--muted);cursor:pointer}
+  .nav-title{font-size:15px;font-weight:700;color:var(--ink);flex:1}
+  .nav-sub{font-size:11px;color:var(--muted)}
+  .cover{border-radius:10px;overflow:hidden;flex-shrink:0;box-shadow:0 3px 8px rgba(0,0,0,0.08);display:flex;align-items:flex-end;padding:5px;background:linear-gradient(135deg,#3a356a,#1e1b4a)}
+  .cover span{font-size:6px;font-weight:800;color:rgba(255,255,255,.8);line-height:1.2}
+
+  /* ═══ K — Two Section Split ═══
+     Unknown 섹션 + Known 섹션으로 분리.
+     각 섹션에 아이콘+카운트 헤더. */
+  .k{background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom))}.k .sb{color:var(--ink)}
+
+  .k .book-bar{display:flex;gap:12px;align-items:center;padding:0 20px;margin-bottom:16px}
+  .k .book-bar .cover{width:48px;height:64px}
+  .k .bb-info{flex:1}
+  .k .bb-title{font-size:15px;font-weight:700;color:var(--ink)}
+  .k .bb-sub{font-size:11px;color:var(--muted);margin-top:2px}
+
+  .k .section{padding:0 20px;margin-bottom:16px}
+  .k .sec-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .k .sec-icon{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px}
+  .k .sec-icon.unknown{background:rgba(196,147,64,0.08);color:var(--amber)}
+  .k .sec-icon.known{background:rgba(26,138,74,0.08);color:var(--accent)}
+  .k .sec-title{font-size:12px;font-weight:700;color:var(--ink)}
+  .k .sec-cnt{font-size:11px;font-weight:600;color:var(--muted);margin-left:auto}
+
+  .k .w-card{display:flex;align-items:center;gap:10px;padding:12px;background:var(--card);border-radius:14px;border:1px solid var(--border);margin-bottom:6px}
+  .k .w-word{font-size:14px;font-weight:700;color:var(--ink);flex:1}
+  .k .w-mean{font-size:11px;color:var(--muted);max-width:130px;text-align:right}
+
+  .k .empty-sec{font-size:12px;color:var(--muted);padding:12px 0}
+
+  /* ═══ L — Progress Bar List ═══
+     상단에 진행 바 + 통계. 아래 단어 리스트.
+     각 단어에 작은 진행 인디케이터. */
+  .l{background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom))}.l .sb{color:var(--ink)}
+
+  .l .progress-card{margin:0 20px 16px;padding:16px;background:var(--card);border-radius:16px;border:1px solid var(--border);box-shadow:0 2px 10px rgba(0,0,0,0.04)}
+  .l .pc-row{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+  .l .pc-row .cover{width:44px;height:58px}
+  .l .pc-info{flex:1}
+  .l .pc-title{font-size:14px;font-weight:700;color:var(--ink)}
+  .l .pc-sub{font-size:11px;color:var(--muted);margin-top:1px}
+  .l .bar-section{border-top:1px solid var(--border);padding-top:12px}
+  .l .bar-labels{display:flex;justify-content:space-between;margin-bottom:4px}
+  .l .bar-labels span{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+  .l .bar-labels .left{color:var(--muted)}
+  .l .bar-labels .right{color:var(--accent)}
+  .l .bar{height:6px;border-radius:3px;background:var(--fill);overflow:hidden}
+  .l .bar-f{height:100%;border-radius:3px;background:var(--accent)}
+  .l .bar-stats{display:flex;gap:16px;margin-top:8px}
+  .l .bs{text-align:center;flex:1}
+  .l .bs .num{font-size:16px;font-weight:800;letter-spacing:-.3px}
+  .l .bs .num.dark{color:var(--ink)}.l .bs .num.amber{color:var(--amber)}.l .bs .num.green{color:var(--accent)}
+  .l .bs .lbl{font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-top:1px}
+
+  .l .words{padding:0 20px 40px}
+  .l .w-item{display:flex;align-items:center;gap:10px;padding:13px 0;border-bottom:1px solid var(--border)}
+  .l .w-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .l .w-dot.unknown{background:var(--amber)}
+  .l .w-dot.known{background:var(--accent)}
+  .l .w-word{font-size:14px;font-weight:700;color:var(--ink);flex:1}
+  .l .w-mean{font-size:11px;color:var(--muted);max-width:120px;text-align:right}
+
+  /* ═══ M — Big Word Focus ═══
+     단어 하나를 엄청 크게. 사전 느낌.
+     스크롤하면 다음 단어. */
+  .m{background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom))}.m .sb{color:var(--ink)}
+
+  .m .words{padding:0 20px 40px}
+  .m .w-block{padding:24px 0;border-bottom:1px solid var(--border)}
+  .m .w-word{font-size:24px;font-weight:800;color:var(--ink);letter-spacing:-.5px}
+  .m .w-mean{font-size:14px;color:var(--muted);margin-top:8px;line-height:1.6}
+  .m .w-sentence{font-size:12px;color:var(--eyebrow);margin-top:10px;padding:10px 14px;background:var(--fill);border-radius:10px;line-height:1.5;font-style:italic}
+  .m .w-tags{display:flex;gap:6px;margin-top:10px}
+  .m .w-tag{font-size:9px;font-weight:700;padding:4px 9px;border-radius:6px}
+  .m .w-tag.page{background:var(--fill);color:var(--eyebrow)}
+  .m .w-tag.new{background:rgba(26,138,74,0.06);color:var(--accent)}
+  .m .w-tag.time{background:var(--fill);color:var(--muted)}
+
+  /* ═══ N — Chip Wall + Filter ═══
+     단어가 칩으로 나열. 탭하면 뜻 확장.
+     필터로 상태 전환. */
+  .n{background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom))}.n .sb{color:var(--ink)}
+
+  .n .book-bar{display:flex;gap:12px;align-items:center;padding:0 20px;margin-bottom:12px}
+  .n .book-bar .cover{width:44px;height:58px}
+  .n .bb-info{flex:1}
+  .n .bb-title{font-size:14px;font-weight:700;color:var(--ink)}
+  .n .bb-sub{font-size:11px;color:var(--muted);margin-top:1px}
+  .n .bb-cnt{font-size:12px;font-weight:800;color:var(--accent)}
+
+  .n .filter-row{display:flex;gap:6px;padding:0 20px;margin-bottom:14px}
+  .n .ft{padding:6px 12px;border-radius:10px;font-size:11px;font-weight:600;color:var(--muted);background:var(--card);border:1px solid var(--border)}.n .ft.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  .n .wall{padding:0 20px 40px;display:flex;flex-wrap:wrap;gap:8px}
+  .n .chip{padding:10px 16px;border-radius:14px;background:var(--card);border:1px solid var(--border);cursor:pointer;font-size:14px;font-weight:700;color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,0.02)}
+  .n .chip.unknown{border-color:rgba(26,138,74,0.12)}
+  .n .chip.expanded{width:100%;border-radius:16px;padding:14px 16px}
+  .n .chip.expanded .c-word{font-size:16px;font-weight:800;color:var(--ink);margin-bottom:4px}
+  .n .chip.expanded .c-mean{font-size:13px;color:var(--muted);line-height:1.4}
+  .n .chip.expanded .c-meta{display:flex;gap:6px;margin-top:8px}
+  .n .chip.expanded .c-tag{font-size:9px;font-weight:700;padding:3px 8px;border-radius:5px;background:var(--fill);color:var(--eyebrow)}
+  .n .chip.expanded .c-tag.new{background:rgba(26,138,74,0.06);color:var(--accent)}
+
+  /* ═══ O — Sentence Context ═══
+     각 단어에 원문 문장 강조.
+     단어가 문장 속에서 어떻게 쓰였는지. */
+  .o{background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom))}.o .sb{color:var(--ink)}
+
+  .o .book-bar{display:flex;gap:12px;align-items:center;padding:0 20px;margin-bottom:16px}
+  .o .book-bar .cover{width:44px;height:58px}
+  .o .bb-info{flex:1}
+  .o .bb-title{font-size:14px;font-weight:700;color:var(--ink)}
+  .o .bb-sub{font-size:11px;color:var(--muted);margin-top:1px}
+
+  .o .words{padding:0 20px 40px}
+  .o .w-item{padding:16px 0;border-bottom:1px solid var(--border)}
+  .o .w-head{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px}
+  .o .w-word{font-size:16px;font-weight:800;color:var(--ink);flex:1;letter-spacing:-.2px}
+  .o .w-badge{font-size:9px;font-weight:700;padding:3px 8px;border-radius:6px;flex-shrink:0}
+  .o .w-badge.new{background:rgba(26,138,74,0.06);color:var(--accent)}
+  .o .w-mean{font-size:13px;color:var(--muted);margin-bottom:8px}
+  .o .w-sentence{font-size:12px;color:var(--ink);padding:10px 14px;background:var(--fill);border-radius:10px;line-height:1.6;border-left:3px solid var(--accent)}
+  .o .w-sentence em{font-style:normal;font-weight:800;color:var(--accent)}
+  .o .w-page{font-size:9px;color:var(--eyebrow);margin-top:6px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>Word Detail</h1>
+  <p>Even More</p>
+</div>
+
+<div class="grid">
+
+<!-- ═══ K — Two Section Split ═══ -->
+<div class="wrap">
+  <div class="lbl">Option K<span>Status Split</span>
+    <span class="desc">Unknown / Known 두 섹션으로 분리. 아이콘+카운트 헤더. 상태별로 한눈에 파악.</span>
+  </div>
+  <div class="dev k">
+    <div class="sc">
+      <div class="sb"><span class="sb-t">9:37</span><div class="sb-r"><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div>&nbsp;&nbsp;<div class="sb-pill"></div></div></div>
+      <div class="ani">
+        <div class="nav"><div class="nav-back">‹</div><div class="nav-title">1 Course Overview</div><div class="nav-sub">2 words</div></div>
+        <div class="book-bar"><div class="cover" style="width:48px;height:64px"><span>Course<br>Ov.</span></div><div class="bb-info"><div class="bb-title">1 Course Overview</div><div class="bb-sub">Page 4 · Saved today</div></div></div>
+
+        <div class="section">
+          <div class="sec-head"><div class="sec-icon unknown">?</div><div class="sec-title">Unknown</div><div class="sec-cnt">2</div></div>
+          <div class="w-card"><span class="w-word">FindingPrime</span><span class="w-mean">소수 찾기</span></div>
+          <div class="w-card"><span class="w-word">Finding</span><span class="w-mean">찾기</span></div>
+        </div>
+
+        <div class="section">
+          <div class="sec-head"><div class="sec-icon known">✓</div><div class="sec-title">Known</div><div class="sec-cnt">0</div></div>
+          <div class="empty-sec">No known words yet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ L — Progress Bar List ═══ -->
+<div class="wrap">
+  <div class="lbl">Option L<span>Progress Bar</span>
+    <span class="desc">상단 진행 바 카드(6px 바 + 3열 스탯). 단어 옆에 컬러 도트로 상태 표시. 진행 상황 강조.</span>
+  </div>
+  <div class="dev l">
+    <div class="sc">
+      <div class="sb"><span class="sb-t">9:37</span><div class="sb-r"><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div>&nbsp;&nbsp;<div class="sb-pill"></div></div></div>
+      <div class="ani">
+        <div class="nav"><div class="nav-back">‹</div><div class="nav-title">1 Course Overview</div></div>
+
+        <div class="progress-card">
+          <div class="pc-row"><div class="cover" style="width:44px;height:58px"><span>Co.</span></div><div class="pc-info"><div class="pc-title">1 Course Overview</div><div class="pc-sub">Last saved today</div></div></div>
+          <div class="bar-section">
+            <div class="bar-labels"><span class="left">Known 0 / 2</span><span class="right">0%</span></div>
+            <div class="bar"><div class="bar-f" style="width:0%"></div></div>
+            <div class="bar-stats">
+              <div class="bs"><div class="num dark">2</div><div class="lbl">Total</div></div>
+              <div class="bs"><div class="num amber">2</div><div class="lbl">Unknown</div></div>
+              <div class="bs"><div class="num green">0</div><div class="lbl">Known</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="words">
+          <div class="w-item"><div class="w-dot unknown"></div><span class="w-word">FindingPrime</span><span class="w-mean">소수 찾기</span></div>
+          <div class="w-item"><div class="w-dot unknown"></div><span class="w-word">Finding</span><span class="w-mean">찾기</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ M — Big Word Focus ═══ -->
+<div class="wrap">
+  <div class="lbl">Option M<span>Dictionary</span>
+    <span class="desc">단어를 크게(24px). 뜻 + 원문 문장(인용 블록) + 태그. 사전/학습 느낌. 깊이 있는 표현.</span>
+  </div>
+  <div class="dev m">
+    <div class="sc">
+      <div class="sb"><span class="sb-t">9:37</span><div class="sb-r"><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div>&nbsp;&nbsp;<div class="sb-pill"></div></div></div>
+      <div class="ani">
+        <div class="nav"><div class="nav-back">‹</div><div class="nav-title">1 Course Overview</div><div class="nav-sub">2 words</div></div>
+
+        <div class="words">
+          <div class="w-block">
+            <div class="w-word">FindingPrime</div>
+            <div class="w-mean">소수 찾기 — a function or algorithm used to determine whether a given number is a prime number</div>
+            <div class="w-sentence">"The <em>FindingPrime</em> algorithm iterates through all integers up to the square root..."</div>
+            <div class="w-tags"><div class="w-tag page">Page 4</div><div class="w-tag new">New</div><div class="w-tag time">2 hr ago</div></div>
+          </div>
+          <div class="w-block">
+            <div class="w-word">Finding</div>
+            <div class="w-mean">찾기 — the act of discovering or locating something through search or investigation</div>
+            <div class="w-sentence">"<em>Finding</em> the optimal solution requires careful analysis of all possible paths."</div>
+            <div class="w-tags"><div class="w-tag page">Page 4</div><div class="w-tag new">New</div><div class="w-tag time">2 hr ago</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ N — Chip Wall ═══ -->
+<div class="wrap">
+  <div class="lbl">Option N<span>Chip Wall</span>
+    <span class="desc">단어가 칩으로 흘러내림. 탭하면 확장되어 뜻+메타 노출. 접힌 상태에서 단어만 빠르게 스캔.</span>
+  </div>
+  <div class="dev n">
+    <div class="sc">
+      <div class="sb"><span class="sb-t">9:37</span><div class="sb-r"><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div>&nbsp;&nbsp;<div class="sb-pill"></div></div></div>
+      <div class="ani">
+        <div class="nav"><div class="nav-back">‹</div><div class="nav-title">1 Course Overview</div><div class="nav-sub">2 words</div></div>
+
+        <div class="book-bar"><div class="cover" style="width:44px;height:58px"><span>Co.</span></div><div class="bb-info"><div class="bb-title">1 Course Overview</div><div class="bb-sub">2 words · 2 unknown</div></div><div class="bb-cnt">2</div></div>
+
+        <div class="filter-row"><div class="ft on">All</div><div class="ft">Unknown</div><div class="ft">Known</div></div>
+
+        <div class="wall">
+          <div class="chip expanded unknown">
+            <div class="c-word">FindingPrime</div>
+            <div class="c-mean">소수 찾기 — algorithm to determine prime numbers</div>
+            <div class="c-meta"><div class="c-tag">Page 4</div><div class="c-tag new">New</div><div class="c-tag">2 hr ago</div></div>
+          </div>
+          <div class="chip unknown">Finding</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ O — Sentence Context ═══ -->
+<div class="wrap">
+  <div class="lbl">Option O<span>Context View</span>
+    <span class="desc">각 단어에 원문 문장 강조 블록. 단어가 문장 속에서 accent로 하이라이트. 맥락 중심 학습.</span>
+  </div>
+  <div class="dev o">
+    <div class="sc">
+      <div class="sb"><span class="sb-t">9:37</span><div class="sb-r"><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div><div class="sb-d"></div>&nbsp;&nbsp;<div class="sb-pill"></div></div></div>
+      <div class="ani">
+        <div class="nav"><div class="nav-back">‹</div><div class="nav-title">1 Course Overview</div><div class="nav-sub">2 words</div></div>
+
+        <div class="book-bar"><div class="cover" style="width:44px;height:58px"><span>Co.</span></div><div class="bb-info"><div class="bb-title">1 Course Overview</div><div class="bb-sub">2 words · Page 4</div></div></div>
+
+        <div class="words">
+          <div class="w-item">
+            <div class="w-head"><span class="w-word">FindingPrime</span><span class="w-badge new">New</span></div>
+            <div class="w-mean">소수 찾기</div>
+            <div class="w-sentence">"The <em>FindingPrime</em> algorithm iterates through all integers up to the square root of n."</div>
+            <div class="w-page">Page 4 · 2 hr ago</div>
+          </div>
+          <div class="w-item">
+            <div class="w-head"><span class="w-word">Finding</span><span class="w-badge new">New</span></div>
+            <div class="w-mean">찾기</div>
+            <div class="w-sentence">"<em>Finding</em> the optimal solution requires careful analysis of all possible paths."</div>
+            <div class="w-page">Page 4 · 2 hr ago</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
