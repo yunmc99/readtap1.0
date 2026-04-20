@@ -108,6 +108,15 @@ enum SentenceExtractor {
       let adjustedStart = max(lower, preferredEnd - maxWords)
       wordIdxRange = adjustedStart..<preferredEnd
     }
+    if !wordIdxRange.contains(anchorIndex) {
+      // Defensive: re-center on the anchor if upstream mapping drifted.
+      didClamp = true
+      let half = maxWords / 2
+      let start = max(0, anchorIndex - half)
+      let end = min(words.count, start + maxWords)
+      let adjusted = max(0, end - maxWords)
+      wordIdxRange = adjusted..<end
+    }
 
     let selectedWords = words[wordIdxRange]
     let text = selectedWords.map(\.text).joined(separator: " ")
@@ -160,7 +169,7 @@ enum SentenceExtractor {
   ) -> Range<Int> {
     guard wordRanges.isEmpty == false else { return 0..<0 }
     let startIdx = wordRanges.firstIndex(where: {
-      $0.lowerBound >= charRange.lowerBound
+      $0.upperBound > charRange.lowerBound
     }) ?? 0
     let lastIdx = wordRanges.lastIndex(where: {
       $0.lowerBound < charRange.upperBound
