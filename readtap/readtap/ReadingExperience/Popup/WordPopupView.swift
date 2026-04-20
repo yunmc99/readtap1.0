@@ -79,6 +79,13 @@ struct WordPopupState: Equatable {
   /// cross-language lookups (spec: 2026-04-17 §10).
   var fromDictionary: Bool = false
 
+  /// Rectangles covering the extracted sentence in the reader's coordinate space.
+  /// Empty when no sentence extraction occurred or on fallback.
+  var sentenceHighlightRects: [CGRect] = []
+
+  /// Which coordinate space the rects above are in.
+  var sentenceHighlightCoordSpace: HighlightCoordinateSpace = .pagePoints
+
   /// Subword suggestions when the full word has no dictionary match (compound word splitting).
   var suggestedWords: [SuggestedWord] = []
 
