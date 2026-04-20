@@ -10,8 +10,6 @@ enum ImageLookupLimits {
   static let maxPopupWordCount = 8
   static let maxLookupContextWords = 40
   static let maxLookupContextCharacterCount = 300
-  static let imageSelectionContextWindow = 3
-  static let imageContextWordLimit = 30
   static let maxAdjustedPopupWordCount = 3
   static let maxAdjustedPopupCharacterCount = 100
   static let maxAdjustedPhraseCandidateCap = 64
@@ -3105,28 +3103,6 @@ final class ImageReaderViewModel: ObservableObject {
     #endif
 
     return (extracted.text, extracted.rects)
-  }
-
-  private func normalizeImageContextToken(_ text: String) -> String {
-    return
-      text
-      .trimmingCharacters(in: .whitespacesAndNewlines)
-      .trimmingCharacters(in: .punctuationCharacters)
-      .replacingOccurrences(of: "-\n", with: "")
-      .replacingOccurrences(of: "\n", with: " ")
-      .replacingOccurrences(of: "\t", with: " ")
-      .replacingOccurrences(of: "\u{00AD}", with: "")
-      .replacingOccurrences(of: "\u{200B}", with: "")
-      .lowercased()
-  }
-
-  private func normalizeImageContextText(_ text: String) -> String {
-    return
-      text
-      .split(whereSeparator: { $0.isWhitespace })
-      .prefix(ImageLookupLimits.imageContextWordLimit)
-      .joined(separator: " ")
-      .trimmingCharacters(in: .whitespacesAndNewlines)
   }
 
   private func performOCR(
