@@ -62,6 +62,7 @@ struct ImageReaderView: View {
   @State private var correctionBoxNormalized: CGRect? = nil
   @State private var adjustBoxValidationMessage: String? = nil
   @State private var translationDownloadConfig: Any? = nil
+  @State private var imageSentenceHighlightVisible: Bool = false
   private let minZoomScale: CGFloat = 1
   private let maxZoomScale: CGFloat = 6
   private var theme: LibraryTheme { appSettings.theme }
@@ -113,6 +114,7 @@ struct ImageReaderView: View {
     .onChange(of: viewModel.popup) { oldValue, newValue in
       if newValue == nil {
         viewModel.highlightBoxNormalized = nil
+        imageSentenceHighlightVisible = false
       }
       // Promo trigger: count lookups and queue promo on popup dismiss
       if oldValue == nil, newValue != nil {
@@ -468,7 +470,8 @@ struct ImageReaderView: View {
           onToggleSynonym: { word, isSynonym in
             viewModel.toggleSynonym(word: word, isSynonym: isSynonym)
           },
-          onGuestGate: { showGuestLoginAlert = true }
+          onGuestGate: { showGuestLoginAlert = true },
+          sentenceHighlightVisible: $imageSentenceHighlightVisible
         )
         .transition(.opacity)
       }

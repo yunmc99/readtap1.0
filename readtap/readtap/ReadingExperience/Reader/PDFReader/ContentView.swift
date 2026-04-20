@@ -107,6 +107,7 @@ struct ReaderView: View {
   @State private var pendingGuestLoginAfterDismiss: Bool = false
   @State private var showGuestLoginAlert: Bool = false
   @State private var showGuestLoginView: Bool = false
+  @State private var pdfSentenceHighlightVisible: Bool = false
   private var isTopChromeVisible: Bool { isChromeBarVisible }
   private var isBottomChromeVisible: Bool { isChromeBarVisible }
   @State private var panelDocument: PDFDocument? = nil
@@ -335,6 +336,7 @@ struct ReaderView: View {
           }
         }
         if oldPopup != nil, newPopup == nil {
+          pdfSentenceHighlightVisible = false
           if pendingGuestLoginAfterDismiss {
             pendingGuestLoginAfterDismiss = false
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
@@ -2873,7 +2875,8 @@ struct ReaderView: View {
             onToggleSynonym: { word, isSynonym in
               viewModel.toggleSynonym(word: word, isSynonym: isSynonym)
             },
-            onGuestGate: { showGuestLoginAlert = true }
+            onGuestGate: { showGuestLoginAlert = true },
+            sentenceHighlightVisible: $pdfSentenceHighlightVisible
           )
           .transition(.opacity)
         }
