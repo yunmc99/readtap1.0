@@ -1499,6 +1499,81 @@ async function handleDictionary(request, config, corsHeaders, env) {
   });
 }
 
+// ── Phase 2 Tier 1 safety filter ──────────────────────────────────────
+// Runs before every feedback INSERT. Obviously-garbage submissions get
+// status='auto-rejected' with a rejection_reason so they never reach the
+// human review queue. We still INSERT the row (not drop it) so audits can
+// spot over-aggressive filters.
+//
+// Corresponds to §3 Tier 1 of
+// docs/superpowers/plans/2026-04-18-dictionary-feedback-automation.md
+function tier1SafetyCheck(params) {
+  const { userSuggestion, langPair } = params;
+
+  // One-tap reports (no suggestion) always pass. The user is just flagging
+  // the current meaning as off; there's no string to filter.
+  if (!userSuggestion) return { ok: true };
+
+  const s = userSuggestion.trim();
+  if (s.length < 1 || s.length > 50) {
+    return { ok: false, reason: "length_out_of_range" };
+  }
+
+  // URL / email / control-char garbage
+  if (/https?:\/\/|\bwww\.|[\w.+-]+@[\w-]+\.[\w.-]+/i.test(s)) {
+    return { ok: false, reason: "contains_url_or_email" };
+  }
+  if (/[\u0000-\u001f\u200b-\u200f\u2028-\u202f]/.test(s)) {
+    return { ok: false, reason: "contains_control_chars" };
+  }
+
+  // Script check — the target side of the lang_pair must match the
+  // script of the suggestion. Prevents e.g. English-only submissions
+  // for an en-ko slot.
+  const targetLang = (langPair || "").split("-")[1] || "";
+  const hasHangul = /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/.test(s);
+  const hasCJK = /[\u4E00-\u9FFF]/.test(s);
+  const hasLatin = /[A-Za-z]/.test(s);
+
+  if (targetLang === "ko" && !hasHangul) {
+    return { ok: false, reason: "ko_requires_hangul" };
+  }
+  if (targetLang === "zh" && !hasCJK) {
+    return { ok: false, reason: "zh_requires_cjk" };
+  }
+  if (targetLang === "en" && (!hasLatin || hasHangul || hasCJK)) {
+    return { ok: false, reason: "en_requires_latin_only" };
+  }
+
+  // Profanity — conservative seed list; extend via KV later if needed.
+  const profanityPatterns = [
+    /씨발|개새끼|ㅅㅂ|ㅈㄹ/i,
+    /\bfuck\b|\bshit\b|\bbitch\b|\basshole\b/i,
+    /操你|傻逼|屌|草尼/i,
+  ];
+  for (const p of profanityPatterns) {
+    if (p.test(s)) return { ok: false, reason: "profanity" };
+  }
+
+  return { ok: true };
+}
+
+// Tier 1 rate limit: 30 feedback rows per client per rolling hour.
+// Over-limit rows are rejected with reason='rate_limited' (stored for
+// audit, not surfaced to client). Uses the existing KV namespace with a
+// bucket-keyed counter. get-check-put has a small race window; acceptable
+// imprecision for this use case.
+async function feedbackRateLimited(clientId, env) {
+  if (!env.TRANSLATION_CACHE || !clientId) return false;
+  const bucket = Math.floor(Date.now() / (60 * 60 * 1000));
+  const key = `fbrate:${clientId}:${bucket}`;
+  const raw = await env.TRANSLATION_CACHE.get(key);
+  const count = raw ? parseInt(raw, 10) || 0 : 0;
+  if (count >= 30) return true;
+  await env.TRANSLATION_CACHE.put(key, String(count + 1), { expirationTtl: 3700 });
+  return false;
+}
+
 async function handleDictionaryFeedback(request, config, corsHeaders, env) {
   // Fire-and-forget user reports on dictionary quality. Writes to D1 for
   // manual triage; never blocks the client, never 5xxs unless auth fails.
@@ -1544,25 +1619,47 @@ async function handleDictionaryFeedback(request, config, corsHeaders, env) {
     return new Response(null, { status: 204, headers: corsHeaders });
   }
 
+  const langPair = `${fromLang}-${toLang}`;
+
+  // Tier 1 — rate limit first (cheapest; avoids even checking suggestion
+  // text when a client is already flooding us).
+  let status = "new";
+  let rejectionReason = null;
+  if (await feedbackRateLimited(clientId, env)) {
+    status = "auto-rejected";
+    rejectionReason = "rate_limited";
+  } else {
+    const filterResult = tier1SafetyCheck({ userSuggestion, langPair });
+    if (!filterResult.ok) {
+      status = "auto-rejected";
+      rejectionReason = filterResult.reason;
+    }
+  }
+
   try {
     await env.DICTIONARY_DB.prepare(
       "INSERT INTO feedback " +
       "(created_at, word, lang_pair, current_meaning, user_suggestion, " +
-      " client_id, sentence_hash, status) " +
-      "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'new')"
+      " client_id, sentence_hash, status, rejection_reason) " +
+      "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)"
     ).bind(
       Math.floor(Date.now() / 1000),
       word,
-      `${fromLang}-${toLang}`,
+      langPair,
       currentMeaning || null,
       userSuggestion,
       clientId,
-      sentenceHash
+      sentenceHash,
+      status,
+      rejectionReason
     ).run();
   } catch {
     // Swallow: feedback is best-effort.
   }
 
+  // Always 204 — never tell the client whether their submission was
+  // accepted or auto-rejected. A hostile client shouldn't be able to
+  // probe the filter by varying inputs.
   return new Response(null, { status: 204, headers: corsHeaders });
 }
 
