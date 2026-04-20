@@ -76,6 +76,14 @@ final class ReaderViewModel: ObservableObject {
   /// when a new lookup starts or the popup is dismissed.
   var premiumLookupTask: Task<Void, Never>?
   var lastLookupSelection: WordSelection? = nil
+  /// Transient: populated during the OCR-fallback lookup path
+  /// (`ocrSelection(at:in:)`) when SentenceExtractor succeeds on the OCR
+  /// word list. Drained into the final `WordPopupState` by the constructing
+  /// call site in `handleSelection`. The OCR path has accurate per-word
+  /// rects (scanned imports) so these override the native-PDF fallback
+  /// (which yields empty rects) when both are available.
+  var pendingSentenceHighlightRects: [CGRect]? = nil
+  var pendingSentenceHighlightCoordSpace: HighlightCoordinateSpace? = nil
   let lookupDebounceInterval: TimeInterval = 0.25
   /// When the current lookup popup first became visible. Used to enforce a
   /// minimum loading-spinner display duration so instant lookups don't flash

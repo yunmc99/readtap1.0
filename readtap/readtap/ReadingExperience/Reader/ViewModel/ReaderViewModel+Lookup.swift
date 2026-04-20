@@ -484,41 +484,12 @@ extension ReaderViewModel {
     let effectiveAnchor = effectiveRectOnView.map { rect in
       CGPoint(x: rect.midX, y: max(rect.minY - 8, 24))
     } ?? selection.anchor
-    // Ensure sentence is a real sentence, not just the word itself.
-    // Multiple paths create WordSelection — centralize sentence extraction here.
-    var selection = selection
-    let word = selection.text.trimmingCharacters(in: .whitespacesAndNewlines)
-    let sentenceTrimmed = selection.sentence.trimmingCharacters(in: .whitespacesAndNewlines)
-    if sentenceTrimmed.isEmpty || sentenceTrimmed.caseInsensitiveCompare(word) == .orderedSame {
-      // Compute position hint from rectOnPage Y relative to page height
-      let posHint: CGFloat? = {
-        guard let rect = selection.rectOnPage, let page = selection.page else { return nil }
-        let pageHeight = page.bounds(for: .mediaBox).height
-        guard pageHeight > 0 else { return nil }
-        // PDF Y is bottom-up, so invert
-        return 1.0 - (rect.midY / pageHeight)
-      }()
-      if let fullSentence = ReaderView.extractSentenceAroundWord(
-        pageText: selection.page?.string,
-        selectedWord: word,
-        positionHint: posHint,
-        rectOnPage: selection.rectOnPage,
-        page: selection.page
-      ) {
-        #if DEBUG
-        print("[SentenceExtract] handleSelection enriched wordLen=\(word.count) sentenceLen=\(fullSentence.count)")
-        #endif
-        selection = WordSelection(
-          text: selection.text,
-          sentence: fullSentence,
-          anchor: selection.anchor,
-          pageIndex: selection.pageIndex,
-          highlightRect: selection.highlightRect,
-          rectOnPage: selection.rectOnPage,
-          page: selection.page
-        )
-      }
-    }
+    // The legacy pre-enrichment pass (previously: extractSentenceAroundWord
+    // when `selection.sentence` was empty or equal to the word) was replaced
+    // by the unified SentenceExtractor call below — see `extractedSentence`
+    // and `sentenceForContext`. When the new extractor fails (missing page/
+    // rect), the fallback simply uses `selection.sentence` as provided by the
+    // caller.
     // Clip highlight rect when the lookup text is shorter than the full
     // text that the rect covers (e.g. 8-word limit truncated a longer selection).
     let (clippedRectOnView, clippedRectOnPage, selectionWasLimited): (CGRect?, CGRect?, Bool) = {
@@ -628,7 +599,21 @@ extension ReaderViewModel {
       )
     }()
     let sentenceForContext: String = extractedSentence?.text ?? selection.sentence
-    let sentenceHighlightRects: [CGRect] = extractedSentence?.rects ?? []
+    // Drain the OCR-fallback path's pending highlight rects here so both
+    // call sites (native PDFKit selection + `ocrSelection(at:in:)`) converge
+    // on the same `sentenceHighlightRects` below. The OCR path sets these
+    // when `SentenceExtractor` succeeds over the in-memory `mapped` words —
+    // useful when Part A's `anchoredWords(for:bookId:)` missed (e.g. OCR
+    // cache write is still in-flight at long-press time). Prefer the newly
+    // extracted rects from Part A when we have them; otherwise use the
+    // OCR-path rects.
+    let pendingOCRRects = self.pendingSentenceHighlightRects
+    self.pendingSentenceHighlightRects = nil
+    self.pendingSentenceHighlightCoordSpace = nil
+    let sentenceHighlightRects: [CGRect] = {
+      if let rects = extractedSentence?.rects, rects.isEmpty == false { return rects }
+      return pendingOCRRects ?? []
+    }()
 
     // Instantly set up the "Loading" popup so it renders on the next frame.
     self.popupShownAt = Date()

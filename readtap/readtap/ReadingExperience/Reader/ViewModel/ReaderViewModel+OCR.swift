@@ -658,26 +658,47 @@ extension ReaderViewModel {
       let rectOnView = picked.rect
       let line = lineText(near: rectOnView, in: mapped)
       let anchor = CGPoint(x: rectOnView.midX, y: max(rectOnView.minY - 8, 24))
-      // Try full-sentence extraction from page text, fall back to OCR line
+      // Reset any lingering transient highlight rects from a prior OCR lookup
+      // so stale values don't leak into the next popup if this branch fails to
+      // produce a SentenceExtractor hit.
+      self.pendingSentenceHighlightRects = nil
+      self.pendingSentenceHighlightCoordSpace = nil
+      // Prefer SentenceExtractor over the OCR word list. Falls back to the
+      // per-line text when extraction fails (e.g. anchor rect can't be matched
+      // against `mapped`, extractor returns nil).
       let sentence: String = {
-        let pageHeight = page.bounds(for: .mediaBox).height
-        let posHint: CGFloat? = pageHeight > 0 ? (1.0 - (picked.value.pageRect.midY / pageHeight)) : nil
-        if let fullSentence = ReaderView.extractSentenceAroundWord(
-          pageText: page.string,
-          selectedWord: boundedWord,
-          positionHint: posHint,
-          rectOnPage: picked.value.pageRect,
-          page: page
-        ) {
+        let allWords: [AnchoredWord] = mapped.map {
+          AnchoredWord(text: $0.value.text, rect: $0.value.pageRect)
+        }
+        guard let anchorIdx = allWords.firstIndex(where: {
+          $0.rect == picked.value.pageRect
+        }) else {
           #if DEBUG
-          print("[SentenceExtract] OCR path NLTokenizer OK wordLen=\(boundedWord.count) sentenceLen=\(fullSentence.count)")
+          print("[SentenceExtract] OCR path fallback (no anchor) wordLen=\(boundedWord.count) lineLen=\(line.count)")
           #endif
-          return fullSentence
+          return line
+        }
+        let maxWords = SubscriptionManager.shared.isEffectivelyPremium
+          ? 150
+          : ReaderLookupLimits.maxPopupContextWordCount
+        let languageCode = LanguageDetector.detectResult(boundedWord).language.code
+        guard let extracted = SentenceExtractor.extract(
+          words: allWords,
+          anchorIndex: anchorIdx,
+          language: languageCode,
+          maxWords: maxWords
+        ) else {
+          #if DEBUG
+          print("[SentenceExtract] OCR path fallback (extractor nil) wordLen=\(boundedWord.count) lineLen=\(line.count)")
+          #endif
+          return line
         }
         #if DEBUG
-        print("[SentenceExtract] OCR path fallback to line wordLen=\(boundedWord.count) lineLen=\(line.count)")
+        print("[SentenceExtract] OCR path SentenceExtractor OK wordLen=\(boundedWord.count) sentenceLen=\(extracted.text.count) rects=\(extracted.rects.count)")
         #endif
-        return line
+        self.pendingSentenceHighlightRects = extracted.rects
+        self.pendingSentenceHighlightCoordSpace = .pagePoints
+        return extracted.text
       }()
       return WordSelection(
         text: boundedWord,
