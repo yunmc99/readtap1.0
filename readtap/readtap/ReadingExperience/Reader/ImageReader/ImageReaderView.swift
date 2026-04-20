@@ -272,6 +272,7 @@ struct ImageReaderView: View {
       let layout = computeLayout(uiImage: uiImage, size: size)
       ZStack {
         imageLayer(uiImage: uiImage, displayFit: layout.displayFit)
+        sentenceHighlightOverlay(uiImage: uiImage, displayFit: layout.displayFit, size: size)
         highlightLayer(uiImage: uiImage, displayFit: layout.displayFit)
         if isAdjustingBox {
           adjustOverlay(uiImage: uiImage, displayFit: layout.displayFit, size: size)
@@ -338,6 +339,57 @@ struct ImageReaderView: View {
         .position(x: highlightRect.midX, y: highlightRect.midY)
         .allowsHitTesting(false)
         .transition(.opacity)
+    }
+  }
+
+  /// Draws the sentence highlight (premium sentence-translation feature) above
+  /// the image but below the tapped-word highlight so the tapped word remains
+  /// visually prominent when both are shown. See
+  /// docs/superpowers/specs/2026-04-20-premium-sentence-translation-accuracy-design.md §5.4
+  ///
+  /// `WordPopupState.sentenceHighlightRects` for ImageReader are stored in
+  /// normalized image coordinates with Vision's bottom-left Y origin (same
+  /// space as `OCRWord.boundingBox`). We reuse `mapNormalizedRectToViewRect`
+  /// — the exact helper every other ImageReader overlay uses — so the sentence
+  /// rects align with the image pixels even when the image is letterboxed /
+  /// pillarboxed inside the outer container, and the Y-axis flip is applied
+  /// consistently.
+  @ViewBuilder
+  private func sentenceHighlightOverlay(
+    uiImage: UIImage,
+    displayFit: CGRect,
+    size: CGSize
+  ) -> some View {
+    let normalizedRects = viewModel.popup?.sentenceHighlightRects ?? []
+    let viewRects = normalizedRects.map {
+      mapNormalizedRectToViewRect($0, imageSize: uiImage.size, fitRect: displayFit)
+    }
+    SentenceHighlightOverlay(
+      rects: viewRects,
+      isVisible: imageSentenceHighlightVisible && normalizedRects.isEmpty == false,
+      tint: palette.accent
+    )
+    .frame(width: size.width, height: size.height)
+    .allowsHitTesting(false)
+  }
+
+  /// Converts normalized (`[0..1]`) rects with a top-left origin to view-space
+  /// rects by scaling against a display size. Provided for completeness per
+  /// the sentence-translation design spec; the ImageReader overlay itself uses
+  /// `mapNormalizedRectToViewRect` instead because ImageReader's normalized
+  /// rects use Vision's bottom-left Y origin and the image is displayed inside
+  /// a letterboxed `displayFit`, not 1:1.
+  private func denormalized(
+    rects: [CGRect],
+    in size: CGSize
+  ) -> [CGRect] {
+    rects.map { r in
+      CGRect(
+        x: r.minX * size.width,
+        y: r.minY * size.height,
+        width: r.width * size.width,
+        height: r.height * size.height
+      )
     }
   }
 
