@@ -108,6 +108,10 @@ struct ReaderView: View {
   @State private var showGuestLoginAlert: Bool = false
   @State private var showGuestLoginView: Bool = false
   @State private var pdfSentenceHighlightVisible: Bool = false
+  /// Bumped on `.PDFViewScaleChanged` / `.PDFViewVisiblePagesChanged` so that
+  /// SwiftUI re-reads `pdfViewRects(...)` and the sentence highlight overlay
+  /// re-projects page-space rects into view-space on pan / zoom.
+  @State private var overlayTick: Int = 0
   private var isTopChromeVisible: Bool { isChromeBarVisible }
   private var isBottomChromeVisible: Bool { isChromeBarVisible }
   @State private var panelDocument: PDFDocument? = nil
@@ -1126,11 +1130,38 @@ struct ReaderView: View {
     }
   }
 
+  /// Convert page-local `.pagePoints` rects (stored on `WordPopupState.sentenceHighlightRects`)
+  /// into view-space rects that `SentenceHighlightOverlay` can draw. `overlayTick` is read so
+  /// SwiftUI re-evaluates this on pan/zoom notifications.
+  private func pdfViewRects(
+    from pageRects: [CGRect],
+    page: PDFPage?,
+    pdfView: PDFView?,
+    tick _: Int
+  ) -> [CGRect] {
+    guard let page, let pdfView, pageRects.isEmpty == false else { return [] }
+    return pageRects.map { pdfView.convert($0, from: page) }
+  }
+
   private var readerStack: some View {
     ZStack {
       readerCanvasBackground
         .ignoresSafeArea()
       pdfContent
+      SentenceHighlightOverlay(
+        rects: pdfViewRects(
+          from: viewModel.popup?.sentenceHighlightRects ?? [],
+          page: pdfViewRef?.currentPage,
+          pdfView: pdfViewRef,
+          tick: overlayTick
+        ),
+        isVisible: pdfSentenceHighlightVisible
+          && (viewModel.popup?.sentenceHighlightRects.isEmpty == false),
+        tint: palette.accent
+      )
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
+      .allowsHitTesting(false)
+      .zIndex(1)
       cachedThumbnailOverlay
       loadingOverlay
       popupOverlay
@@ -1156,6 +1187,27 @@ struct ReaderView: View {
       }
     }
     .animation(.easeInOut(duration: 0.2), value: isManualEntryPresented)
+    .onReceive(
+      NotificationCenter.default.publisher(for: .PDFViewVisiblePagesChanged)
+    ) { _ in
+      overlayTick &+= 1
+    }
+    .onReceive(
+      NotificationCenter.default.publisher(for: .PDFViewScaleChanged)
+    ) { _ in
+      overlayTick &+= 1
+    }
+    .onReceive(
+      NotificationCenter.default.publisher(for: .PDFViewPageChanged)
+    ) { _ in
+      // Highlight is scoped to the page the popup was opened on — clear
+      // visibility when the user scrolls to a different page so we don't
+      // render stale rects against the new page's coordinate system.
+      if pdfSentenceHighlightVisible {
+        pdfSentenceHighlightVisible = false
+      }
+      overlayTick &+= 1
+    }
   }
 
   @ViewBuilder
