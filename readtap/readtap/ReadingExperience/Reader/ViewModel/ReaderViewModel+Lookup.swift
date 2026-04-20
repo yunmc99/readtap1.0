@@ -599,12 +599,43 @@ extension ReaderViewModel {
     lastLookupRequestTime = now
     let popupAnchor = effectiveAnchor
 
+    // Unified sentence extraction — single source of truth for this lookup's
+    // sentence context (initial popup, persistent cache, startPremiumLookup,
+    // final popup). Falls back to `selection.sentence` when page/rect are
+    // missing (e.g. synthesized WordSelection without PDFKit geometry).
+    //
+    // Language hint uses quick script detection on the selected token; the
+    // SentenceExtractor tokenizer falls back to `.undetermined` for unknowns,
+    // so "best-effort" is fine here — cross-language mislabels still produce
+    // reasonable sentence boundaries for Latin scripts.
+    let isPremium = SubscriptionManager.shared.isEffectivelyPremium
+    let maxSentenceWords = isPremium
+      ? 150
+      : ReaderLookupLimits.maxPopupContextWordCount
+    let initialLanguageHint = LanguageDetector.detectResult(selection.text).language.code
+    let extractedSentence: ExtractedSentence? = {
+      guard let page = selection.page,
+            let rectOnPage = selection.rectOnPage,
+            !rectOnPage.isNull
+      else { return nil }
+      let allWords = self.anchoredWords(for: page, bookId: bookId)
+      guard let anchor = Self.anchorIndex(for: rectOnPage, in: allWords) else { return nil }
+      return SentenceExtractor.extract(
+        words: allWords,
+        anchorIndex: anchor,
+        language: initialLanguageHint,
+        maxWords: maxSentenceWords
+      )
+    }()
+    let sentenceForContext: String = extractedSentence?.text ?? selection.sentence
+    let sentenceHighlightRects: [CGRect] = extractedSentence?.rects ?? []
+
     // Instantly set up the "Loading" popup so it renders on the next frame.
     self.popupShownAt = Date()
-    self.popup = WordPopupState(
+    var initialPopup = WordPopupState(
       word: quickWord,
       meaning: AppText.t(.loading),
-      sentence: selection.sentence,
+      sentence: sentenceForContext,
       anchor: popupAnchor,
       bookId: bookId,
       language: "auto",
@@ -617,6 +648,9 @@ extension ReaderViewModel {
       candidateTranslationNotice: nil,
       targetLanguage: signatureTarget
     )
+    initialPopup.sentenceHighlightRects = sentenceHighlightRects
+    initialPopup.sentenceHighlightCoordSpace = .pagePoints
+    self.popup = initialPopup
 
     lookupTask?.cancel()
     premiumLookupTask?.cancel()
@@ -644,11 +678,11 @@ extension ReaderViewModel {
       }
       
       let tokenForScript = taskRawToken.trimmingCharacters(in: CharacterSet.punctuationCharacters.union(.symbols))
-      let boundedSentence = ReaderView.boundedLookupText(
-        selection.sentence.isEmpty ? taskRawToken : selection.sentence,
-        maxWordCount: ReaderLookupLimits.maxPopupContextWordCount
-      )
-      let safeSentence = boundedSentence.text
+      // `sentenceForContext` was computed synchronously above by SentenceExtractor
+      // (or the legacy `selection.sentence` fallback). If extraction produced an
+      // empty string fall back to the raw token so downstream detection doesn't
+      // trip on an empty context.
+      let safeSentence = sentenceForContext.isEmpty ? taskRawToken : sentenceForContext
       var initialDetected = LanguageDetector.detectResult(taskRawToken).language
       let hasKana = containsJapaneseKana(tokenForScript)
       let hasHan = containsHan(tokenForScript)
@@ -695,10 +729,10 @@ extension ReaderViewModel {
         await waitForMinimumLoadingDurationIfNeeded()
         await MainActor.run {
           guard self.lookupRequestGeneration == requestGeneration else { return }
-          self.popup = WordPopupState(
+          var phrasePopup = WordPopupState(
             word: lookupWord,
             meaning: AppText.t(.popupPhraseUpgradeHint),
-            sentence: selection.sentence,
+            sentence: sentenceForContext,
             anchor: popupAnchor,
             bookId: bookId,
             language: "auto",
@@ -710,6 +744,9 @@ extension ReaderViewModel {
             isLoading: false,
             targetLanguage: "auto"
           )
+          phrasePopup.sentenceHighlightRects = sentenceHighlightRects
+          phrasePopup.sentenceHighlightCoordSpace = .pagePoints
+          self.popup = phrasePopup
         }
         return
       }
@@ -868,7 +905,7 @@ extension ReaderViewModel {
             id: existing.id,
             word: existing.word,
             meaning: persistedMeaning,
-            sentence: existing.sentence ?? selection.sentence,
+            sentence: existing.sentence ?? sentenceForContext,
             bookId: bookId
           )
           // Highlight location is stored separately in vocabulary_highlights now;
@@ -948,6 +985,8 @@ extension ReaderViewModel {
             candidateTranslationNotice: nil,
             targetLanguage: target
           )
+          cachedPopup.sentenceHighlightRects = sentenceHighlightRects
+          cachedPopup.sentenceHighlightCoordSpace = .pagePoints
           // Restore POS from DB or parallel cache; fire premium if neither exists
           let isPremiumUser = SubscriptionManager.shared.isEffectivelyPremium
           if let storedPosJson = savedEntry.posJson,
@@ -1015,6 +1054,8 @@ extension ReaderViewModel {
             candidateTranslationNotice: nil,
             targetLanguage: target
           )
+          candidatePopup.sentenceHighlightRects = sentenceHighlightRects
+          candidatePopup.sentenceHighlightCoordSpace = .pagePoints
           // Restore POS from saved entry or fire premium lookup
           let isPremiumUser = SubscriptionManager.shared.isEffectivelyPremium
           if isPremiumUser, let _ = cachedAutoSavedEntryId,
@@ -1053,7 +1094,7 @@ extension ReaderViewModel {
         } else {
           // Keep showing the loading stub but update the word/sentence to accurate values
           if let preview = self.popup {
-            self.popup = WordPopupState(
+            var stubPopup = WordPopupState(
               word: lookupWord,
               meaning: preview.meaning,
               sentence: safeSentence,
@@ -1076,6 +1117,9 @@ extension ReaderViewModel {
               candidateTranslationNotice: preview.candidateTranslationNotice,
               targetLanguage: target
             )
+            stubPopup.sentenceHighlightRects = sentenceHighlightRects
+            stubPopup.sentenceHighlightCoordSpace = .pagePoints
+            self.popup = stubPopup
           }
         }
       }
@@ -1126,11 +1170,11 @@ extension ReaderViewModel {
           }
           if !hasStoredPos && self.premiumResultCache[Self.premiumCacheKey(word: lookupWord, source: detected.language.code, target: target)] == nil {
             #if DEBUG
-            print("[PremiumLookup] SENDING wordLen=\(lookupWord.count) sentenceLen=\(selection.sentence.count)")
+            print("[PremiumLookup] SENDING wordLen=\(lookupWord.count) sentenceLen=\(sentenceForContext.count)")
             #endif
             self.startPremiumLookup(
               word: lookupWord,
-              sentence: selection.sentence,
+              sentence: sentenceForContext,
               sourceLang: detected.language.code,
               targetLang: target,
               expectedAnchor: popupAnchor,
@@ -1245,7 +1289,7 @@ extension ReaderViewModel {
             {
               let rescue = await buildRescueMeaningCandidates(
                 word: finalWord,
-                sentence: selection.sentence,
+                sentence: sentenceForContext,
                 detectedSource: detected.language.code,
                 detectedTarget: target,
                 sentenceDetected: sentenceDetected,
@@ -1284,7 +1328,7 @@ extension ReaderViewModel {
                   text: candidateWord,
                   source: detected.language.code,
                   target: target,
-                  context: selection.sentence
+                  context: sentenceForContext
                 )
                 if self.lookupService.isLikelyPlaceholderMeaning(candidateMeaning, forWord: candidateWord) {
                   continue
@@ -1382,7 +1426,7 @@ extension ReaderViewModel {
       )
       if enToKoSingleCandidate {
         let enhanceGeneration = requestGeneration
-        let normalizeSentence = normalizeContextForTranslationCandidate(selection.sentence)
+        let normalizeSentence = normalizeContextForTranslationCandidate(sentenceForContext)
         let existingCandidates = meaningCandidates
         let baseWord = finalWord
         let sourceCode = detected.language.code
@@ -1409,7 +1453,7 @@ extension ReaderViewModel {
               for: baseWord,
               source: sourceCode,
               target: target,
-              context: selection.sentence,
+              context: sentenceForContext,
               preferredCandidates: preferredCandidates
             )
           } else {
@@ -1543,7 +1587,7 @@ extension ReaderViewModel {
             id: existing.id,
             word: existing.word,
             meaning: persistedMeaning,
-            sentence: existing.sentence ?? selection.sentence,
+            sentence: existing.sentence ?? sentenceForContext,
             bookId: bookId
           )
           // Highlight geometry is stored per-location in vocabulary_highlights;
@@ -1616,7 +1660,7 @@ extension ReaderViewModel {
         var nextPopup = WordPopupState(
           word: finalWord,
           meaning: meaning,
-          sentence: selection.sentence,
+          sentence: sentenceForContext,
           sentenceTranslationKo: sentenceKo,
           synonymsEn: synonyms,
           anchor: popupAnchor,
@@ -1636,6 +1680,8 @@ extension ReaderViewModel {
           candidateTranslationNotice: lookupFailureNotice,
           targetLanguage: target
         )
+        nextPopup.sentenceHighlightRects = sentenceHighlightRects
+        nextPopup.sentenceHighlightCoordSpace = .pagePoints
         nextPopup.fromDictionary = lookupFromDictionary
         // Subword suggestions for compound words with no dictionary match
         if !suggestedWords.isEmpty {
@@ -1700,7 +1746,7 @@ extension ReaderViewModel {
             #endif
             self.startPremiumLookup(
               word: finalWord,
-              sentence: selection.sentence,
+              sentence: sentenceForContext,
               sourceLang: finalLanguageCode,
               targetLang: target,
               expectedAnchor: popupAnchor,
@@ -1724,7 +1770,7 @@ extension ReaderViewModel {
         if canFetchPremium && nextPopup.premiumByPos.isEmpty && !nextPopup.isPhraseMode {
           self.startPremiumLookup(
             word: finalWord,
-            sentence: selection.sentence,
+            sentence: sentenceForContext,
             sourceLang: finalLanguageCode,
             targetLang: target,
             expectedAnchor: popupAnchor,
