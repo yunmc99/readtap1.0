@@ -120,5 +120,24 @@ apply-remote-zhen:
 apply-staging-zhen:
 	cd .. && npx wrangler d1 execute readtap-dictionary --remote --env=staging --file=dictionary-seed/out/seed_zh_en.sql
 
+# ── Manual overrides (hand-curated entries for words Wiktionary/Kaikki miss)
+# Edit manual_<source>_<target>.csv, then run apply-manual-<pair>.
+# Rows carry source_tag='manual' and coexist with wiktionary/kaikki via the
+# entries UNIQUE(word, lang_pair, pos, source_tag) constraint. Re-running
+# DELETEs only the previous manual set for that pair, never touches the
+# wiktionary/kaikki rows.
+
+manual-ko:
+	python3 03_build_manual_sql.py --source en --target ko
+
+apply-manual-ko:
+	cd .. && npx wrangler d1 execute readtap-dictionary --remote --file=dictionary-seed/out/manual_en_ko.sql
+
+manual-zh:
+	python3 03_build_manual_sql.py --source en --target zh
+
+apply-manual-zh:
+	cd .. && npx wrangler d1 execute readtap-dictionary --remote --file=dictionary-seed/out/manual_en_zh.sql
+
 clean:
 	rm -rf out/*
