@@ -1453,15 +1453,36 @@ async function handleDictionary(request, config, corsHeaders, env) {
     LIMIT 8
   `;
 
+  // Phase 2 Task 6: prefer `overrides` over `entries`/`meanings`. An
+  // override row is a human-approved correction that MUST take
+  // precedence over whatever Wiktionary/Kaikki emitted. Overrides live
+  // at the meaning level (word, lang_pair, pos?, meaning), not sense
+  // ordinals, so merging is: if a word has overrides, those lead the
+  // returned meanings list and we pad with seeded meanings afterwards.
+  const overrideSql = `
+    SELECT meaning, pos
+    FROM overrides
+    WHERE word = ?1 AND lang_pair = ?2
+    ORDER BY id ASC
+  `;
+
   let hitWord = null;
   let rows = [];
+  let overrideMeanings = [];
   for (const candidate of candidates) {
     try {
-      const result = await env.DICTIONARY_DB.prepare(sql).bind(candidate, langPair).all();
-      const r = result.results || [];
-      if (r.length > 0) {
+      const [overrideResult, entryResult] = await Promise.all([
+        env.DICTIONARY_DB.prepare(overrideSql).bind(candidate, langPair).all(),
+        env.DICTIONARY_DB.prepare(sql).bind(candidate, langPair).all(),
+      ]);
+      const overrideRows = overrideResult.results || [];
+      const entryRows = entryResult.results || [];
+      if (overrideRows.length > 0 || entryRows.length > 0) {
         hitWord = candidate;
-        rows = r;
+        rows = entryRows;
+        overrideMeanings = overrideRows
+          .map((r) => String(r.meaning || "").trim())
+          .filter(Boolean);
         break;
       }
     } catch (err) {
@@ -1473,26 +1494,39 @@ async function handleDictionary(request, config, corsHeaders, env) {
     }
   }
 
-  if (rows.length === 0) {
+  if (overrideMeanings.length === 0 && rows.length === 0) {
     return jsonResponse(200, { hit: false }, { ...corsHeaders, "Cache-Control": "public, max-age=60" });
   }
 
-  // Dedup preserving order, cap at 3 meanings for free-tier flat list.
+  // Overrides lead; seeded meanings fill the remaining slots. Dedup
+  // preserving order, cap at 3 for free-tier flat list.
   const seen = new Set();
   const meanings = [];
-  for (const r of rows) {
-    const m = String(r.meaning || "").trim();
+  for (const m of overrideMeanings) {
     if (!m || seen.has(m)) continue;
     seen.add(m);
     meanings.push(m);
     if (meanings.length >= 3) break;
   }
+  for (const r of rows) {
+    if (meanings.length >= 3) break;
+    const m = String(r.meaning || "").trim();
+    if (!m || seen.has(m)) continue;
+    seen.add(m);
+    meanings.push(m);
+  }
+
+  // source tag: "override" if any override contributed, else the seed
+  // source. Useful for client-side debug and telemetry.
+  const source = overrideMeanings.length > 0
+    ? (rows.length > 0 ? "override+" + (rows[0].source_tag || "seed") : "override")
+    : (rows[0]?.source_tag || null);
 
   return jsonResponse(200, {
     hit: true,
     word: hitWord,
     meanings,
-    source: rows[0].source_tag,
+    source,
   }, {
     ...corsHeaders,
     "Cache-Control": "public, max-age=86400",
