@@ -1828,10 +1828,34 @@ extension ReaderViewModel {
     )
     let baseWord = popup.word.trimmingCharacters(in: .whitespacesAndNewlines)
     guard baseWord.isEmpty == false else { return }
-    let boundedSentence = ReaderView.boundedLookupText(
+
+    // Prefer SentenceExtractor (unified boundary detection, abbreviation fusion,
+    // symmetric maxWord clamp). Falls back to legacy `boundedLookupText` when
+    // we can't recover the PDFPage / rectOnPage (e.g. stale ViewModel state).
+    let isPremium = SubscriptionManager.shared.isEffectivelyPremium
+    let maxSentenceWords = isPremium ? 150 : ReaderLookupLimits.maxPopupContextWordCount
+    let extractedSentence: ExtractedSentence? = {
+      guard let page = self.lastLookupPage,
+            let rectOnPage = self.lastLookupRectOnPage else { return nil }
+      let allWords = self.anchoredWords(for: page, bookId: popup.bookId)
+      guard let anchor = Self.anchorIndex(for: rectOnPage, in: allWords) else { return nil }
+      return SentenceExtractor.extract(
+        words: allWords,
+        anchorIndex: anchor,
+        language: popup.language,
+        maxWords: maxSentenceWords
+      )
+    }()
+
+    // Preserve legacy bounded-sentence behavior as the fallback and as the
+    // cache-signature/persistence string — the existing cache keys were seeded
+    // with bounded output, so we must keep feeding them the same shape when
+    // extraction fails.
+    let legacyBoundedSentence = ReaderView.boundedLookupText(
       popup.sentence,
       maxWordCount: ReaderLookupLimits.maxPopupContextWordCount
     ).text
+    let boundedSentence = extractedSentence?.text ?? legacyBoundedSentence
     let sentenceForContext = normalizeContextForTranslationCandidate(boundedSentence)
     let normalization = LookupNormalizer.normalizeForLookup(
       text: baseWord,
@@ -1916,6 +1940,9 @@ extension ReaderViewModel {
       let wasWrong = updated.isUserReportedWrong
       updated.word = primary.word
       updated.meaning = primary.meaning
+      updated.sentence = boundedSentence
+      updated.sentenceHighlightRects = extractedSentence?.rects ?? []
+      updated.sentenceHighlightCoordSpace = .pagePoints
       updated.synonymsEn = primary.synonyms
       updated.meaningSource = .candidate
       updated.meaningConfidence = .high
