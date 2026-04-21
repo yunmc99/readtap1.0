@@ -590,7 +590,11 @@ extension ReaderViewModel {
             !rectOnPage.isNull
       else { return nil }
       let allWords = self.anchoredWords(for: page, bookId: bookId)
-      guard let anchor = Self.anchorIndex(for: rectOnPage, in: allWords) else { return nil }
+      guard let anchor = Self.anchorIndex(
+        for: rectOnPage,
+        selectedText: selection.text,
+        in: allWords
+      ) else { return nil }
       return SentenceExtractor.extract(
         words: allWords,
         anchorIndex: anchor,
@@ -1876,7 +1880,11 @@ extension ReaderViewModel {
       guard let page = self.lastLookupPage,
             let rectOnPage = self.lastLookupRectOnPage else { return nil }
       let allWords = self.anchoredWords(for: page, bookId: popup.bookId)
-      guard let anchor = Self.anchorIndex(for: rectOnPage, in: allWords) else { return nil }
+      guard let anchor = Self.anchorIndex(
+        for: rectOnPage,
+        selectedText: baseWord,
+        in: allWords
+      ) else { return nil }
       return SentenceExtractor.extract(
         words: allWords,
         anchorIndex: anchor,
@@ -3291,15 +3299,20 @@ extension ReaderViewModel {
                 current.autoSavedUUID = existing.uuid
                 current.isSaved = true
               } else {
+                // Back-fill pageIndex + rect from the in-flight lookup state so the
+                // saved card carries its origin page. Without this, the Words tab's
+                // "open in reader" stays disabled because `item.pageIndex` is NULL.
+                let resolvedPageIndex: Int? = self.lastLookupPageIndex >= 0 ? self.lastLookupPageIndex : nil
                 let didInsert = self.vocabStore.saveWord(
                   word: word,
                   meaning: premiumMeaning,
                   sentence: sentence,
                   language: sourceLang,
                   bookId: bookId,
-                  pageIndex: nil,
-                  highlightRect: nil,
-                  targetLanguage: targetLang
+                  pageIndex: resolvedPageIndex,
+                  highlightRect: self.lastLookupRectOnPage,
+                  targetLanguage: targetLang,
+                  highlightColorHex: PDFHighlightManager.shared.currentHighlightColorHex
                 )
                 if didInsert,
                    let newEntry = self.vocabStore.existingEntry(

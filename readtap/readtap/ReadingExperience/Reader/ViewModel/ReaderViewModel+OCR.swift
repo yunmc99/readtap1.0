@@ -670,9 +670,11 @@ extension ReaderViewModel {
         let allWords: [AnchoredWord] = mapped.map {
           AnchoredWord(text: $0.value.text, rect: $0.value.pageRect)
         }
-        guard let anchorIdx = allWords.firstIndex(where: {
-          $0.rect == picked.value.pageRect
-        }) else {
+        guard let anchorIdx = Self.anchorIndex(
+          for: picked.value.pageRect,
+          selectedText: picked.value.text,
+          in: allWords
+        ) else {
           #if DEBUG
           print("[SentenceExtract] OCR path fallback (no anchor) wordLen=\(boundedWord.count) lineLen=\(line.count)")
           #endif

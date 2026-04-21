@@ -74,8 +74,17 @@ extension ReaderViewModel {
     var result: [AnchoredWord] = []
     tokenizer.enumerateTokens(in: pageText.startIndex..<pageText.endIndex) { range, _ in
       let word = String(pageText[range])
-      let startOffset = pageText.distance(from: pageText.startIndex, to: range.lowerBound)
-      let endOffset = pageText.distance(from: pageText.startIndex, to: range.upperBound)
+      // PDFKit's characterBounds(at:) expects UTF-16 (NSString) indices, NOT
+      // Swift Character offsets. For any page with non-ASCII runs, the wrong
+      // characters get queried and rects drift far from the actual word.
+      guard let utf16Start = range.lowerBound.samePosition(in: pageText.utf16),
+            let utf16End = range.upperBound.samePosition(in: pageText.utf16)
+      else {
+        result.append(AnchoredWord(text: word, rect: .zero))
+        return true
+      }
+      let startOffset = pageText.utf16.distance(from: pageText.utf16.startIndex, to: utf16Start)
+      let endOffset = pageText.utf16.distance(from: pageText.utf16.startIndex, to: utf16End)
       var bounds = CGRect.null
       if endOffset > startOffset {
         for i in startOffset..<endOffset {
@@ -90,31 +99,113 @@ extension ReaderViewModel {
     return result
   }
 
-  /// Finds the word whose rect center is closest to `tappedRect`'s center.
-  /// Used to anchor `SentenceExtractor` at the word the user actually tapped.
+  /// Finds the word to anchor `SentenceExtractor` at.
+  ///
+  /// Text-identity first: if `selectedText` uniquely matches one of the
+  /// anchored words (case + punctuation normalized), use it. Geometry is only
+  /// a tiebreaker among multiple text matches, plus a sanity guard against
+  /// coord-system drift. Pure geometry is the last-resort fallback.
+  ///
+  /// Returns `nil` when confidence is low so callers fall back to
+  /// `selection.sentence` instead of anchoring on the wrong word.
   static func anchorIndex(
     for tappedRect: CGRect,
+    selectedText: String,
     in words: [AnchoredWord]
   ) -> Int? {
     guard words.isEmpty == false else { return nil }
-    // If all rects are zero (degenerate input), we can't meaningfully pick one.
-    // Defense-in-depth: even if a caller bypasses `anchoredWords` and provides
-    // a zero-rect list, we won't produce a wrong answer.
-    guard words.contains(where: { !$0.rect.isEmpty }) else { return nil }
+    // If all rects are zero, we can't meaningfully match geometry at all.
+    let anyRealRect = words.contains(where: { !$0.rect.isEmpty })
+
+    let needle = normalizedAnchorToken(selectedText)
     let tapCenter = CGPoint(x: tappedRect.midX, y: tappedRect.midY)
-    var bestIdx: Int?
-    var bestDist = CGFloat.greatestFiniteMagnitude
-    for (i, w) in words.enumerated() {
-      let mid = CGPoint(x: w.rect.midX, y: w.rect.midY)
-      let dx = mid.x - tapCenter.x
-      let dy = mid.y - tapCenter.y
-      let dist = dx * dx + dy * dy
-      if dist < bestDist {
-        bestDist = dist
-        bestIdx = i
+
+    // Row-tolerance: typical line height estimated from the tapped rect.
+    // Fall back to a reasonable default if the tapped rect has no height info.
+    let rowTolerance: CGFloat = max(tappedRect.height * 2.0, 30.0)
+
+    // Pass 1: text-identity candidates.
+    if needle.isEmpty == false {
+      let textMatches: [Int] = words.indices.filter {
+        normalizedAnchorToken(words[$0].text) == needle
+      }
+      if textMatches.count == 1 {
+        return textMatches[0]
+      } else if textMatches.count > 1 {
+        // Tiebreak among text matches by rect proximity, respecting row tolerance.
+        if anyRealRect {
+          return nearestIndex(
+            in: textMatches,
+            to: tapCenter,
+            rowTolerance: rowTolerance,
+            words: words
+          )
+        } else {
+          // No rect info — pick the first match as a best effort.
+          return textMatches[0]
+        }
       }
     }
-    return bestIdx
+
+    // Pass 2: fallback — pure geometry with sanity guard.
+    guard anyRealRect else { return nil }
+    guard let candidate = nearestIndex(
+      in: Array(words.indices),
+      to: tapCenter,
+      rowTolerance: rowTolerance,
+      words: words
+    ) else { return nil }
+    // Sanity guard: if the chosen word's rect is absurdly far in Y (more than
+    // a full page height worth of line-heights), the coord systems are
+    // mismatched somewhere and we'd rather return nil so the caller falls
+    // back to selection.sentence.
+    let chosen = words[candidate].rect
+    let dy = abs(chosen.midY - tapCenter.y)
+    if dy > rowTolerance * 20 {
+      return nil
+    }
+    return candidate
+  }
+
+  // MARK: - Private anchor helpers
+
+  private static func normalizedAnchorToken(_ text: String) -> String {
+    text.lowercased()
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+      .trimmingCharacters(in: CharacterSet.punctuationCharacters)
+      .trimmingCharacters(in: CharacterSet.symbols)
+  }
+
+  /// Among the given word indices, find the one whose rect center is closest
+  /// to `tapCenter`. Prefers candidates within `rowTolerance` Y distance —
+  /// if any exist, pick the closest X among those; otherwise, closest overall.
+  private static func nearestIndex(
+    in indices: [Int],
+    to tapCenter: CGPoint,
+    rowTolerance: CGFloat,
+    words: [AnchoredWord]
+  ) -> Int? {
+    guard indices.isEmpty == false else { return nil }
+    var inRow: [(idx: Int, dx: CGFloat)] = []
+    var bestOverall: (idx: Int, dist: CGFloat)? = nil
+    for idx in indices {
+      let r = words[idx].rect
+      guard !r.isEmpty else { continue }
+      let mid = CGPoint(x: r.midX, y: r.midY)
+      let dy = abs(mid.y - tapCenter.y)
+      let dx = abs(mid.x - tapCenter.x)
+      let dist = dx * dx + dy * dy
+      if dy <= rowTolerance {
+        inRow.append((idx, dx))
+      }
+      if bestOverall == nil || dist < bestOverall!.dist {
+        bestOverall = (idx, dist)
+      }
+    }
+    if let best = inRow.min(by: { $0.dx < $1.dx }) {
+      return best.idx
+    }
+    return bestOverall?.idx
   }
 
   // MARK: - Reading-order sort
