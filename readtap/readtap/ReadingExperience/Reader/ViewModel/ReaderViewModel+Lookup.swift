@@ -1868,7 +1868,7 @@ extension ReaderViewModel {
     // Prefer the PageLayout-derived sentence (unified boundary detection,
     // drift-free rects, paragraph-scoped tokenizer). Falls back to legacy
     // `boundedLookupText` when we can't recover the PDFPage / rectOnPage.
-    let extractedSentence: String? = {
+    let extractedLookup: (text: String, rects: [CGRect])? = {
       guard let page = self.lastLookupPage,
             let rectOnPage = self.lastLookupRectOnPage else { return nil }
       let layout = self.pageLayout(
@@ -1881,7 +1881,7 @@ extension ReaderViewModel {
         containingPoint: tapPoint,
         selectedText: baseWord
       ) else { return nil }
-      return sentence.text
+      return (sentence.text, layout.highlightRects(for: sentence))
     }()
 
     // Preserve legacy bounded-sentence behavior as the fallback and as the
@@ -1892,7 +1892,7 @@ extension ReaderViewModel {
       popup.sentence,
       maxWordCount: ReaderLookupLimits.maxPopupContextWordCount
     ).text
-    let boundedSentence = extractedSentence ?? legacyBoundedSentence
+    let boundedSentence = extractedLookup?.text ?? legacyBoundedSentence
     let sentenceForContext = normalizeContextForTranslationCandidate(boundedSentence)
     let normalization = LookupNormalizer.normalizeForLookup(
       text: baseWord,
@@ -1978,7 +1978,7 @@ extension ReaderViewModel {
       updated.word = primary.word
       updated.meaning = primary.meaning
       updated.sentence = boundedSentence
-      updated.sentenceHighlightRects = extractedSentence?.rects ?? []
+      updated.sentenceHighlightRects = extractedLookup?.rects ?? []
       updated.sentenceHighlightCoordSpace = .pagePoints
       updated.synonymsEn = primary.synonyms
       updated.meaningSource = .candidate

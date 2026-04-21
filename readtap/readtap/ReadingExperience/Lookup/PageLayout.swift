@@ -45,6 +45,12 @@ struct LayoutSentence: Equatable {
   let text: String
   let paragraphID: Int
   let confidence: Confidence
+  /// Pre-computed highlight rects for this sentence, in `coordinateSpace`.
+  /// Builder populates this at build time using PDFSelection probe for
+  /// partial lines so the bounds are visually precise (no char-proportion
+  /// approximation). Empty means `PageLayout.highlightRects(for:)` will
+  /// compute rects at render time using proportional fallback.
+  let rects: [CGRect]
 
   enum Confidence: Equatable {
     case high     // both ends at terminal punctuation
@@ -115,12 +121,16 @@ struct PageLayout: Equatable {
     return candidates[0]
   }
 
-  /// Per-line highlight rects for a sentence. Lines wholly inside the
-  /// sentence get their full bounds. Start and end lines are trimmed
-  /// proportionally by character-count within the line (close enough for
-  /// rounded-rect rendering; the overlay's corner radius hides sub-pixel
-  /// error).
+  /// Highlight rects for a sentence. Prefers precomputed rects from the
+  /// builder (precise, PDFSelection-probed at partial lines). Falls back
+  /// to char-proportion approximation when `sentence.rects` is empty (OCR
+  /// path; no PDFPage available at build time).
   func highlightRects(for sentence: LayoutSentence) -> [CGRect] {
+    if sentence.rects.isEmpty == false { return sentence.rects }
+    return approximateHighlightRects(for: sentence)
+  }
+
+  private func approximateHighlightRects(for sentence: LayoutSentence) -> [CGRect] {
     guard lines.isEmpty == false else { return [] }
     var rects: [CGRect] = []
     for line in lines {
@@ -134,10 +144,8 @@ struct PageLayout: Equatable {
       let totalChars = max(lineEnd - lineStart, 1)
 
       if coveredChars >= totalChars {
-        // Full line inside sentence.
         rects.append(line.bounds)
       } else {
-        // Partial line — trim by char proportion.
         let startFrac = CGFloat(sentStart - lineStart) / CGFloat(totalChars)
         let endFrac = CGFloat(sentEnd - lineStart) / CGFloat(totalChars)
         let x = line.bounds.minX + startFrac * line.bounds.width

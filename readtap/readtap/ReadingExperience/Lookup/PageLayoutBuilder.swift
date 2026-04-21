@@ -39,6 +39,10 @@ enum PageLayoutBuilder {
 
     var accumulated = ""
     var rawLines: [(text: String, bounds: CGRect, range: Range<Int>)] = []
+    // Parallel to `rawLines`: the PDFSelection + its raw (pre-trim) length
+    // and leading-whitespace count. Used later to build sub-selections via
+    // `extend(atStart:)` / `extend(atEnd:)` for precise partial-line rects.
+    var lineProbeSources: [(selection: PDFSelection, leadingWs: Int, rawLen: Int)] = []
     var cursorUtf16 = 0
 
     for lineSel in lineSelections {
@@ -48,6 +52,17 @@ enum PageLayoutBuilder {
       let bounds = lineSel.bounds(for: page)
       guard !bounds.isNull, !bounds.isEmpty else { continue }
 
+      // Count leading whitespace UTF-16 units in `raw` so sub-selection
+      // math later can offset into the full PDFSelection text layer.
+      var leadingWs = 0
+      for ch in raw.unicodeScalars {
+        if ch.properties.isWhitespace || CharacterSet.newlines.contains(ch) {
+          leadingWs += ch.utf16.count
+        } else {
+          break
+        }
+      }
+
       if cursorUtf16 > 0 {
         accumulated.append(" ")
         cursorUtf16 += 1
@@ -56,13 +71,91 @@ enum PageLayoutBuilder {
       accumulated.append(text)
       cursorUtf16 += text.utf16.count
       rawLines.append((text: text, bounds: bounds, range: start..<cursorUtf16))
+      lineProbeSources.append((
+        selection: lineSel,
+        leadingWs: leadingWs,
+        rawLen: raw.utf16.count
+      ))
     }
 
-    return finalize(
+    let layout = finalize(
       pageText: accumulated,
       rawLines: rawLines,
       language: languageHint,
       coordinateSpace: .pagePoints
+    )
+    return withPreciseRects(layout: layout, page: page, lineProbes: lineProbeSources)
+  }
+
+  /// Post-process a PageLayout to replace `LayoutSentence.rects` (empty
+  /// from the generic finalize path) with precise rects computed via
+  /// PDFSelection sub-selection (`extend(atStart:)` / `extend(atEnd:)`).
+  /// For fully-contained lines, uses `line.bounds` directly (no extra
+  /// PDFKit calls). For partial lines, constructs a copy of the line's
+  /// PDFSelection, contracts its start/end to the sentence's portion of
+  /// the line, then reads the sub-selection's bounds.
+  private static func withPreciseRects(
+    layout: PageLayout,
+    page: PDFPage,
+    lineProbes: [(selection: PDFSelection, leadingWs: Int, rawLen: Int)]
+  ) -> PageLayout {
+    guard layout.lines.count == lineProbes.count else { return layout }
+    let rebuiltSentences: [LayoutSentence] = layout.sentences.map { sentence in
+      var rects: [CGRect] = []
+      for (idx, line) in layout.lines.enumerated() {
+        guard line.textRangeUTF16.overlaps(sentence.textRangeUTF16) else { continue }
+        let lineStart = line.textRangeUTF16.lowerBound
+        let lineEnd = line.textRangeUTF16.upperBound
+        let sentStart = max(lineStart, sentence.textRangeUTF16.lowerBound)
+        let sentEnd = min(lineEnd, sentence.textRangeUTF16.upperBound)
+        let startInLine = sentStart - lineStart
+        let endInLine = sentEnd - lineStart
+        let trimmedLen = lineEnd - lineStart
+
+        if startInLine <= 0, endInLine >= trimmedLen {
+          rects.append(line.bounds)
+          continue
+        }
+        guard let sub = lineProbes[idx].selection.copy() as? PDFSelection else {
+          continue
+        }
+        let leadingWs = lineProbes[idx].leadingWs
+        let rawLen = lineProbes[idx].rawLen
+        // `sub` currently covers chars [0, rawLen). We want it to cover
+        // chars [leadingWs + startInLine, leadingWs + endInLine) in the
+        // raw line text. Contract the start/end accordingly.
+        let trimStartBy = leadingWs + startInLine
+        let trimEndBy = rawLen - (leadingWs + endInLine)
+        if trimStartBy > 0 { sub.extend(atStart: -trimStartBy) }
+        if trimEndBy > 0 { sub.extend(atEnd: -trimEndBy) }
+        let bounds = sub.bounds(for: page)
+        if bounds.isNull || bounds.isEmpty {
+          // Fallback: proportional approx (same math as PageLayout.approx...).
+          let startFrac = CGFloat(startInLine) / CGFloat(max(trimmedLen, 1))
+          let endFrac = CGFloat(endInLine) / CGFloat(max(trimmedLen, 1))
+          let x = line.bounds.minX + startFrac * line.bounds.width
+          let w = max(0, (endFrac - startFrac) * line.bounds.width)
+          rects.append(CGRect(
+            x: x, y: line.bounds.minY,
+            width: w, height: line.bounds.height
+          ))
+        } else {
+          rects.append(bounds)
+        }
+      }
+      return LayoutSentence(
+        textRangeUTF16: sentence.textRangeUTF16,
+        text: sentence.text,
+        paragraphID: sentence.paragraphID,
+        confidence: sentence.confidence,
+        rects: rects
+      )
+    }
+    return PageLayout(
+      pageText: layout.pageText,
+      lines: layout.lines,
+      sentences: rebuiltSentences,
+      coordinateSpace: layout.coordinateSpace
     )
   }
 
@@ -246,8 +339,11 @@ enum PageLayoutBuilder {
       let paraStartUtf16 = lines[paraStart].textRangeUTF16.lowerBound
       let paraEndUtf16 = lines[paraEnd - 1].textRangeUTF16.upperBound
 
-      guard let paraStartIdx = String.Index(utf16Offset: paraStartUtf16, in: pageText),
-            let paraEndIdx = String.Index(utf16Offset: paraEndUtf16, in: pageText)
+      let paraStartIdx = String.Index(utf16Offset: paraStartUtf16, in: pageText)
+      let paraEndIdx = String.Index(utf16Offset: paraEndUtf16, in: pageText)
+      guard paraStartIdx <= paraEndIdx,
+            paraStartIdx >= pageText.startIndex,
+            paraEndIdx <= pageText.endIndex
       else {
         paraStart = paraEnd
         continue
@@ -292,15 +388,37 @@ enum PageLayoutBuilder {
 
     let terminators: Set<Character> = [".", "!", "?", "。", "！", "？"]
     return fused.compactMap { range in
-      let text = paragraph[range].trimmingCharacters(in: .whitespacesAndNewlines)
+      // NLTokenizer sentence tokens typically include the trailing whitespace
+      // that separates sentences (e.g. "... beliefs. " with trailing space).
+      // Trim that whitespace from the range before computing UTF-16 offsets
+      // so the downstream PDFSelection sub-selection doesn't grab the gap
+      // between this sentence and the next.
+      var startIdx = range.lowerBound
+      while startIdx < range.upperBound,
+            paragraph[startIdx].isWhitespace || paragraph[startIdx].isNewline
+      {
+        startIdx = paragraph.index(after: startIdx)
+      }
+      var endIdx = range.upperBound
+      while endIdx > startIdx {
+        let prev = paragraph.index(before: endIdx)
+        let ch = paragraph[prev]
+        if ch.isWhitespace || ch.isNewline {
+          endIdx = prev
+        } else {
+          break
+        }
+      }
+      guard startIdx < endIdx else { return nil }
+      let text = String(paragraph[startIdx..<endIdx])
       guard text.isEmpty == false else { return nil }
       let startUtf16Rel = paragraph.utf16.distance(
         from: paragraph.utf16.startIndex,
-        to: range.lowerBound.samePosition(in: paragraph.utf16) ?? paragraph.utf16.startIndex
+        to: startIdx.samePosition(in: paragraph.utf16) ?? paragraph.utf16.startIndex
       )
       let endUtf16Rel = paragraph.utf16.distance(
         from: paragraph.utf16.startIndex,
-        to: range.upperBound.samePosition(in: paragraph.utf16) ?? paragraph.utf16.endIndex
+        to: endIdx.samePosition(in: paragraph.utf16) ?? paragraph.utf16.endIndex
       )
       let lastChar = text.last
       let confidence: LayoutSentence.Confidence = {
@@ -311,7 +429,8 @@ enum PageLayoutBuilder {
         textRangeUTF16: (paragraphStartUtf16 + startUtf16Rel)..<(paragraphStartUtf16 + endUtf16Rel),
         text: text,
         paragraphID: paragraphID,
-        confidence: confidence
+        confidence: confidence,
+        rects: []
       )
     }
   }
