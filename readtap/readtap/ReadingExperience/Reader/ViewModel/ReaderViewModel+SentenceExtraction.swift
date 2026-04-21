@@ -73,15 +73,22 @@ extension ReaderViewModel {
     tokenizer.string = pageText
     var result: [AnchoredWord] = []
     tokenizer.enumerateTokens(in: pageText.startIndex..<pageText.endIndex) { range, _ in
-      // NLTokenizer(.word) skips trailing punctuation (periods, commas, em-dashes).
-      // SentenceExtractor later re-joins these words with spaces and runs
-      // NLTokenizer(.sentence) on the result — without punctuation that
-      // tokenizer cannot detect sentence boundaries and treats the entire
-      // page as one sentence. Extend each word's text up to the next
-      // whitespace so attached punctuation is preserved for the sentence
-      // tokenizer. Rect geometry still uses the original word range.
+      // NLTokenizer(.word) skips trailing punctuation (periods, commas,
+      // em-dashes). SentenceExtractor later re-joins these words with spaces
+      // and runs NLTokenizer(.sentence) on the result — without punctuation
+      // that tokenizer can't detect sentence boundaries and treats the entire
+      // page as one sentence. Extend each word's text through attached
+      // punctuation so the sentence tokenizer sees terminators. Stop at the
+      // next letter/digit so punctuation-joined pairs like `assumptions—shared`
+      // don't swallow the following word — NLTokenizer also emits that next
+      // word as its own token, so greedy whitespace-based extension would
+      // produce a duplicated `assumptions—shared` + `shared` pair that
+      // breaks sentence boundary detection downstream. Rect geometry still
+      // uses the original word range.
       var textEnd = range.upperBound
-      while textEnd < pageText.endIndex, !pageText[textEnd].isWhitespace {
+      while textEnd < pageText.endIndex {
+        let c = pageText[textEnd]
+        if c.isWhitespace || c.isLetter || c.isNumber { break }
         textEnd = pageText.index(after: textEnd)
       }
       let word = String(pageText[range.lowerBound..<textEnd])

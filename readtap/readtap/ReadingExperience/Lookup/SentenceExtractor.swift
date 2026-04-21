@@ -142,10 +142,39 @@ enum SentenceExtractor {
   private static func buildFlowedText(
     words: [AnchoredWord]
   ) -> (String, [Range<String.Index>]) {
+    // Build the flowed text token-by-token, inserting a synthetic sentence
+    // terminator (". ") whenever two consecutive words are separated by a
+    // paragraph-sized vertical gap. Without this, headers / list items /
+    // dialogue lines that don't end in their own period get absorbed into
+    // the following paragraph's sentence and the extractor picks up the
+    // wrong boundary (e.g. tapping a word in the body highlights the title
+    // along with the paragraph).
+    var separators: [String] = []   // what to append between words[i] and words[i+1]
+    separators.reserveCapacity(max(0, words.count - 1))
+    for i in 0..<max(0, words.count - 1) {
+      let a = words[i].rect
+      let b = words[i + 1].rect
+      let aHasRect = !a.isEmpty
+      let bHasRect = !b.isEmpty
+      if aHasRect, bHasRect {
+        let dy = abs(a.midY - b.midY)
+        let lineHeight = max(a.height, b.height, 10)
+        // Same-line words: dy ≈ 0. Wrapped-line words: dy ≈ 1.0–1.4 × lineHeight.
+        // Paragraph break / heading gap: dy ≥ 1.7 × lineHeight.
+        if dy > lineHeight * 1.7 {
+          separators.append(". ")
+          continue
+        }
+      }
+      separators.append(" ")
+    }
+
     var flowed = ""
     for (i, w) in words.enumerated() {
       flowed.append(w.text)
-      if i < words.count - 1 { flowed.append(" ") }
+      if i < words.count - 1 {
+        flowed.append(separators[i])
+      }
     }
     // Rebuild ranges against the final (fully-appended) string since
     // intermediate indices are invalidated on each append.
@@ -157,7 +186,8 @@ enum SentenceExtractor {
       let end = flowed.index(start, offsetBy: w.text.count)
       ranges.append(start..<end)
       if i < words.count - 1 {
-        cursor = flowed.index(after: end)  // skip the space
+        // Advance cursor past the separator we inserted after this word.
+        cursor = flowed.index(end, offsetBy: separators[i].count)
       }
     }
     return (flowed, ranges)
