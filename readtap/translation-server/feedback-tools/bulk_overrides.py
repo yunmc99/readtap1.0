@@ -215,6 +215,38 @@ CURATED = [
     ("car", "noun", ["자동차", "차"]),
     ("city", "noun", ["도시"]),
     ("country", "noun", ["나라", "국가", "시골"]),
+
+    # WH-words / question words. Most had partial seed coverage but with
+    # weird artifacts (-지만, 하처, 아무튼). Overrides lead, cleaning up
+    # what users see.
+    ("where", "adverb", ["어디", "어디에"]),
+    ("where", "conjunction", ["~하는 곳"]),
+    ("which", "determiner", ["어느", "어떤"]),
+    ("which", "pronoun", ["어느 것"]),
+    ("what", "pronoun", ["무엇", "뭐"]),
+    ("what", "determiner", ["어떤"]),
+    ("that", "determiner", ["그", "저"]),
+    ("that", "pronoun", ["그것"]),
+    ("whom", "pronoun", ["누구를", "누구에게"]),
+    ("these", "pronoun", ["이것들"]),
+    ("these", "determiner", ["이", "이러한"]),
+    ("those", "pronoun", ["그것들", "저것들"]),
+    ("those", "determiner", ["그"]),
+    ("so", "conjunction", ["그래서", "그러므로"]),
+    ("so", "adverb", ["그렇게"]),
+    ("yes", "interjection", ["네", "예"]),
+    ("no", "interjection", ["아니요", "아니"]),
+    ("no", "determiner", ["~없는"]),
+
+    # Personal pronouns — obvious gap since Wiktionary rarely fills
+    # single-letter or very short entries well.
+    ("i", "pronoun", ["나", "저"]),
+    ("you", "pronoun", ["너", "당신"]),
+    ("he", "pronoun", ["그"]),
+    ("she", "pronoun", ["그녀"]),
+    ("it", "pronoun", ["그것"]),
+    ("we", "pronoun", ["우리"]),
+    ("they", "pronoun", ["그들"]),
 ]
 
 
