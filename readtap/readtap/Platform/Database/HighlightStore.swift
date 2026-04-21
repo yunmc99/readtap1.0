@@ -37,6 +37,7 @@ final class HighlightStore {
     private init() {
         createTableIfNeeded()
         backfillFromVocabularyIfNeeded()
+        backfillVocabularyPageIndexFromHighlightsIfNeeded()
     }
 
     // MARK: - Schema
@@ -102,6 +103,56 @@ final class HighlightStore {
         UserDefaults.standard.set(true, forKey: backfillDefaultsKey)
     }
 
+    /// Reverse back-fill: for vocabulary rows whose `pageIndex` / `highlightX/Y/W/H`
+    /// are NULL but which have at least one `vocabulary_highlights` row, copy the
+    /// earliest highlight's values back onto the vocabulary row.
+    ///
+    /// Needed because one code path (premium-late-save in the reader) used to
+    /// INSERT vocabulary rows with `pageIndex: nil, highlightRect: nil`, and the
+    /// old `updateHighlightRect` back-fill that masked this was removed during the
+    /// structural highlights refactor. The fix at the call site only covers
+    /// future saves; this migration cleans up historic rows so the Words tab's
+    /// "open in reader" button re-enables for them.
+    private let reverseBackfillDefaultsKey = "db.vocabulary_pageindex_backfilled_from_highlights.v1"
+    private func backfillVocabularyPageIndexFromHighlightsIfNeeded() {
+        if UserDefaults.standard.bool(forKey: reverseBackfillDefaultsKey) { return }
+
+        let sql = """
+        UPDATE vocabulary
+        SET pageIndex = COALESCE(pageIndex, (
+                SELECT vh.pageIndex FROM vocabulary_highlights vh
+                WHERE vh.vocabularyId = vocabulary.id
+                ORDER BY vh.createdAt ASC LIMIT 1
+            )),
+            highlightX = COALESCE(highlightX, (
+                SELECT vh.x FROM vocabulary_highlights vh
+                WHERE vh.vocabularyId = vocabulary.id
+                ORDER BY vh.createdAt ASC LIMIT 1
+            )),
+            highlightY = COALESCE(highlightY, (
+                SELECT vh.y FROM vocabulary_highlights vh
+                WHERE vh.vocabularyId = vocabulary.id
+                ORDER BY vh.createdAt ASC LIMIT 1
+            )),
+            highlightW = COALESCE(highlightW, (
+                SELECT vh.w FROM vocabulary_highlights vh
+                WHERE vh.vocabularyId = vocabulary.id
+                ORDER BY vh.createdAt ASC LIMIT 1
+            )),
+            highlightH = COALESCE(highlightH, (
+                SELECT vh.h FROM vocabulary_highlights vh
+                WHERE vh.vocabularyId = vocabulary.id
+                ORDER BY vh.createdAt ASC LIMIT 1
+            ))
+        WHERE (pageIndex IS NULL OR highlightX IS NULL)
+          AND EXISTS (
+              SELECT 1 FROM vocabulary_highlights vh WHERE vh.vocabularyId = vocabulary.id
+          );
+        """
+        _ = db.execute(sql)
+        UserDefaults.standard.set(true, forKey: reverseBackfillDefaultsKey)
+    }
+
     // MARK: - Select helpers
 
     private static let fullSelectColumns = """
@@ -151,6 +202,34 @@ final class HighlightStore {
         } ?? []
     }
 
+    /// All highlights on a specific page of a book, regardless of vocabulary entry.
+    /// Used by `add(...)` to enforce the cross-vocabulary "bigger wins" overlap rule.
+    func listByBookAndPage(bookId: String?, pageIndex: Int) -> [VocabularyHighlight] {
+        let sql: String
+        if bookId == nil || bookId?.isEmpty == true {
+            sql = """
+            SELECT \(Self.fullSelectColumns) FROM vocabulary_highlights
+            WHERE (bookId IS NULL OR bookId = '') AND pageIndex = ? AND deletedAt IS NULL;
+            """
+        } else {
+            sql = """
+            SELECT \(Self.fullSelectColumns) FROM vocabulary_highlights
+            WHERE bookId = ? AND pageIndex = ? AND deletedAt IS NULL;
+            """
+        }
+        return db.withStatement(sql) { stmt in
+            if let bookId, !bookId.isEmpty {
+                sqlite3_bind_text(stmt, 1, bookId, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_int(stmt, 2, Int32(pageIndex))
+            } else {
+                sqlite3_bind_int(stmt, 1, Int32(pageIndex))
+            }
+            var rows: [VocabularyHighlight] = []
+            while sqlite3_step(stmt) == SQLITE_ROW { rows.append(Self.parseRow(stmt)) }
+            return rows
+        } ?? []
+    }
+
     func listByVocabularyId(_ vocabularyId: Int) -> [VocabularyHighlight] {
         let sql = """
         SELECT \(Self.fullSelectColumns) FROM vocabulary_highlights
@@ -177,10 +256,19 @@ final class HighlightStore {
 
     // MARK: - Writes
 
-    /// Insert or return existing. Dedup criterion: same (vocabularyId, pageIndex) AND
-    /// the new rect overlaps an existing rect by ≥ 55 % of the smaller area. This
-    /// prevents accidental duplicates from a user long-pressing the exact same
-    /// occurrence twice.
+    /// Insert or reconcile. Overlap rule (applied across ALL highlights on the same
+    /// bookId+pageIndex, regardless of which vocabulary entry they belong to):
+    ///   - If a new rect overlaps an existing rect by ≥ 55 % of the smaller area,
+    ///     the **bigger rect wins**:
+    ///       • existing ≥ new  → skip insert, return existing (no visual duplicate).
+    ///       • new > existing  → delete the smaller existing row(s), insert new.
+    ///   - Non-overlapping (< 55 %) rects coexist.
+    ///
+    /// This keeps a phrase highlight ("put forward") from layering on top of a
+    /// previously-saved single-word highlight ("forward") — the phrase wins because
+    /// its rect fully encloses the word's rect. It also prevents the reverse case
+    /// from double-drawing when a word inside an existing phrase highlight is
+    /// looked up later.
     @discardableResult
     func add(
         vocabularyId: Int,
@@ -191,9 +279,21 @@ final class HighlightStore {
     ) -> VocabularyHighlight? {
         guard rect.width > 0, rect.height > 0 else { return nil }
 
-        let siblings = listByVocabularyId(vocabularyId).filter { $0.pageIndex == pageIndex }
-        if let duplicate = siblings.first(where: { Self.highlightsCompete(rect, $0.rect) }) {
-            return duplicate
+        let siblings = listByBookAndPage(bookId: bookId, pageIndex: pageIndex)
+        let newArea = Self.highlightArea(for: rect)
+        var victims: [Int] = []
+        for sibling in siblings where Self.highlightsCompete(rect, sibling.rect) {
+            let sibArea = Self.highlightArea(for: sibling.rect)
+            if sibArea >= newArea {
+                // Existing wins — new rect is redundant / smaller.
+                return sibling
+            } else {
+                // New rect is bigger and subsumes this sibling — drop it.
+                victims.append(sibling.id)
+            }
+        }
+        for victimId in victims {
+            deleteById(victimId)
         }
 
         let uuid = UUID().uuidString

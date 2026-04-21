@@ -43,6 +43,7 @@ struct FlashcardDeckView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @EnvironmentObject private var appSettings: AppSettings
+    @ObservedObject private var pronouncer = PronunciationPlayer.shared
 
     @FocusState private var focusedField: FlashcardEditFocus?
 
@@ -115,6 +116,28 @@ struct FlashcardDeckView: View {
     private var currentOpenRequest: OpenBookRequest? {
         guard let currentItem else { return nil }
         return openRequestProvider(currentItem)
+    }
+
+    private var currentFaceText: String? {
+        guard let currentItem else { return nil }
+        let text = isFlipped ? currentItem.meaning : currentItem.word
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    private var currentFaceLanguage: String? {
+        guard let currentItem else { return nil }
+        return isFlipped ? currentItem.targetLanguage : currentItem.language
+    }
+
+    private var isSpeakingCurrentFace: Bool {
+        guard let text = currentFaceText else { return false }
+        return pronouncer.isSpeaking(text)
+    }
+
+    private func speakCurrentFace() {
+        guard let text = currentFaceText else { return }
+        pronouncer.speak(text, language: currentFaceLanguage)
     }
 
     private var canOpenInBook: Bool {
@@ -208,6 +231,10 @@ struct FlashcardDeckView: View {
             isInlineEditing = false
             isSentencePreviewVisible = false
             focusedField = nil
+            pronouncer.stop()
+        }
+        .onDisappear {
+            pronouncer.stop()
         }
         .onChange(of: overlayMode) { _, newValue in
             if newValue != .details {
@@ -285,6 +312,26 @@ struct FlashcardDeckView: View {
             Spacer(minLength: 0)
 
             HStack(spacing: 6) {
+                Button {
+                    speakCurrentFace()
+                } label: {
+                    Image(systemName: isSpeakingCurrentFace ? "speaker.wave.2.fill" : "speaker.wave.2")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(isSpeakingCurrentFace ? DSColors.accent : DSColors.muted)
+                        .frame(width: 32, height: 32)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(Color.white.opacity(0.86))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                        .stroke(isSpeakingCurrentFace ? DSColors.accent.opacity(0.3) : DSColors.border, lineWidth: 1)
+                                )
+                        )
+                }
+                .buttonStyle(.plain)
+                .disabled(currentItem == nil)
+                .accessibilityLabel(AppText.L("Pronounce", "발음 듣기", "朗读"))
+
                 Button {
                     withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
                         overlayMode = overlayMode == .details ? nil : .details

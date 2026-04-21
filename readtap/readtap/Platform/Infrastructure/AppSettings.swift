@@ -73,6 +73,7 @@ final class AppSettings: ObservableObject {
     @Published private(set) var theme: LibraryTheme
     @Published private(set) var language: AppLanguage
     @Published private(set) var autoSaveEnabled: Bool
+    @Published private(set) var highlightOnSaveEnabled: Bool
     @Published private(set) var readerLongPressEnabled: Bool
     @Published private(set) var translationSource: String
     @Published private(set) var translationTarget: String
@@ -83,6 +84,7 @@ final class AppSettings: ObservableObject {
     @Published private(set) var dailyWordGoal: Int
     @Published private(set) var dailyMinuteGoal: Int
     @Published private(set) var synonymPlacement: SynonymPlacement
+    @Published private(set) var pronunciationRate: Double
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -96,6 +98,7 @@ final class AppSettings: ObservableObject {
 
         language = AppLanguage.current()
         autoSaveEnabled = UserDefaults.standard.object(forKey: "autoSaveEnabled") as? Bool ?? true
+        highlightOnSaveEnabled = UserDefaults.standard.object(forKey: "highlightOnSaveEnabled") as? Bool ?? true
         readerLongPressEnabled = UserDefaults.standard.object(forKey: "readerLongPressEnabled") as? Bool ?? true
         translationSource = TranslationSource.resolved(from: UserDefaults.standard.string(forKey: "translationSource")).rawValue
         translationTarget = UserDefaults.standard.string(forKey: "translationTarget") ?? TranslationTarget.auto.rawValue
@@ -113,6 +116,9 @@ final class AppSettings: ObservableObject {
         dailyMinuteGoal = UserDefaults.standard.object(forKey: "dailyMinuteGoal") as? Int ?? 10
         let rawSynPlacement = UserDefaults.standard.string(forKey: "synonymPlacement") ?? SynonymPlacement.back.rawValue
         synonymPlacement = SynonymPlacement(rawValue: rawSynPlacement) ?? .back
+        pronunciationRate = Self.clampedPronunciationRate(
+            UserDefaults.standard.object(forKey: PronunciationPlayer.rateStorageKey) as? Double
+        )
 
         // Observe UserDefaults so external writes (e.g. SettingsView via @AppStorage) propagate here too.
         NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
@@ -127,6 +133,9 @@ final class AppSettings: ObservableObject {
 
                 let newAutoSave = UserDefaults.standard.object(forKey: "autoSaveEnabled") as? Bool ?? true
                 if self.autoSaveEnabled != newAutoSave { self.autoSaveEnabled = newAutoSave }
+
+                let newHighlightOnSave = UserDefaults.standard.object(forKey: "highlightOnSaveEnabled") as? Bool ?? true
+                if self.highlightOnSaveEnabled != newHighlightOnSave { self.highlightOnSaveEnabled = newHighlightOnSave }
 
                 let newLongPress = UserDefaults.standard.object(forKey: "readerLongPressEnabled") as? Bool ?? true
                 if self.readerLongPressEnabled != newLongPress { self.readerLongPressEnabled = newLongPress }
@@ -158,8 +167,18 @@ final class AppSettings: ObservableObject {
 
                 let newSynPlacement = SynonymPlacement(rawValue: UserDefaults.standard.string(forKey: "synonymPlacement") ?? "") ?? .back
                 if self.synonymPlacement != newSynPlacement { self.synonymPlacement = newSynPlacement }
+
+                let newRate = Self.clampedPronunciationRate(
+                    UserDefaults.standard.object(forKey: PronunciationPlayer.rateStorageKey) as? Double
+                )
+                if self.pronunciationRate != newRate { self.pronunciationRate = newRate }
             }
             .store(in: &cancellables)
+    }
+
+    private static func clampedPronunciationRate(_ raw: Double?) -> Double {
+        let value = raw ?? PronunciationPlayer.defaultRate
+        return max(PronunciationPlayer.minRate, min(PronunciationPlayer.maxRate, value))
     }
 
     var wordPopupScale: CGFloat {
@@ -181,6 +200,11 @@ final class AppSettings: ObservableObject {
     func setAutoSave(_ enabled: Bool) {
         UserDefaults.standard.set(enabled, forKey: "autoSaveEnabled")
         autoSaveEnabled = enabled
+    }
+
+    func setHighlightOnSave(_ enabled: Bool) {
+        UserDefaults.standard.set(enabled, forKey: "highlightOnSaveEnabled")
+        highlightOnSaveEnabled = enabled
     }
 
     func setReaderLongPress(_ enabled: Bool) {
@@ -238,6 +262,12 @@ final class AppSettings: ObservableObject {
     func setSynonymPlacement(_ placement: SynonymPlacement) {
         UserDefaults.standard.set(placement.rawValue, forKey: "synonymPlacement")
         synonymPlacement = placement
+    }
+
+    func setPronunciationRate(_ rate: Double) {
+        let clamped = Self.clampedPronunciationRate(rate)
+        PronunciationPlayer.setRate(clamped)
+        pronunciationRate = clamped
     }
 
     var selectedHighlightPreset: HighlightColorPreset {

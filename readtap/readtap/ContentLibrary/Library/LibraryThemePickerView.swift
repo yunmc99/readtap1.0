@@ -4,7 +4,6 @@ struct LibraryThemePickerView: View {
     @EnvironmentObject private var appSettings: AppSettings
     @ObservedObject private var subscription = SubscriptionManager.shared
     @State private var previewTheme: LibraryTheme? = nil
-    @State private var showPaywall = false
     private var theme: LibraryTheme { appSettings.theme }
 
     var body: some View {
@@ -22,7 +21,7 @@ struct LibraryThemePickerView: View {
                             isLocked: isLocked,
                             onTap: {
                                 if isLocked {
-                                    showPaywall = true
+                                    AuthManager.shared.pendingPaywallPresentation = true
                                 } else {
                                     withAnimation(.smooth(duration: 0.3)) {
                                         appSettings.setTheme(t)
@@ -56,13 +55,13 @@ struct LibraryThemePickerView: View {
                 },
                 onPaywall: {
                     previewTheme = nil
-                    showPaywall = true
+                    AuthManager.shared.pendingPaywallPresentation = true
                 }
             )
         }
-        .sheet(isPresented: $showPaywall) {
-            PaywallView()
-        }
+        // PaywallView is presented at the WindowGroup level via
+        // AuthManager.pendingPaywallPresentation to avoid sibling
+        // fullScreenCover conflicts — see AdaptivePresentation.swift.
     }
 }
 

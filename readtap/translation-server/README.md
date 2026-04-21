@@ -1,9 +1,25 @@
 # ReadTap Translation Worker (Cloudflare Workers)
 
 초기/베타/저비용 운영을 위한 **Cloudflare Workers 단독 구성** 템플릿입니다.
-`ContextMeaningService`와 한국어 사전 프록시가 호출하는 `/health`, `/translate`, `/meaning`, `/krdict` 경로를 지원합니다.
+`ContextMeaningService`와 한국어 사전 프록시가 호출하는 `/health`, `/translate`, `/meaning`, `/krdict`, `/dictionary`, `/dictionary-feedback` 경로를 지원합니다.
 
-> 중요: 이 Worker는 **번역 전용 경계**입니다.
+## What's here (map for future maintainers)
+
+| Directory | Purpose | Start reading |
+|---|---|---|
+| `index.js` | Worker handlers for every endpoint | `handleDictionary` + `handleDictionaryFeedback` for the Phase 1 / Phase 2 dict system |
+| `migrations/` | D1 schema evolution | `001_dictionary.sql` (base), `002_feedback_automation.sql` (overrides + rejection_reason) |
+| `dictionary-seed/` | Offline pipelines that seed `entries`/`meanings` | [dictionary-seed/README.md](./dictionary-seed/README.md) |
+| `feedback-tools/` | Phase 2 operator pipeline (aggregate → cross_ref → review) | [feedback-tools/README.md](./feedback-tools/README.md) |
+| `wrangler.toml` | Deploy config (root + staging envs, shared D1 database_id) | — |
+
+Design docs:
+- Phase 1 free-tier dict: [`docs/superpowers/plans/2026-04-17-free-tier-dictionary-phase1.md`](../../docs/superpowers/plans/2026-04-17-free-tier-dictionary-phase1.md)
+- Phase 2 feedback automation: [`docs/superpowers/plans/2026-04-18-dictionary-feedback-automation.md`](../../docs/superpowers/plans/2026-04-18-dictionary-feedback-automation.md)
+
+**D1 data survives worker redeploys.** Worker code is redeployable via `npx wrangler deploy` in seconds; the D1 content is only changed by the seed/manual/feedback pipelines, never by a worker push.
+
+> 중요: 이 Worker는 **번역 + 사전 경계**입니다.
 > 동기화/구독/인증 API는 별도 `app server`(Spring Boot)로 분리하는 것을 권장합니다.
 > `backend/PLAN_BACKEND_MVP.md`와 `backend/api-v1.yaml`이 해당 서버의 기준 API입니다.
 

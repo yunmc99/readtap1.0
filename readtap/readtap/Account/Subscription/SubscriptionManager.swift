@@ -22,12 +22,39 @@ final class SubscriptionManager: ObservableObject {
     private static let allProductIds: Set<String> = [monthlyProductId, yearlyProductId]
 
     /// Synchronous premium check.
-    /// Checks admin override first (instant), then falls back to isPremium
-    /// which depends on the async StoreKit entitlement refresh.
+    /// Checks admin override first (instant), then applies date-based safety
+    /// checks before returning `isPremium`.
+    ///
+    /// The date checks are a safety net for a subtle StoreKit timing bug:
+    /// when a subscription expires naturally (after cancellation), Apple
+    /// does NOT emit a `Transaction.updates` event — the entitlement just
+    /// silently falls out of `Transaction.currentEntitlements`. If the user
+    /// keeps the app in the foreground across the exact expiration moment,
+    /// `refreshSubscriptionStatus` won't run and `isPremium` stays stale at
+    /// `true`. The scheduled `expirationRefreshTask` covers this on happy
+    /// paths, but these synchronous date cutoffs guarantee the right answer
+    /// even if the task was cancelled / hasn't fired yet.
     /// Always returns false in guest mode — guests never get premium features.
     var isEffectivelyPremium: Bool {
         if AuthManager.shared.isGuestMode { return false }
         if let override = premiumOverride { return override }
+        // Subscription safety net: past its expiration, treat as not premium.
+        if let expiresAt = subscriptionExpiresAt, expiresAt < Date() {
+            return false
+        }
+        // Trial safety net: past 7 days since start, treat as not premium
+        // (unless a separate active subscription is providing entitlement).
+        if activeSubscriptionProductId == nil,
+           let trialStart = defaults.object(forKey: Self.trialStartKey) as? Date {
+            let trialEndDate = Calendar.current.date(
+                byAdding: .day,
+                value: Self.trialDurationDays,
+                to: trialStart
+            )
+            if let trialEndDate, trialEndDate < Date() {
+                return false
+            }
+        }
         return isPremium
     }
 
@@ -43,6 +70,11 @@ final class SubscriptionManager: ObservableObject {
     @Published private(set) var activeSubscriptionProductId: String? = nil
     /// Expiration date of the current StoreKit subscription (nil if no active subscription).
     @Published private(set) var subscriptionExpiresAt: Date? = nil
+    /// Whether the active subscription will auto-renew at `subscriptionExpiresAt`.
+    /// `false` means the user has canceled — they still have access until the
+    /// expiration date, but the subscription will not renew. Defaults to `true`
+    /// when there is no active subscription (neutral value).
+    @Published private(set) var willAutoRenew: Bool = true
     /// Whether the user is banned from the entire app (from Supabase `profiles.banned_at`).
     @Published private(set) var isBanned: Bool = false
     /// Admin-provided reason for the ban (may be nil even when banned).
@@ -57,6 +89,17 @@ final class SubscriptionManager: ObservableObject {
     /// True while `loadProducts()` is actively fetching from StoreKit (including
     /// retry attempts). UI can use this to show a ProgressView.
     @Published private(set) var isLoadingProducts: Bool = false
+    /// Whether this device's Apple ID has *ever* had an auto-renewable subscription
+    /// to the app. Used to suppress the "Start 7-Day Free Trial" offer and the
+    /// promo sheet for returning users who canceled — offering a trial to someone
+    /// who's already been a paying subscriber is misleading UX and a soft App
+    /// Store Guideline 3.1.1 issue ("fraudulent trial practices").
+    ///
+    /// Persisted in UserDefaults (`hasEverSubscribedKey`) so the decision survives
+    /// app restarts before StoreKit's async `Transaction.all` scan completes.
+    /// Also re-validated against `Transaction.all` on every refresh so the flag
+    /// turns on for users whose purchase happened on a different install.
+    @Published private(set) var hasEverSubscribed: Bool = UserDefaults.standard.bool(forKey: "readtap_has_ever_subscribed")
 
     enum TrialState: Equatable {
         case notStarted
@@ -75,6 +118,11 @@ final class SubscriptionManager: ObservableObject {
     private let defaults: UserDefaults
     private static let trialStartKey = "readtap_trial_start_date"
     private static let trialDurationDays = 7
+    /// Persists `hasEverSubscribed` across app launches. Intentionally NOT cleared
+    /// on sign-out (`resetForSignOut`) because it reflects device-level Apple ID
+    /// history, not a per-user claim — a different in-app user on the same device
+    /// shouldn't get a fresh trial offer either.
+    static let hasEverSubscribedKey = "readtap_has_ever_subscribed"
     /// Per-user claim of the device's StoreKit subscription. Stored as
     /// `<prefix><userId> = true`. StoreKit entitlements live on the Apple ID,
     /// not on our in-app account; this flag binds an entitlement to a specific
@@ -83,6 +131,10 @@ final class SubscriptionManager: ObservableObject {
     private static let subscriptionClaimKeyPrefix = "readtap_subscription_claimed_"
 
     private var transactionListener: Task<Void, Never>?
+    /// A single pending Task that fires at the next known expiration boundary
+    /// (subscription end OR trial end, whichever is sooner) and triggers a
+    /// refresh. See `scheduleNextExpirationRefresh` for why this exists.
+    private var expirationRefreshTask: Task<Void, Never>?
     /// Tracks the current "sign-in generation" so in-flight async refreshes
     /// spawned before sign-out don't overwrite a freshly reset state.
     private var signInGeneration: Int = 0
@@ -95,6 +147,7 @@ final class SubscriptionManager: ObservableObject {
 
     deinit {
         transactionListener?.cancel()
+        expirationRefreshTask?.cancel()
     }
 
     // MARK: - Public API
@@ -200,7 +253,17 @@ final class SubscriptionManager: ObservableObject {
                 let transaction = try checkVerified(verification)
                 await transaction.finish()
                 // Bind this StoreKit subscription to the current in-app user.
-                await MainActor.run { markCurrentUserAsSubscriptionOwner() }
+                // Also eagerly set `hasEverSubscribed` so the promo sheet stops
+                // offering trials to this user from now on, even if the async
+                // `refreshSubscriptionStatus` below hasn't finished scanning
+                // `Transaction.all` yet.
+                await MainActor.run {
+                    markCurrentUserAsSubscriptionOwner()
+                    if !hasEverSubscribed {
+                        hasEverSubscribed = true
+                        defaults.set(true, forKey: Self.hasEverSubscribedKey)
+                    }
+                }
                 let gen = signInGeneration
                 await refreshSubscriptionStatus(generation: gen)
                 await MainActor.run { purchaseState = .purchased }
@@ -359,6 +422,8 @@ final class SubscriptionManager: ObservableObject {
     /// Bumps `signInGeneration` so any in-flight async refresh is discarded.
     func resetForSignOut() {
         signInGeneration &+= 1        // overflow-safe increment
+        expirationRefreshTask?.cancel()
+        expirationRefreshTask = nil
         defaults.removeObject(forKey: Self.trialStartKey)
         trialState = .notStarted
         trialDaysRemaining = 0
@@ -366,10 +431,18 @@ final class SubscriptionManager: ObservableObject {
         premiumOverride = nil
         activeSubscriptionProductId = nil
         subscriptionExpiresAt = nil
+        willAutoRenew = true
         isBanned = false
         banReason = nil
         isTrialOfferDisabled = false
         purchaseState = .idle
+    }
+
+    /// Convenience: whether the user has an active subscription that they've
+    /// canceled (auto-renewal disabled). Access continues until
+    /// `subscriptionExpiresAt`, after which they revert to free tier.
+    var isSubscriptionCanceled: Bool {
+        activeSubscriptionProductId != nil && !willAutoRenew
     }
 
     /// Whether the user has ever started a trial.
@@ -424,6 +497,7 @@ final class SubscriptionManager: ObservableObject {
         guard let startDate = defaults.object(forKey: Self.trialStartKey) as? Date else {
             trialState = .notStarted
             trialDaysRemaining = 0
+            scheduleNextExpirationRefresh()
             return
         }
 
@@ -441,23 +515,46 @@ final class SubscriptionManager: ObservableObject {
         } else {
             trialState = .expired
             trialDaysRemaining = 0
+            // Trial just flipped to expired — re-derive isPremium so the UI
+            // reflects this immediately if there's no active subscription
+            // stepping in.
+            if premiumOverride == nil,
+               activeSubscriptionProductId == nil {
+                isPremium = false
+            }
         }
+        scheduleNextExpirationRefresh()
     }
 
     /// Check current entitlements to determine if user has an active subscription.
     /// `generation` is captured at call-site; if it differs from `signInGeneration`
     /// by the time the async work finishes, the user has signed out — discard results.
     private func refreshSubscriptionStatus(generation: Int) async {
-        var hasActiveSubscription = false
-        var activeProductId: String? = nil
-        var expiresAt: Date? = nil
+        var activeTransaction: Transaction? = nil
 
         for await result in Transaction.currentEntitlements {
             guard let transaction = try? checkVerified(result) else { continue }
             if Self.allProductIds.contains(transaction.productID) {
-                hasActiveSubscription = true
-                activeProductId = transaction.productID
-                expiresAt = transaction.expirationDate
+                activeTransaction = transaction
+                break
+            }
+        }
+
+        let hasActiveSubscription = activeTransaction != nil
+        let activeProductId = activeTransaction?.productID
+        let expiresAt = activeTransaction?.expirationDate
+
+        // Scan ALL past transactions (including expired / canceled) so returning
+        // subscribers don't see a "Start 7-Day Free Trial" offer they're no
+        // longer eligible for. `Transaction.all` survives app reinstall on the
+        // same Apple ID. We only care about auto-renewable subscriptions here —
+        // ignore the rest.
+        var foundHistoricalSubscription = false
+        for await result in Transaction.all {
+            guard let transaction = try? checkVerified(result) else { continue }
+            if transaction.productType == .autoRenewable,
+               Self.allProductIds.contains(transaction.productID) {
+                foundHistoricalSubscription = true
                 break
             }
         }
@@ -465,6 +562,11 @@ final class SubscriptionManager: ObservableObject {
         await MainActor.run {
             // Discard stale results from a previous sign-in session.
             guard self.signInGeneration == generation else { return }
+
+            if foundHistoricalSubscription && !self.hasEverSubscribed {
+                self.hasEverSubscribed = true
+                self.defaults.set(true, forKey: Self.hasEverSubscribedKey)
+            }
 
             // Per-user claim gate: a StoreKit entitlement is only honored when
             // the current in-app user has explicitly claimed it. This prevents
@@ -476,6 +578,13 @@ final class SubscriptionManager: ObservableObject {
 
             self.activeSubscriptionProductId = activeSubForThisUser ? activeProductId : nil
             self.subscriptionExpiresAt = activeSubForThisUser ? expiresAt : nil
+            // Clear stale willAutoRenew when there's no subscription; otherwise
+            // leave the previously-fetched value in place until the async
+            // fetch below completes. This prevents a stale `false` from
+            // carrying over across plan changes.
+            if !activeSubForThisUser {
+                self.willAutoRenew = true
+            }
 
             // Premium = active subscription (claimed by this user) OR active trial
             let trialActive: Bool
@@ -487,9 +596,105 @@ final class SubscriptionManager: ObservableObject {
             // Admin override takes absolute priority
             if let override = self.premiumOverride {
                 self.isPremium = override
-                return
+            } else {
+                self.isPremium = activeSubForThisUser || trialActive
             }
-            self.isPremium = activeSubForThisUser || trialActive
+
+            // Now that we know the next expiration, schedule a follow-up
+            // refresh so the UI transitions to free tier at the exact moment
+            // access ends — even if the app stays in foreground and no
+            // Transaction.updates event fires.
+            self.scheduleNextExpirationRefresh()
+        }
+
+        // Fetch `willAutoRenew` in a *detached* Task after isPremium has
+        // already been published. Apple's `Product.SubscriptionInfo.status`
+        // call can be slow or hang (especially in sandbox right after a
+        // fresh purchase, before the renewal state has propagated), and
+        // awaiting it inline previously caused purchases to not apply
+        // premium until the status fetch returned — which could be many
+        // seconds or never. Firing it off the main await path means the
+        // premium flip happens immediately on purchase; the cancellation
+        // badge ("ends on DATE") updates a moment later once status arrives.
+        if let tx = activeTransaction {
+            Task { [weak self] in
+                await self?.fetchAndUpdateRenewalInfo(for: tx, generation: generation)
+            }
+        }
+    }
+
+    /// Asynchronously fetch `willAutoRenew` for a given transaction and
+    /// publish it. Safe to call concurrently with other refreshes — the
+    /// `signInGeneration` guard ensures stale results are dropped.
+    private func fetchAndUpdateRenewalInfo(for tx: Transaction, generation: Int) async {
+        var willAutoRenew = true
+        if let product = products.first(where: { $0.id == tx.productID }),
+           let subscription = product.subscription,
+           let statuses = try? await subscription.status {
+            for status in statuses {
+                if case .verified(let renewalInfo) = status.renewalInfo,
+                   renewalInfo.currentProductID == tx.productID {
+                    willAutoRenew = renewalInfo.willAutoRenew
+                    break
+                }
+            }
+        }
+        await MainActor.run {
+            guard self.signInGeneration == generation else { return }
+            // Only publish if the user still owns an active subscription —
+            // another refresh may have cleared it while we were awaiting.
+            if self.activeSubscriptionProductId == tx.productID {
+                self.willAutoRenew = willAutoRenew
+            }
+        }
+    }
+
+    /// Schedule (or reschedule) a single Task that fires at the soonest known
+    /// expiration boundary — subscription end or trial end, whichever comes
+    /// first — and triggers a refresh so `isPremium` transitions to false at
+    /// the exact moment entitlement ends.
+    ///
+    /// Without this, a user who cancels an auto-renewing subscription and
+    /// leaves the app open past the expiration date would remain "premium"
+    /// in the UI until they background/foreground the app, because Apple does
+    /// not emit a `Transaction.updates` event on natural expiration.
+    ///
+    /// Must be called on the main actor.
+    private func scheduleNextExpirationRefresh() {
+        expirationRefreshTask?.cancel()
+
+        var nextExpiry: Date? = nil
+
+        if let subExpiry = subscriptionExpiresAt, subExpiry > Date() {
+            nextExpiry = subExpiry
+        }
+
+        if case .active = trialState,
+           let trialStart = defaults.object(forKey: Self.trialStartKey) as? Date,
+           let trialEnd = Calendar.current.date(
+               byAdding: .day,
+               value: Self.trialDurationDays,
+               to: trialStart
+           ),
+           trialEnd > Date() {
+            nextExpiry = min(nextExpiry ?? trialEnd, trialEnd)
+        }
+
+        guard let expiry = nextExpiry else { return }
+        // Add a small buffer past the exact expiration moment so StoreKit
+        // has a chance to drop the entitlement from `currentEntitlements`
+        // before we re-check.
+        let delay = expiry.timeIntervalSinceNow + 2
+        // Ignore absurd future values (>400 days) — a safety valve against
+        // corrupt state accidentally scheduling a year-long sleep.
+        guard delay > 0, delay < 60 * 60 * 24 * 400 else { return }
+
+        let gen = signInGeneration
+        expirationRefreshTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            guard !Task.isCancelled, let self else { return }
+            await self.refreshSubscriptionStatus(generation: gen)
+            await MainActor.run { self.refreshTrialState() }
         }
     }
 

@@ -27,6 +27,7 @@ private enum ReaderHaptics {
 struct ReaderChromeBar: View, Equatable {
     let autoSaveEnabled: Bool
     let longPressEnabled: Bool
+    let highlightOnSaveEnabled: Bool
     let isThumbnailPanelVisible: Bool
     let isBookmarked: Bool
     let isFinished: Bool
@@ -36,6 +37,7 @@ struct ReaderChromeBar: View, Equatable {
     let onToggleThumbnails: () -> Void
     let onToggleAutoSave: (Bool) -> Void
     let onToggleLongPress: (Bool) -> Void
+    let onToggleHighlightOnSave: (Bool) -> Void
     let onToggleBookmark: () -> Void
     let onToggleFinished: () -> Void
     let onOpenWordbook: () -> Void
@@ -45,6 +47,7 @@ struct ReaderChromeBar: View, Equatable {
     static func == (lhs: ReaderChromeBar, rhs: ReaderChromeBar) -> Bool {
         lhs.autoSaveEnabled == rhs.autoSaveEnabled &&
         lhs.longPressEnabled == rhs.longPressEnabled &&
+        lhs.highlightOnSaveEnabled == rhs.highlightOnSaveEnabled &&
         lhs.isThumbnailPanelVisible == rhs.isThumbnailPanelVisible &&
         lhs.isBookmarked == rhs.isBookmarked &&
         lhs.isFinished == rhs.isFinished &&
@@ -59,6 +62,7 @@ struct ReaderChromeBar: View, Equatable {
             chromeDivider
             autoSaveButton
             longPressButton
+            highlightButton
             Spacer(minLength: 6)
             wordbookButton
             bookmarkButton
@@ -121,6 +125,21 @@ struct ReaderChromeBar: View, Equatable {
         )
         .accessibilityLabel("Auto-save")
         .accessibilityValue(autoSaveEnabled ? "On" : "Off")
+    }
+
+    private var highlightButton: some View {
+        // `highlighter` has no `.fill` variant; the pill signals on/off via
+        // background + border + scale, so reusing the same symbol reads correctly.
+        LongPressModePill(
+            isEnabled: highlightOnSaveEnabled,
+            systemImageOn: "highlighter",
+            systemImageOff: "highlighter",
+            theme: theme,
+            styleMode: styleMode,
+            action: onToggleHighlightOnSave
+        )
+        .accessibilityLabel(AppText.L("Highlight", "하이라이트", "高亮"))
+        .accessibilityValue(highlightOnSaveEnabled ? "On" : "Off")
     }
 
     private var wordbookButton: some View {

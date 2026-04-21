@@ -36,6 +36,7 @@ struct ImageOCRPDFBuilder {
         let pageCount: Int
         let averageConfidence: Float
         let wordsPerPage: [Int]
+        let confidencePerPage: [Float]
     }
 
     // MARK: - Public API (source-aware, returns BuildResult with quality metrics)
@@ -147,6 +148,10 @@ struct ImageOCRPDFBuilder {
 
     private static func makeBuildResult(url: URL, pages: [(UIImage, [OCRWord])]) -> BuildResult {
         let wordsPerPage = pages.map { $0.1.count }
+        let confidencePerPage: [Float] = pages.map { _, words in
+            guard !words.isEmpty else { return 0 }
+            return words.reduce(0) { $0 + $1.confidence } / Float(words.count)
+        }
         let allWords = pages.flatMap { $0.1 }
         let avgConf: Float
         if allWords.isEmpty {
@@ -158,7 +163,8 @@ struct ImageOCRPDFBuilder {
             url: url,
             pageCount: pages.count,
             averageConfidence: avgConf,
-            wordsPerPage: wordsPerPage
+            wordsPerPage: wordsPerPage,
+            confidencePerPage: confidencePerPage
         )
     }
 
@@ -413,6 +419,26 @@ struct ImageOCRPDFBuilder {
             // hard images (we still try all passes), but speeds up the common "clean scan" case.
             if let currentBest = bestSoFar, isHighQualityOCRResult(currentBest) {
                 break
+            }
+        }
+
+        // Scanner sources normally skip binarization (VisionKit pre-enhances). But when a
+        // scanner page still comes out weak — shadows, curved spines, faded print — the heavier
+        // passes can rescue it. Clean scans never reach this branch thanks to early-exit above.
+        if source == .scanner,
+           let currentBest = bestSoFar,
+           !isHighQualityOCRResult(currentBest),
+           !isHighConfidence(currentBest) {
+            let fallbackPasses: [OCRPass] = [.normalizedStrong, .binarized, .binarizedStrong]
+            for pass in fallbackPasses {
+                let result = performOCR(on: image, pass: pass, languages: languages)
+                results.append(result)
+                if let updated = results.max(by: { score($0) < score($1) }) {
+                    bestSoFar = updated
+                    if isHighQualityOCRResult(updated) {
+                        break
+                    }
+                }
             }
         }
 
@@ -1174,27 +1200,52 @@ struct ImageOCRPDFBuilder {
         renderPDF(pages: [(image, words)])
     }
 
+    // US Letter at 72 dpi — PDFKit's native point unit. Every scanned page is letterboxed to one of these
+    // two sizes so downstream min/max zoom, thumbnails, and page navigation stay consistent regardless of
+    // source image resolution.
+    private static let canonicalPortraitPageSize = CGSize(width: 612, height: 792)
+    private static let canonicalLandscapePageSize = CGSize(width: 792, height: 612)
+
+    private static func canonicalPageBounds(for imageSize: CGSize) -> CGRect {
+        let size = imageSize.width > imageSize.height ? canonicalLandscapePageSize : canonicalPortraitPageSize
+        return CGRect(origin: .zero, size: size)
+    }
+
+    private static func letterboxedRect(for imageSize: CGSize, in pageSize: CGSize) -> CGRect {
+        guard imageSize.width > 0, imageSize.height > 0, pageSize.width > 0, pageSize.height > 0 else {
+            return CGRect(origin: .zero, size: pageSize)
+        }
+        let scale = min(pageSize.width / imageSize.width, pageSize.height / imageSize.height)
+        let fittedSize = CGSize(width: imageSize.width * scale, height: imageSize.height * scale)
+        let origin = CGPoint(
+            x: (pageSize.width - fittedSize.width) / 2,
+            y: (pageSize.height - fittedSize.height) / 2
+        )
+        return CGRect(origin: origin, size: fittedSize)
+    }
+
 	    private static func renderPDF(pages: [(UIImage, [OCRWord])]) -> Data {
-	        let firstSize = pages.first?.0.size ?? .zero
-	        let renderer = UIGraphicsPDFRenderer(bounds: CGRect(origin: .zero, size: firstSize))
+	        let firstPageBounds = canonicalPageBounds(for: pages.first?.0.size ?? .zero)
+	        let renderer = UIGraphicsPDFRenderer(bounds: firstPageBounds)
 
 	        return renderer.pdfData { context in
 	            for (image, words) in pages {
-	                let pageSize = image.size
-	                let bounds = CGRect(origin: .zero, size: pageSize)
-	                context.beginPage(withBounds: bounds, pageInfo: [:])
-	                image.draw(in: bounds)
+	                let pageBounds = canonicalPageBounds(for: image.size)
+	                let imageRect = letterboxedRect(for: image.size, in: pageBounds.size)
+	                context.beginPage(withBounds: pageBounds, pageInfo: [:])
+	                image.draw(in: imageRect)
 
 	                let cgContext = context.cgContext
 	                cgContext.saveGState()
-	                cgContext.translateBy(x: 0, y: pageSize.height)
+	                cgContext.translateBy(x: 0, y: pageBounds.height)
 	                cgContext.scaleBy(x: 1, y: -1)
 	                cgContext.setTextDrawingMode(.invisible)
 	                cgContext.textMatrix = .identity
 
-	                let items = stabilizedTextItems(from: words, pageSize: pageSize)
+	                let items = stabilizedTextItems(from: words, pageSize: imageRect.size)
 	                for item in items {
-	                    drawText(item.text, in: item.rect, context: cgContext)
+	                    let offsetRect = item.rect.offsetBy(dx: imageRect.origin.x, dy: imageRect.origin.y)
+	                    drawText(item.text, in: offsetRect, context: cgContext)
 	                }
 
 	                cgContext.restoreGState()

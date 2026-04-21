@@ -395,6 +395,38 @@ struct WordsFolderDetailView: View {
 
             Spacer()
 
+            if !localItems.isEmpty {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.16)) {
+                        if isSelectionMode {
+                            exitSelectionMode()
+                        } else {
+                            isSelectionMode = true
+                        }
+                    }
+                } label: {
+                    Text(isSelectionMode
+                         ? AppText.L("Cancel", "취소", "取消")
+                         : AppText.L("Select", "선택", "选择"))
+                        .font(.system(size: pad ? 13 : 11, weight: .heavy))
+                        .foregroundStyle(isSelectionMode ? Color.white : WordsFolderDetailPalette.accent)
+                        .padding(.horizontal, pad ? 14 : 12)
+                        .frame(height: pad ? 44 : 32)
+                        .background(
+                            RoundedRectangle(cornerRadius: pad ? 12 : 10, style: .continuous)
+                                .fill(isSelectionMode ? WordsFolderDetailPalette.accent : WordsFolderDetailPalette.surface)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: pad ? 12 : 10, style: .continuous)
+                                        .stroke(
+                                            isSelectionMode ? WordsFolderDetailPalette.accent.opacity(0.14) : WordsFolderDetailPalette.borderSoft,
+                                            lineWidth: 1
+                                        )
+                                )
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+
             Text("\(localItems.count)")
                 .font(.system(size: DSLayout.listCaptionSize, weight: .bold))
                 .foregroundStyle(WordsFolderDetailPalette.accent.opacity(0.7))
@@ -618,6 +650,7 @@ struct WordsFolderDetailView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, pad ? 20 : 16)
             .padding(.horizontal, pad ? 28 : 20)
+            .contentShape(Rectangle())
             .overlay(alignment: .bottom) {
                 if !isLast {
                     Rectangle()
@@ -686,14 +719,14 @@ struct WordsFolderDetailView: View {
             Circle()
                 .fill(isSelected ? WordsFolderDetailPalette.accent : WordsFolderDetailPalette.surface)
             Circle()
-                .stroke(isSelected ? WordsFolderDetailPalette.accent.opacity(0.14) : WordsFolderDetailPalette.border, lineWidth: 1.2)
+                .stroke(isSelected ? WordsFolderDetailPalette.accent : WordsFolderDetailPalette.border, lineWidth: 1.5)
             if isSelected {
                 Image(systemName: "checkmark")
-                    .font(.system(size: 8, weight: .bold))
+                    .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(Color.white)
             }
         }
-        .frame(width: 20, height: 20)
+        .frame(width: 28, height: 28)
     }
 
     private func loc(korean: String, english: String, chinese: String = "") -> String {

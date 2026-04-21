@@ -658,27 +658,12 @@ extension ReaderViewModel {
       let rectOnView = picked.rect
       let line = lineText(near: rectOnView, in: mapped)
       let anchor = CGPoint(x: rectOnView.midX, y: max(rectOnView.minY - 8, 24))
-      // Try full-sentence extraction from page text, fall back to OCR line
-      let sentence: String = {
-        let pageHeight = page.bounds(for: .mediaBox).height
-        let posHint: CGFloat? = pageHeight > 0 ? (1.0 - (picked.value.pageRect.midY / pageHeight)) : nil
-        if let fullSentence = ReaderView.extractSentenceAroundWord(
-          pageText: page.string,
-          selectedWord: boundedWord,
-          positionHint: posHint,
-          rectOnPage: picked.value.pageRect,
-          page: page
-        ) {
-          #if DEBUG
-          print("[SentenceExtract] OCR path NLTokenizer OK wordLen=\(boundedWord.count) sentenceLen=\(fullSentence.count)")
-          #endif
-          return fullSentence
-        }
-        #if DEBUG
-        print("[SentenceExtract] OCR path fallback to line wordLen=\(boundedWord.count) lineLen=\(line.count)")
-        #endif
-        return line
-      }()
+
+      // Fallback sentence = the line the tap landed on. The canonical
+      // sentence (and its highlight rects) are computed downstream by
+      // `handleSelection` via `pageLayout(for:)`, which shares the same
+      // OCR word cache this path is reading from. No cross-wire needed.
+      let sentence = line
       return WordSelection(
         text: boundedWord,
         sentence: sentence,

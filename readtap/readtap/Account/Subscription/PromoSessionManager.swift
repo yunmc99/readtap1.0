@@ -49,12 +49,20 @@ final class PromoSessionManager {
 
   /// Returns true when conditions are met to show the promo sheet:
   /// hit a milestone, not suppressed today, user is not premium,
-  /// and the server-side kill switch is not active.
+  /// the server-side kill switch is not active, and the user has never
+  /// had an auto-renewable subscription on this Apple ID.
+  ///
+  /// `hasEverSubscribed` guard: a returning user who canceled their
+  /// subscription shouldn't see the "Start 7-Day Free Trial" / "Compare
+  /// for yourself" promo — they've already been premium and offering
+  /// them a trial is misleading. They can still reach the paywall
+  /// manually via Settings → Subscription Plan.
   var shouldShowPromo: Bool {
     isAtMilestone
       && !isSuppressedToday
       && !SubscriptionManager.shared.isEffectivelyPremium
       && !SubscriptionManager.shared.isTrialOfferDisabled
+      && !SubscriptionManager.shared.hasEverSubscribed
       && !AuthManager.shared.isGuestMode
   }
 

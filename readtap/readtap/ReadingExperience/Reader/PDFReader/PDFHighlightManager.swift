@@ -182,7 +182,7 @@ final class PDFHighlightManager {
             existing.page?.removeAnnotation(existing)
         }
 
-        let annotation = PDFAnnotation(bounds: row.rect, forType: .highlight, withProperties: nil)
+        let annotation = PDFAnnotation(bounds: Self.tightenedRectForRender(row.rect), forType: .highlight, withProperties: nil)
         annotation.color = highlightColor(for: row.colorHex)
         annotation.userName = String(row.id)
         page.addAnnotation(annotation)
@@ -212,7 +212,7 @@ final class PDFHighlightManager {
                   let page = document.page(at: row.pageIndex),
                   row.rect.width > 0, row.rect.height > 0 else { continue }
 
-            let annotation = PDFAnnotation(bounds: row.rect, forType: .highlight, withProperties: nil)
+            let annotation = PDFAnnotation(bounds: Self.tightenedRectForRender(row.rect), forType: .highlight, withProperties: nil)
             annotation.color = highlightColor(for: row.colorHex)
             annotation.userName = String(row.id)
             page.addAnnotation(annotation)
@@ -237,6 +237,24 @@ final class PDFHighlightManager {
         pdfView.scaleFactor = original + 0.0001
         pdfView.scaleFactor = original
         _ = page
+    }
+
+    /// Shrink a highlight rect vertically for rendering. Stored rects come from
+    /// `PDFSelection.bounds(for:)` or Vision OCR word boxes, which extend from
+    /// ascender to descender lines — visually floating above / below the glyph
+    /// ink. We keep the stored rect intact (canonical) but draw a tighter one.
+    ///
+    /// Keeps `midY` fixed so the highlight stays visually centered on the text.
+    static func tightenedRectForRender(_ rect: CGRect, heightFactor: CGFloat = 0.72) -> CGRect {
+        let factor = max(0.2, min(1.0, heightFactor))
+        let newHeight = rect.height * factor
+        let yOffset = (rect.height - newHeight) / 2.0
+        return CGRect(
+            x: rect.origin.x,
+            y: rect.origin.y + yOffset,
+            width: rect.width,
+            height: newHeight
+        )
     }
 
     private func highlightColor(for hex: String?) -> UIColor {

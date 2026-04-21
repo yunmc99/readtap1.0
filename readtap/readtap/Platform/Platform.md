@@ -14,7 +14,7 @@
 - `OCR/` — OCRTuning, LanguageDetection, ImageOCRPDFBuilder (scan→PDF), PDFOCRProcessor (PDF text layer), OCRPrecomputeService
 - `Localization/` — `AppLanguage.swift` (all UI strings; ~48 KB, Phase 2 decomposition target)
 - `Models/` — cross-team value types (OCRWord, OpenBookRequest, etc.)
-- `Infrastructure/` — AppWarmup, SecretsBootstrap (auto-generated, gitignored), DeviceIdentifier, AppNotifications, AppSettings
+- `Infrastructure/` — AppWarmup, SecretsBootstrap (auto-generated, gitignored), DeviceIdentifier, AppNotifications, AppSettings, PronunciationPlayer (AVSpeech TTS singleton)
 
 ## What to touch / what NOT to touch
 
@@ -26,3 +26,23 @@
 ## Protocols defined here (consumed by feature teams)
 
 Currently none — feature teams use Platform types directly. When horizontal dependencies arise, protocols should be defined in `Models/` for conformance by feature teams.
+
+## PronunciationPlayer (added 2026-04-21)
+
+`Infrastructure/PronunciationPlayer.swift` — `@MainActor` ObservableObject singleton wrapping `AVSpeechSynthesizer`. Consumed by `ReadingExperience/Popup/WordPopupView.swift` (popup speaker button) and `Vocabulary/Flashcards/FlashcardDeckView.swift` (flashcard speaker button). Also exposed to `Account/Settings/SettingsView.swift` for the speed-preset preview button.
+
+Public API:
+
+- `speak(_ text: String, language: String? = nil)` — configures `AVAudioSession` to `.playback` + `.duckOthers` then speaks. Plays over silent switch. Intended for explicit user-tap entry points.
+- `speakPreview(_ text: String, language: String? = nil)` — same as `speak` but uses `.ambient` category so the silent switch mutes playback. Intended ONLY for passive/incidental preview UI (Settings speed preset). Do not use for tapped-intent entry points.
+- `stop()` — cancels in-flight utterance.
+- `isSpeaking(_ text: String) -> Bool` — whether this specific text is currently being spoken (used by icon active-state).
+- `@Published speakingText: String?` — observable state for reactive UI.
+
+Rate storage: `UserDefaults` key `PronunciationPlayer.rateStorageKey` (= `"pronunciationRate"`). Default `0.45`, clamped `[0.35, 0.55]`. `AppSettings.pronunciationRate` mirrors this and offers `setPronunciationRate(_:)`; prefer the AppSettings path for writes so the SwiftUI `@Published` triggers. `PronunciationPlayer.currentRate` reads the latest value fresh on every `speak()`.
+
+Language mapping (`mapToBCP47`): short codes → BCP-47 voice language. `en`→`en-US`, `ko`→`ko-KR`, `zh`→`zh-CN` (or `zh-TW` when the raw hint contains `hant`/`tw`/`hk`), `ja`→`ja-JP`, plus common EU languages. Unmapped hints fall through to `NLLanguageRecognizer` detection on the text itself, then to `Locale.current.identifier`. Extending: add a new `case` in the `mapToBCP47` switch.
+
+`PronunciationSpeedPreset` enum (same file): `.slow` / `.normal` / `.fast` with `rate` mapping. `PronunciationSpeedPreset.nearest(to:)` snaps an arbitrary rate to the nearest preset for UI selection-state.
+
+Threading: class is `@MainActor`; `AVSpeechSynthesizerDelegate` methods are marked `nonisolated` and hop to `@MainActor` via `Task { @MainActor in … }` to clear `speakingText`.
