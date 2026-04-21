@@ -1701,6 +1701,13 @@ extension ReaderViewModel {
               WordPopupState.PosEntry(pos: $0.pos, meanings: $0.meanings)
             }
           }
+          // Preserve the cached sentence translation so the disclosure can
+          // show bolded content immediately (otherwise the Race-B path drops
+          // it and the first-lookup bolding breaks).
+          if let cachedSentenceTrans = cachedPremium.sentenceTranslation,
+             !cachedSentenceTrans.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            nextPopup.sentenceTranslationKo = cachedSentenceTrans
+          }
           nextPopup.isPremiumContentLoading = false
         } else {
           nextPopup.isPremiumContentLoading = canFetchPremium
@@ -3242,6 +3249,14 @@ extension ReaderViewModel {
             .flatMap(\.meanings)
             .prefix(2)
             .joined(separator: ", ")
+
+          // Mirror what will be persisted to the DB so currentMeaningStems()
+          // can bold the tapped word in sentenceTranslation on first lookup.
+          // Without this, popup.meaning holds the stale basic-DeepL output,
+          // whose stems often don't match the LLM's chosen Korean token.
+          if !premiumMeaning.isEmpty {
+            current.meaning = premiumMeaning
+          }
         }
 
         // Apply sentence translation from premium result
