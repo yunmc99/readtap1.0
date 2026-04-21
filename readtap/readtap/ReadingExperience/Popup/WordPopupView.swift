@@ -168,7 +168,6 @@ struct WordPopupView: View {
   let onSave: () -> Void
   let onUndoSave: (() -> Void)?
   let onAdjustBox: (() -> Void)?
-  let onManualEntry: (() -> Void)?
   let onUpgrade: (() -> Void)?
 
   let onSelectMeaningCandidate: (WordPopupState.MeaningCandidate) -> Void
@@ -220,7 +219,6 @@ struct WordPopupView: View {
     onSave: @escaping () -> Void,
     onUndoSave: (() -> Void)? = nil,
     onAdjustBox: (() -> Void)? = nil,
-    onManualEntry: (() -> Void)? = nil,
     onUpgrade: (() -> Void)? = nil,
     onShowCandidatePanel: @escaping () -> Void = {},
     onSelectMeaningCandidate: @escaping (WordPopupState.MeaningCandidate) -> Void = { _ in },
@@ -236,7 +234,6 @@ struct WordPopupView: View {
     self.onSave = onSave
     self.onUndoSave = onUndoSave
     self.onAdjustBox = onAdjustBox
-    self.onManualEntry = onManualEntry
     self.onUpgrade = onUpgrade
     self.onShowCandidatePanel = onShowCandidatePanel
     self.onSelectMeaningCandidate = onSelectMeaningCandidate
@@ -450,7 +447,6 @@ struct WordPopupView: View {
          shouldShowSaveButton
           || shouldShowUndoButton
           || onAdjustBox != nil
-          || onManualEntry != nil
       {
         if actions.isEmpty == false {
           Rectangle()
@@ -1056,7 +1052,7 @@ struct WordPopupView: View {
   }
 
   private var actionItems: [PopupActionItem] {
-    // Fixed order: Adjust | Manual | Save/Unsave
+    // Fixed order: Adjust | Save/Unsave
     var items: [PopupActionItem] = []
 
     // 1. Adjust (always first)
@@ -1065,13 +1061,7 @@ struct WordPopupView: View {
         .init(title: AppText.t(.popupAdjustSelection), isPrimary: false, isUndo: false, disabled: popup.isLoading, action: onAdjustBox))
     }
 
-    // 2. Manual (middle)
-    if let onManualEntry {
-      items.append(
-        .init(title: AppText.t(.popupEnterManually), isPrimary: false, isUndo: false, disabled: popup.isLoading, action: onManualEntry))
-    }
-
-    // 3. Save or Unsave (always last)
+    // 2. Save or Unsave (always last)
     if shouldShowUndoButton, let onUndoSave {
       items.append(
         .init(

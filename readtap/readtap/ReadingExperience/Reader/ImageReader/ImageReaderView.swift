@@ -482,7 +482,6 @@ struct ImageReaderView: View {
           popup: popup,
           onSave: { viewModel.saveFromPopup() },
           onAdjustBox: { startBoxAdjust() },
-          onManualEntry: { startManualEntry() },
           onUpgrade: { AuthManager.shared.pendingPaywallPresentation = true },
           onSelectMeaningCandidate: { candidate in
             viewModel.applyMeaningCandidate(candidate)

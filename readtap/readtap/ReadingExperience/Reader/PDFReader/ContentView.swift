@@ -2915,7 +2915,6 @@ struct ReaderView: View {
             onSave: { viewModel.saveFromPopup() },
             onUndoSave: { viewModel.undoSaveFromPopup() },
             onAdjustBox: { startBoxAdjust() },
-            onManualEntry: { startManualEntry() },
             onUpgrade: { AuthManager.shared.pendingPaywallPresentation = true },
             onShowCandidatePanel: {
               viewModel.expandMeaningCandidatesPanel()
