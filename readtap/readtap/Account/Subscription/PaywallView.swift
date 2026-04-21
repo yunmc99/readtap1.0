@@ -425,8 +425,10 @@ struct PaywallView: View {
 
     private var ctaSection: some View {
         VStack(spacing: 8) {
-            // Free trial button (only when trial not yet started + kill switch off + not subscribed)
-            if !isCurrentSubscriber && isTrialNotStarted && !manager.isTrialOfferDisabled {
+            // Free trial button — see `canOfferTrial` for the full eligibility
+            // matrix (trial not started, kill switch off, not a subscriber,
+            // and the Apple ID has never subscribed before).
+            if canOfferTrial {
                 Button {
                     // Guest gate: trials and subscriptions must be tied to an account
                     // so they persist across devices and don't silently fail to claim.
@@ -527,7 +529,7 @@ struct PaywallView: View {
                                     "\(period)(으)로 변경 — \(selected.displayPrice)",
                                     "更改为\(period) — \(selected.displayPrice)")
                             }
-                            if isTrialNotStarted && !manager.isTrialOfferDisabled {
+                            if canOfferTrial {
                                 return AppText.L("Subscribe Now", "바로 구독하기", "立即订阅")
                             }
                             let period = isYearly
@@ -541,7 +543,7 @@ struct PaywallView: View {
                         Text(label)
                             .font(.body.weight(.semibold))
                             .foregroundStyle(
-                                !isCurrentSubscriber && isTrialNotStarted && !manager.isTrialOfferDisabled
+                                canOfferTrial
                                     ? palette.accent : .white
                             )
                             .frame(maxWidth: .infinity)
@@ -549,11 +551,11 @@ struct PaywallView: View {
                             .background(
                                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                                     .fill(
-                                        !isCurrentSubscriber && isTrialNotStarted && !manager.isTrialOfferDisabled
+                                        canOfferTrial
                                             ? Color.clear : palette.accent
                                     )
                                     .overlay(
-                                        !isCurrentSubscriber && isTrialNotStarted && !manager.isTrialOfferDisabled
+                                        canOfferTrial
                                         ? RoundedRectangle(cornerRadius: 14, style: .continuous)
                                             .stroke(palette.accent, lineWidth: 1.5)
                                         : nil

@@ -135,6 +135,17 @@ Call sites: Reader `PromoSheet.onUpgrade` (PDF + Image), Reader `WordPopupView.o
 
 **Subscriber-detection cascade in `PaywallView.headerSection`**: the subtitle uses a 4-tier cascade — active StoreKit subscriber → `isEffectivelyPremium` (covers admin override + post-launch StoreKit refresh window + active trial without a subscription) → trial expired → trial not started. Do NOT rely on `isCurrentSubscriber` alone; it's briefly `nil` right after app launch before `refreshSubscriptionStatus` completes, and that made paying subscribers see "Your free trial has ended" in the paywall subtitle.
 
+**Returning-subscriber trial suppression (`hasEverSubscribed`)** — `SubscriptionManager.hasEverSubscribed` is `true` when this device's Apple ID has *ever* had an auto-renewable subscription to the app, regardless of whether it's currently active. Set by:
+- `purchase()` success (eager, so the next refresh doesn't need to finish),
+- `refreshSubscriptionStatus` scanning `Transaction.all` (catches installs on a different device where the subscription originally happened),
+- persisted in `UserDefaults["readtap_has_ever_subscribed"]` (intentionally NOT cleared on `resetForSignOut` — device-level Apple ID history, not per-user).
+
+Guards that must include `!manager.hasEverSubscribed`:
+- `PromoSessionManager.shouldShowPromo` — suppresses the comparison promo sheet entirely for returning subscribers.
+- `PaywallView.canOfferTrial` — single source of truth for "show the Start 7-Day Free Trial CTA / use the Subscribe-Now copy". All four previous copies of the inline condition `!isCurrentSubscriber && isTrialNotStarted && !isTrialOfferDisabled` were consolidated into this property; new paywall UI should reuse it instead of rewriting the matrix.
+
+Why: offering a trial to someone who has already been a paying subscriber (even a canceled one) is misleading UX and a soft App Store Guideline 3.1.1 concern ("fraudulent trial practices"). `trialState == .notStarted` is insufficient on its own — users who subscribed without ever starting a trial still have that state, which previously let the promo resurface after cancellation.
+
 **Ordering**: `ContentLibrary/Books/OrderKey.swift` implements LexoRank-lite (base-36 fractional indexing) for drag-and-drop reorder of books/folders. Only the dragged item's `orderKey` is updated — no full-list renumbering.
 
 **Localization**: `Platform/Localization/AppLanguage.swift` — System/English/Korean/Chinese with all UI strings translated inline via `AppText.L(en, ko, zh)` and `AppText.t(.key)`.

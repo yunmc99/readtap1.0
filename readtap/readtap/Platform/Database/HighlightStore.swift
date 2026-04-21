@@ -37,6 +37,7 @@ final class HighlightStore {
     private init() {
         createTableIfNeeded()
         backfillFromVocabularyIfNeeded()
+        backfillVocabularyPageIndexFromHighlightsIfNeeded()
     }
 
     // MARK: - Schema
@@ -100,6 +101,56 @@ final class HighlightStore {
         """
         _ = db.execute(sql)
         UserDefaults.standard.set(true, forKey: backfillDefaultsKey)
+    }
+
+    /// Reverse back-fill: for vocabulary rows whose `pageIndex` / `highlightX/Y/W/H`
+    /// are NULL but which have at least one `vocabulary_highlights` row, copy the
+    /// earliest highlight's values back onto the vocabulary row.
+    ///
+    /// Needed because one code path (premium-late-save in the reader) used to
+    /// INSERT vocabulary rows with `pageIndex: nil, highlightRect: nil`, and the
+    /// old `updateHighlightRect` back-fill that masked this was removed during the
+    /// structural highlights refactor. The fix at the call site only covers
+    /// future saves; this migration cleans up historic rows so the Words tab's
+    /// "open in reader" button re-enables for them.
+    private let reverseBackfillDefaultsKey = "db.vocabulary_pageindex_backfilled_from_highlights.v1"
+    private func backfillVocabularyPageIndexFromHighlightsIfNeeded() {
+        if UserDefaults.standard.bool(forKey: reverseBackfillDefaultsKey) { return }
+
+        let sql = """
+        UPDATE vocabulary
+        SET pageIndex = COALESCE(pageIndex, (
+                SELECT vh.pageIndex FROM vocabulary_highlights vh
+                WHERE vh.vocabularyId = vocabulary.id
+                ORDER BY vh.createdAt ASC LIMIT 1
+            )),
+            highlightX = COALESCE(highlightX, (
+                SELECT vh.x FROM vocabulary_highlights vh
+                WHERE vh.vocabularyId = vocabulary.id
+                ORDER BY vh.createdAt ASC LIMIT 1
+            )),
+            highlightY = COALESCE(highlightY, (
+                SELECT vh.y FROM vocabulary_highlights vh
+                WHERE vh.vocabularyId = vocabulary.id
+                ORDER BY vh.createdAt ASC LIMIT 1
+            )),
+            highlightW = COALESCE(highlightW, (
+                SELECT vh.w FROM vocabulary_highlights vh
+                WHERE vh.vocabularyId = vocabulary.id
+                ORDER BY vh.createdAt ASC LIMIT 1
+            )),
+            highlightH = COALESCE(highlightH, (
+                SELECT vh.h FROM vocabulary_highlights vh
+                WHERE vh.vocabularyId = vocabulary.id
+                ORDER BY vh.createdAt ASC LIMIT 1
+            ))
+        WHERE (pageIndex IS NULL OR highlightX IS NULL)
+          AND EXISTS (
+              SELECT 1 FROM vocabulary_highlights vh WHERE vh.vocabularyId = vocabulary.id
+          );
+        """
+        _ = db.execute(sql)
+        UserDefaults.standard.set(true, forKey: reverseBackfillDefaultsKey)
     }
 
     // MARK: - Select helpers
