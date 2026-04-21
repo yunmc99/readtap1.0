@@ -4,9 +4,10 @@
 //
 //  Bridges ReaderViewModel ↔ SentenceExtractor for the PDFReader path.
 //  - `anchoredWords(for:bookId:)` produces reading-order words for the PDFPage
-//    currently owning the selection, preferring the OCR word cache (scanned
-//    imports give us accurate per-word rects) and falling back to
-//    NLTokenizer(.word) over `page.string` (native PDF text with zero rects).
+//    currently owning the selection from the OCR word cache (scanned imports
+//    have accurate per-word rects). Returns [] for native-PDF text when no
+//    OCR cache exists, so callers fall back to `selection.sentence`
+//    (line-level text from PDFKit).
 //  - `anchorIndex(for:in:)` finds the word closest to the tapped rect so
 //    SentenceExtractor knows which sentence contains the selection.
 //
@@ -15,7 +16,6 @@
 
 import CoreGraphics
 import Foundation
-import NaturalLanguage
 import PDFKit
 
 extension ReaderViewModel {
@@ -26,10 +26,9 @@ extension ReaderViewModel {
   /// Scanned imports have accurate per-word rects here, so the on-page
   /// sentence highlight overlay can render precisely.
   ///
-  /// Priority 2: NLTokenizer(.word) over `page.string` for native PDFKit
-  /// text. Per-word rects are `.zero` — sentence text still flows through
-  /// to the LLM correctly, but the on-page highlight overlay will no-op.
-  /// Native-PDF per-word rect recovery is a v1.1 follow-up (spec §10).
+  /// Priority 2 (native PDFKit text layer): returns [] so the caller falls
+  /// back to `selection.sentence` (line-level text from PDFKit). Rect-accurate
+  /// native-PDF extraction is a v1.1 follow-up (spec §10).
   func anchoredWords(
     for page: PDFPage,
     bookId: String
@@ -61,19 +60,13 @@ extension ReaderViewModel {
       }
     }
 
-    // Priority 2: NLTokenizer(.word) over page.string.
-    // Native PDF text — per-word rects are unavailable here, so the on-page
-    // highlight overlay will no-op. Sentence text still flows to the LLM.
-    guard let pageText = page.string, !pageText.isEmpty else { return [] }
-    let tokenizer = NLTokenizer(unit: .word)
-    tokenizer.string = pageText
-    var result: [AnchoredWord] = []
-    tokenizer.enumerateTokens(in: pageText.startIndex..<pageText.endIndex) { range, _ in
-      let word = String(pageText[range])
-      result.append(AnchoredWord(text: word, rect: .zero))
-      return true
-    }
-    return result
+    // Priority 2: Native PDFKit text layer.
+    // In v1, per-word rects aren't cheaply recoverable from page.string, and
+    // running SentenceExtractor on all-zero-rect words would produce a sentence
+    // anchored to a meaningless word index. Return [] so the caller falls back
+    // to selection.sentence (the correct line-level text). Rect-accurate
+    // native-PDF extraction is a v1.1 follow-up (spec §10).
+    return []
   }
 
   /// Finds the word whose rect center is closest to `tappedRect`'s center.
@@ -83,14 +76,14 @@ extension ReaderViewModel {
     in words: [AnchoredWord]
   ) -> Int? {
     guard words.isEmpty == false else { return nil }
+    // If all rects are zero (degenerate input), we can't meaningfully pick one.
+    // Defense-in-depth: even if a caller bypasses `anchoredWords` and provides
+    // a zero-rect list, we won't produce a wrong answer.
+    guard words.contains(where: { !$0.rect.isEmpty }) else { return nil }
     let tapCenter = CGPoint(x: tappedRect.midX, y: tappedRect.midY)
     var bestIdx: Int?
     var bestDist = CGFloat.greatestFiniteMagnitude
     for (i, w) in words.enumerated() {
-      // Skip rect-less entries (native-PDF fallback) — we have no geometry to
-      // compare against. If every word has `.zero`, fall back to the middle
-      // of the list so the extractor still has something to center on.
-      if w.rect == .zero { continue }
       let mid = CGPoint(x: w.rect.midX, y: w.rect.midY)
       let dx = mid.x - tapCenter.x
       let dy = mid.y - tapCenter.y
@@ -99,10 +92,6 @@ extension ReaderViewModel {
         bestDist = dist
         bestIdx = i
       }
-    }
-    // Fallback for all-zero-rect word lists (native PDF page.string path).
-    if bestIdx == nil, words.isEmpty == false {
-      return words.count / 2
     }
     return bestIdx
   }
