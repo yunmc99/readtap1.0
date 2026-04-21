@@ -584,7 +584,9 @@ extension ReaderViewModel {
       ? 150
       : ReaderLookupLimits.maxPopupContextWordCount
     let initialLanguageHint = LanguageDetector.detectResult(selection.text).language.code
-    let extractedSentence: ExtractedSentence? = {
+    // Compute shared inputs once so sentence extraction and rect calibration
+    // both see the same anchored word list + anchor index.
+    let pageWordsBundle: (page: PDFPage, rectOnPage: CGRect, words: [AnchoredWord], anchor: Int)? = {
       guard let page = selection.page,
             let rectOnPage = selection.rectOnPage,
             !rectOnPage.isNull
@@ -595,13 +597,42 @@ extension ReaderViewModel {
         selectedText: selection.text,
         in: allWords
       ) else { return nil }
+      return (page, rectOnPage, allWords, anchor)
+    }()
+
+    let extractedSentence: ExtractedSentence? = {
+      guard let bundle = pageWordsBundle else { return nil }
       return SentenceExtractor.extract(
-        words: allWords,
-        anchorIndex: anchor,
+        words: bundle.words,
+        anchorIndex: bundle.anchor,
         language: initialLanguageHint,
         maxWords: maxSentenceWords
       )
     }()
+
+    // PDFKit's `page.string` logical order does not always match
+    // `characterBounds(at:)` visual indexing for PDFs with italic / reflowed
+    // text runs. That mismatch leaves extractor rects at the right line but
+    // shifted horizontally by a page-specific offset. Use the tap rect from
+    // `PDFSelection` (the source of truth for where the user actually tapped)
+    // as a calibration anchor: compute the delta between the anchor word's
+    // characterBounds rect and the tap rect, then apply it to every
+    // extracted rect so the highlight aligns with the visible text.
+    let calibratedHighlightRects: [CGRect] = {
+      guard let extracted = extractedSentence,
+            extracted.rects.isEmpty == false,
+            let bundle = pageWordsBundle,
+            bundle.anchor < bundle.words.count
+      else { return extractedSentence?.rects ?? [] }
+      let anchorRect = bundle.words[bundle.anchor].rect
+      guard !anchorRect.isEmpty else { return extracted.rects }
+      let dx = bundle.rectOnPage.midX - anchorRect.midX
+      let dy = bundle.rectOnPage.midY - anchorRect.midY
+      // Skip the shift if already aligned — avoids sub-pixel jitter.
+      if abs(dx) < 2, abs(dy) < 2 { return extracted.rects }
+      return extracted.rects.map { $0.offsetBy(dx: dx, dy: dy) }
+    }()
+
     let sentenceForContext: String = extractedSentence?.text ?? selection.sentence
     // Drain the OCR-fallback path's pending highlight rects here so both
     // call sites (native PDFKit selection + `ocrSelection(at:in:)`) converge
@@ -615,7 +646,7 @@ extension ReaderViewModel {
     self.pendingSentenceHighlightRects = nil
     self.pendingSentenceHighlightCoordSpace = nil
     let sentenceHighlightRects: [CGRect] = {
-      if let rects = extractedSentence?.rects, rects.isEmpty == false { return rects }
+      if calibratedHighlightRects.isEmpty == false { return calibratedHighlightRects }
       return pendingOCRRects ?? []
     }()
 

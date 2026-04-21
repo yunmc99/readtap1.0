@@ -1180,6 +1180,12 @@ struct ReaderView: View {
               && (viewModel.popup?.sentenceHighlightRects.isEmpty == false),
             tint: palette.accent
           )
+          // Fill the pdfContent frame so the overlay's top-leading origin
+          // aligns with pdfView bounds top-leading. Without this the inner
+          // ZStack shrinks to its intrinsic (tiny) size and is placed at
+          // the overlay's default .center alignment, which shifts the
+          // .offset-positioned rects by roughly half the view height.
+          .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
           .allowsHitTesting(false)
         )
         .zIndex(1)
