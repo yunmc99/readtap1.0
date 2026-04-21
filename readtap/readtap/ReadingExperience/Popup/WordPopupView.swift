@@ -79,6 +79,13 @@ struct WordPopupState: Equatable {
   /// cross-language lookups (spec: 2026-04-17 §10).
   var fromDictionary: Bool = false
 
+  /// Rectangles covering the extracted sentence in the reader's coordinate space.
+  /// Empty when no sentence extraction occurred or on fallback.
+  var sentenceHighlightRects: [CGRect] = []
+
+  /// Which coordinate space the rects above are in.
+  var sentenceHighlightCoordSpace: HighlightCoordinateSpace = .pagePoints
+
   /// Subword suggestions when the full word has no dictionary match (compound word splitting).
   var suggestedWords: [SuggestedWord] = []
 
@@ -171,7 +178,7 @@ struct WordPopupView: View {
   @Environment(\.colorScheme) private var colorScheme
   @Environment(\.calloutAvailableHeight) private var availableHeight
   @State private var currentPage: Int = 0
-  @State private var isSentenceExpanded: Bool = false
+  @Binding var sentenceHighlightVisible: Bool
   @State private var feedbackSheetVisible: Bool = false
   private var theme: LibraryTheme { appSettings.theme }
   private var palette: CalendarPalette { theme.calendarPalette(for: colorScheme) }
@@ -188,7 +195,7 @@ struct WordPopupView: View {
     // Extra height for POS rows
     let premiumExtra: CGFloat = isPremium ? 180 : 0
     // Extra height for expanded sentence translation
-    let sentenceExtra: CGFloat = isSentenceExpanded ? 120 : 0
+    let sentenceExtra: CGFloat = sentenceHighlightVisible ? 120 : 0
     // Extra height for subword suggestion cards
     let suggestedExtra: CGFloat = popup.suggestedWords.isEmpty ? 0 : CGFloat(min(popup.suggestedWords.count, 4) * 52 + 28)
     let contentHeight = max(168, min(base + premiumExtra + sentenceExtra + suggestedExtra, safeHeight))
@@ -215,7 +222,8 @@ struct WordPopupView: View {
     onSelectSuggestedWord: ((WordPopupState.SuggestedWord) -> Void)? = nil,
     onRequestSynonymAntonym: (() -> Void)? = nil,
     onToggleSynonym: ((String, Bool) -> Void)? = nil,
-    onGuestGate: (() -> Void)? = nil
+    onGuestGate: (() -> Void)? = nil,
+    sentenceHighlightVisible: Binding<Bool>
   ) {
     self.popup = popup
     self.onSave = onSave
@@ -231,6 +239,7 @@ struct WordPopupView: View {
     self.onRequestSynonymAntonym = onRequestSynonymAntonym
     self.onToggleSynonym = onToggleSynonym
     self.onGuestGate = onGuestGate
+    self._sentenceHighlightVisible = sentenceHighlightVisible
   }
 
   private var displayMeaning: String {
@@ -740,23 +749,23 @@ struct WordPopupView: View {
         VStack(alignment: .leading, spacing: 0) {
           Button {
             withAnimation(.easeInOut(duration: 0.2)) {
-              isSentenceExpanded.toggle()
+              sentenceHighlightVisible.toggle()
             }
           } label: {
             HStack(spacing: 4) {
-              Text(isSentenceExpanded
+              Text(sentenceHighlightVisible
                 ? AppText.L("Hide translation", "문장 해석 접기", "收起句子翻译")
                 : AppText.L("Show translation", "문장 해석 보기", "查看句子翻译"))
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(palette.accent)
-              Image(systemName: isSentenceExpanded ? "chevron.up" : "chevron.down")
+              Image(systemName: sentenceHighlightVisible ? "chevron.up" : "chevron.down")
                 .font(.system(size: 7, weight: .bold))
                 .foregroundStyle(palette.accent)
             }
           }
           .buttonStyle(.plain)
 
-          if isSentenceExpanded {
+          if sentenceHighlightVisible {
             VStack(alignment: .leading, spacing: 3) {
               Text(AppText.t(.popupSentenceLabel))
                 .font(.system(size: 8, weight: .bold))

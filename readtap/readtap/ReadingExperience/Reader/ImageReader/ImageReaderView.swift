@@ -10,8 +10,6 @@ enum ImageLookupLimits {
   static let maxPopupWordCount = 8
   static let maxLookupContextWords = 40
   static let maxLookupContextCharacterCount = 300
-  static let imageSelectionContextWindow = 3
-  static let imageContextWordLimit = 30
   static let maxAdjustedPopupWordCount = 3
   static let maxAdjustedPopupCharacterCount = 100
   static let maxAdjustedPhraseCandidateCap = 64
@@ -61,6 +59,7 @@ struct ImageReaderView: View {
   @State private var correctionBoxNormalized: CGRect? = nil
   @State private var adjustBoxValidationMessage: String? = nil
   @State private var translationDownloadConfig: Any? = nil
+  @State private var imageSentenceHighlightVisible: Bool = false
   private let minZoomScale: CGFloat = 1
   private let maxZoomScale: CGFloat = 6
   private var theme: LibraryTheme { appSettings.theme }
@@ -112,6 +111,7 @@ struct ImageReaderView: View {
     .onChange(of: viewModel.popup) { oldValue, newValue in
       if newValue == nil {
         viewModel.highlightBoxNormalized = nil
+        imageSentenceHighlightVisible = false
       }
       // Promo trigger: count lookups and queue promo on popup dismiss
       if oldValue == nil, newValue != nil {
@@ -271,6 +271,7 @@ struct ImageReaderView: View {
       let layout = computeLayout(uiImage: uiImage, size: size)
       ZStack {
         imageLayer(uiImage: uiImage, displayFit: layout.displayFit)
+        sentenceHighlightOverlay(uiImage: uiImage, displayFit: layout.displayFit, size: size)
         highlightLayer(uiImage: uiImage, displayFit: layout.displayFit)
         if isAdjustingBox {
           adjustOverlay(uiImage: uiImage, displayFit: layout.displayFit, size: size)
@@ -341,6 +342,37 @@ struct ImageReaderView: View {
         .allowsHitTesting(false)
         .transition(.opacity)
     }
+  }
+
+  /// Draws the sentence highlight (premium sentence-translation feature) above
+  /// the image but below the tapped-word highlight so the tapped word remains
+  /// visually prominent when both are shown. See
+  /// docs/superpowers/specs/2026-04-20-premium-sentence-translation-accuracy-design.md §5.4
+  ///
+  /// `WordPopupState.sentenceHighlightRects` for ImageReader are stored in
+  /// normalized image coordinates with Vision's bottom-left Y origin (same
+  /// space as `OCRWord.boundingBox`). We reuse `mapNormalizedRectToViewRect`
+  /// — the exact helper every other ImageReader overlay uses — so the sentence
+  /// rects align with the image pixels even when the image is letterboxed /
+  /// pillarboxed inside the outer container, and the Y-axis flip is applied
+  /// consistently.
+  @ViewBuilder
+  private func sentenceHighlightOverlay(
+    uiImage: UIImage,
+    displayFit: CGRect,
+    size: CGSize
+  ) -> some View {
+    let normalizedRects = viewModel.popup?.sentenceHighlightRects ?? []
+    let viewRects = normalizedRects.map {
+      mapNormalizedRectToViewRect($0, imageSize: uiImage.size, fitRect: displayFit)
+    }
+    SentenceHighlightOverlay(
+      rects: viewRects,
+      isVisible: imageSentenceHighlightVisible && normalizedRects.isEmpty == false,
+      tint: palette.accent
+    )
+    .frame(width: size.width, height: size.height)
+    .allowsHitTesting(false)
   }
 
   @ViewBuilder
@@ -470,7 +502,8 @@ struct ImageReaderView: View {
           onToggleSynonym: { word, isSynonym in
             viewModel.toggleSynonym(word: word, isSynonym: isSynonym)
           },
-          onGuestGate: { showGuestLoginAlert = true }
+          onGuestGate: { showGuestLoginAlert = true },
+          sentenceHighlightVisible: $imageSentenceHighlightVisible
         )
         .transition(.opacity)
       }
@@ -1537,11 +1570,12 @@ final class ImageReaderViewModel: ObservableObject {
       text: boundedToken, detectedLanguage: initialDetected)
     let lookupWord = normalization.selected
     guard !lookupWord.isEmpty else { return }
-    let selectionContext = imageSelectionContext(
+    let extractedPair = imageSelectionContext(
       selectedWord: lookupWord,
       selectedBox: normalizedBox,
       words: words
     )
+    let sentenceHighlightRects = extractedPair?.rects ?? []
     var detected = LanguageDetector.detectResult(lookupWord)
     if containsHangul(lookupWord) {
       detected = .init(language: .korean, confidence: 1)
@@ -1564,11 +1598,7 @@ final class ImageReaderViewModel: ObservableObject {
     case .auto:
       break
     }
-    let boundedSelectionContext = Self.boundedContextText(
-      selectionContext,
-      maxWordCount: ImageLookupLimits.maxLookupContextWords,
-      maxCharacterCount: ImageLookupLimits.maxLookupContextCharacterCount
-    )
+    let boundedSelectionContext = extractedPair?.sentence ?? ""
     if detected.language == .unknown || detected.confidence < 0.55,
       boundedSelectionContext.isEmpty == false
     {
@@ -1647,6 +1677,8 @@ final class ImageReaderViewModel: ObservableObject {
       if let entry = cachedSavedEntry {
         cachedPopup.autoSavedEntryId = entry.id
       }
+      cachedPopup.sentenceHighlightRects = sentenceHighlightRects
+      cachedPopup.sentenceHighlightCoordSpace = .normalizedImage
       popup = cachedPopup
       if isPremiumUser && cachedPopup.premiumByPos.isEmpty && !lookupWord.isEmpty {
         startPremiumLookup(
@@ -1662,20 +1694,23 @@ final class ImageReaderViewModel: ObservableObject {
 
     // Set popup synchronously so it appears in the same SwiftUI render pass
     // (avoids a timing gap where commitBoxAdjust removes the overlay before the popup is set).
-      popup = WordPopupState(
-        word: lookupWord,
-        meaning: "",
-        sentence: boundedSelectionContext,
-        anchor: anchor,
-        bookId: self.bookId,
-        language: detected.language.code,
-        isPlaceholderMeaning: true,
-        isUserReportedWrong: false,
-        isSaved: false,
-        isLoading: false,
-        candidateTranslationNotice: nil,
-        targetLanguage: target
-      )
+    var initialPopup = WordPopupState(
+      word: lookupWord,
+      meaning: "",
+      sentence: boundedSelectionContext,
+      anchor: anchor,
+      bookId: self.bookId,
+      language: detected.language.code,
+      isPlaceholderMeaning: true,
+      isUserReportedWrong: false,
+      isSaved: false,
+      isLoading: false,
+      candidateTranslationNotice: nil,
+      targetLanguage: target
+    )
+    initialPopup.sentenceHighlightRects = sentenceHighlightRects
+    initialPopup.sentenceHighlightCoordSpace = .normalizedImage
+    popup = initialPopup
     let cacheStoreKey = lookupCacheKey
 
     lookupTask?.cancel()
@@ -1775,6 +1810,8 @@ final class ImageReaderViewModel: ObservableObject {
         newPopup.meaningSource = lookupResult.source
         newPopup.meaningConfidence = lookupResult.confidence
         newPopup.isPlaceholderMeaning = lookupResult.isPlaceholderMeaning
+        newPopup.sentenceHighlightRects = sentenceHighlightRects
+        newPopup.sentenceHighlightCoordSpace = .normalizedImage
         // Restore POS data from DB if word was previously saved with posJson
         let savedEntry = self.vocabStore.existingEntry(
           word: lookupWord,
@@ -2282,16 +2319,13 @@ final class ImageReaderViewModel: ObservableObject {
       self.lookupTask?.cancel()
       self.lookupTask = Task { [weak self] in
         guard let self else { return }
-        let selectionContext = self.imageSelectionContext(
+        let extractedPair = self.imageSelectionContext(
           selectedWord: lookupWord,
           selectedBox: selection.word.boundingBox,
           words: selection.words
         )
-        let boundedSelectionContext = Self.boundedContextText(
-          selectionContext,
-          maxWordCount: ImageLookupLimits.maxLookupContextWords,
-          maxCharacterCount: ImageLookupLimits.maxLookupContextCharacterCount
-        )
+        let boundedSelectionContext = extractedPair?.sentence ?? ""
+        let sentenceHighlightRects = extractedPair?.rects ?? []
         let isPremium = SubscriptionManager.shared.isEffectivelyPremium
         let lookupResult = await lookupService.lookupMeaning(
           for: lookupWord,
@@ -2401,6 +2435,8 @@ final class ImageReaderViewModel: ObservableObject {
           newPopup.meaningSource = lookupResult.source
           newPopup.meaningConfidence = lookupResult.confidence
           newPopup.isPlaceholderMeaning = lookupResult.isPlaceholderMeaning
+          newPopup.sentenceHighlightRects = sentenceHighlightRects
+          newPopup.sentenceHighlightCoordSpace = .normalizedImage
           self.popup = newPopup
         }
       }
@@ -3055,88 +3091,53 @@ final class ImageReaderViewModel: ObservableObject {
     }
   }
 
-  private func imageSelectionContext(selectedWord: String, selectedBox: CGRect, words: [OCRWord])
-    -> String
-  {
-    guard words.isEmpty == false else { return "" }
+  private func imageSelectionContext(
+    selectedWord: String,
+    selectedBox: CGRect,
+    words: [OCRWord]
+  ) -> (sentence: String, rects: [CGRect])? {
+    guard words.isEmpty == false else { return nil }
 
+    // Sort into reading order: primary Y (line), secondary X.
     let lineTolerance = max(0.02, selectedBox.height * 2.5)
-    let sameLineWords = words.filter {
-      abs($0.boundingBox.midY - selectedBox.midY) <= lineTolerance
-    }
-    let line = (sameLineWords.isEmpty ? words : sameLineWords).sorted {
-      $0.boundingBox.minX < $1.boundingBox.minX
-    }
-
-    var anchorIndex = 0
-    var minDistance = CGFloat.greatestFiniteMagnitude
-    for (idx, word) in line.enumerated() {
-      let distance = abs(word.boundingBox.midX - selectedBox.midX)
-      if distance < minDistance {
-        minDistance = distance
-        anchorIndex = idx
-      }
+    let sorted = words.sorted { a, b in
+      let ay = a.boundingBox.midY
+      let by = b.boundingBox.midY
+      if abs(ay - by) > lineTolerance { return ay < by }
+      return a.boundingBox.minX < b.boundingBox.minX
     }
 
-    let selectedNormalized = normalizeImageContextToken(selectedWord)
-    if selectedNormalized.isEmpty == false {
-      for (idx, word) in line.enumerated() {
-        if normalizeImageContextToken(word.text) == selectedNormalized {
-          anchorIndex = idx
-          break
-        }
-      }
+    let anchored: [AnchoredWord] = sorted.map {
+      AnchoredWord(text: $0.text, rect: $0.boundingBox)
     }
 
-    // Use the full line as context; if the line is short, include adjacent lines
-    var contextWords = line
-    let usedAdjacentLines: Bool
-    if contextWords.count < 6 {
-      // Include words from adjacent lines for more context
-      let adjacentTolerance = max(0.04, selectedBox.height * 5.0)
-      let nearbyWords = words.filter {
-        abs($0.boundingBox.midY - selectedBox.midY) <= adjacentTolerance
-      }.sorted { $0.boundingBox.minX < $1.boundingBox.minX }
-      if nearbyWords.count > contextWords.count {
-        contextWords = nearbyWords
-        usedAdjacentLines = true
-      } else {
-        usedAdjacentLines = false
-      }
-    } else {
-      usedAdjacentLines = false
-    }
-    let contextText = contextWords
-      .map { normalizeImageContextToken($0.text) }
-      .filter { $0.isEmpty == false }
-      .prefix(ImageLookupLimits.imageContextWordLimit)
-      .joined(separator: " ")
+    // Anchor: OCR word whose box midpoint is closest to the tapped midpoint.
+    let tapMid = CGPoint(x: selectedBox.midX, y: selectedBox.midY)
+    guard let anchorIdx = anchored.enumerated().min(by: { a, b in
+      let da = pow(a.element.rect.midX - tapMid.x, 2) + pow(a.element.rect.midY - tapMid.y, 2)
+      let db = pow(b.element.rect.midX - tapMid.x, 2) + pow(b.element.rect.midY - tapMid.y, 2)
+      return da < db
+    })?.offset else { return nil }
+
+    // Language hint from a sample of nearby text.
+    let sample = anchored.prefix(30).map(\.text).joined(separator: " ")
+    let langCode = LanguageDetector.detectResult(sample).language.code
+
+    let isPremium = SubscriptionManager.shared.isEffectivelyPremium
+    let maxWords = isPremium ? 150 : ReaderLookupLimits.maxPopupContextWordCount
+
+    guard let extracted = SentenceExtractor.extract(
+      words: anchored,
+      anchorIndex: anchorIdx,
+      language: langCode,
+      maxWords: maxWords
+    ) else { return nil }
+
     #if DEBUG
-    print("[ImageContext] wordLen=\(selectedWord.count) lineWords=\(line.count) contextWords=\(contextWords.count) adjacentLines=\(usedAdjacentLines) contextLen=\(contextText.count)")
+    print("[ImageContext] wordLen=\(selectedWord.count) totalWords=\(anchored.count) anchorIdx=\(anchorIdx) lang=\(langCode) sentenceLen=\(extracted.text.count) rects=\(extracted.rects.count)")
     #endif
-    return normalizeImageContextText(contextText)
-  }
 
-  private func normalizeImageContextToken(_ text: String) -> String {
-    return
-      text
-      .trimmingCharacters(in: .whitespacesAndNewlines)
-      .trimmingCharacters(in: .punctuationCharacters)
-      .replacingOccurrences(of: "-\n", with: "")
-      .replacingOccurrences(of: "\n", with: " ")
-      .replacingOccurrences(of: "\t", with: " ")
-      .replacingOccurrences(of: "\u{00AD}", with: "")
-      .replacingOccurrences(of: "\u{200B}", with: "")
-      .lowercased()
-  }
-
-  private func normalizeImageContextText(_ text: String) -> String {
-    return
-      text
-      .split(whereSeparator: { $0.isWhitespace })
-      .prefix(ImageLookupLimits.imageContextWordLimit)
-      .joined(separator: " ")
-      .trimmingCharacters(in: .whitespacesAndNewlines)
+    return (extracted.text, extracted.rects)
   }
 
   private func performOCR(
