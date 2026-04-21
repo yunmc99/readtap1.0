@@ -57,6 +57,21 @@ struct PremiumComparisonPromoSheet: View {
         measuredHeight = newValue
       }
     }
+    // Explicit close button. Required because on iPad this sheet is presented
+    // as a fullScreenCover (see `adaptivePaywallSheet`) which has no
+    // drag-to-dismiss. Also provides a redundant dismiss affordance on iPhone
+    // alongside the native drag indicator.
+    .overlay(alignment: .topTrailing) {
+      Button(action: onDismiss) {
+        Image(systemName: "xmark.circle.fill")
+          .font(DSLayout.isPad ? .title : .title2)
+          .foregroundStyle(palette.muted.opacity(0.5))
+          .padding(DSLayout.isPad ? 20 : 16)
+      }
+      .accessibilityLabel(AppText.L("Close", "닫기", "关闭"))
+    }
+    // iPhone bottom-sheet sizing. These are no-ops when the sheet is presented
+    // as a fullScreenCover on iPad.
     .presentationDetents([.large])
     .presentationDragIndicator(.visible)
     .presentationBackground(Color(uiColor: .systemBackground))

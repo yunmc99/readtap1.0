@@ -132,11 +132,11 @@ Aligned with existing product copy in `AppLanguage.swift`.
 | POS labels | Hidden | Shown per group |
 | Sentence translation | — | Yes |
 | Synonyms / antonyms | — | Yes |
-| Example sentences | — | Yes |
-| Phrase translation (multi-word) | Upgrade prompt (existing path unchanged) | Yes |
 | Offline fallback | Inherent (dictionary is primary) | Dictionary engaged only on LLM failure |
 | Feedback affordance in popup | Yes | No |
 | Accuracy floor | Dictionary-verified common words | LLM with dictionary fallback floor |
+
+> **Dropped differentiators (2026-04-20 revision)**: *Example sentences* and *Phrase translation (multi-word)* were removed from the premium list. Example sentences felt like filler next to sentence translation. Phrase translation overlapped with sentence translation — once the sentence containing the selected words is translated end-to-end, a separate phrase-translation affordance is redundant. Multi-word selection continues to work but is no longer a premium gate.
 
 ## 7. Accuracy Mechanisms (the core of free-tier quality)
 
@@ -189,7 +189,9 @@ The badge is essential. Without visual separation between verified dictionary hi
 
 ### 7.5 Phrase handling (multi-word selection)
 
-Unchanged: multi-word selection stays premium-gated via the existing `popupPhraseUpgradeHint` path. Dictionary endpoint rejects multi-token requests; client shows the upgrade prompt. No free-tier phrase lookup in this design.
+**Revised 2026-04-20**: phrase translation is no longer a premium differentiator. Sentence translation (premium) already covers the multi-word-in-context case; a separate phrase affordance was redundant.
+
+Multi-word selection continues to work on both tiers. The sentence containing the selection is extracted as usual; the user sees the whole sentence translated (premium) or the anchor word looked up in the dictionary (free). Removal of `popupPhraseUpgradeHint` and associated gate logic is tracked in the phrase-gate cleanup follow-up — not in scope of this spec.
 
 ## 8. Server-Side Design
 
@@ -464,3 +466,4 @@ For each: tap in the curated sentence; verify the top-ranked meaning is contextu
 ## 17. Changelog
 
 - **2026-04-17**: Initial design. Server-backed dictionary via Cloudflare D1, flat meaning list on free tier (POS remains premium-only), Apple Translation fallback with explicit badge on miss, user-facing feedback pipeline for same-day data correction. Premium path unchanged.
+- **2026-04-20**: Removed *Example sentences* and *Phrase translation* from premium differentiation table (§6). Example sentences felt like filler; phrase translation overlapped with sentence translation. Revised §7.5 to reflect phrase handling no longer being premium-gated.

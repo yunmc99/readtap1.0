@@ -101,7 +101,6 @@ struct ReaderView: View {
   // that occurred when both were updated separately in the same mutation flush.
   @State private var isChromeBarVisible: Bool = false
   @State private var isLanguageModalPresented: Bool = false
-  @State private var showPaywall: Bool = false
   @State private var showPremiumPromo: Bool = false
   @State private var pendingPromoAfterDismiss: Bool = false
   @State private var pendingGuestLoginAfterDismiss: Bool = false
@@ -675,18 +674,18 @@ struct ReaderView: View {
       view.sheet(isPresented: $isTargetPickerPresented) {
         TranslationTargetPickerView(selection: $translationTarget)
       })
+    // PaywallView is presented at the WindowGroup level via
+    // AuthManager.pendingPaywallPresentation to avoid sibling fullScreenCover
+    // conflicts with the promo sheet (which caused a flicker on iPad where a
+    // small-sheet-sized PaywallView briefly appeared before the promo sheet).
     view = AnyView(
-      view.sheet(isPresented: $showPaywall) {
-        PaywallView()
-      })
-    view = AnyView(
-      view.sheet(isPresented: $showPremiumPromo) {
+      view.adaptivePaywallSheet(isPresented: $showPremiumPromo) {
         PremiumComparisonPromoSheet(
           lookupCount: PromoSessionManager.shared.totalLookupCount,
           onUpgrade: {
             showPremiumPromo = false
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-              showPaywall = true
+              AuthManager.shared.pendingPaywallPresentation = true
             }
           },
           onDismiss: { showPremiumPromo = false },
@@ -947,6 +946,7 @@ struct ReaderView: View {
     ReaderChromeBar(
       autoSaveEnabled: appSettings.autoSaveEnabled,
       longPressEnabled: appSettings.readerLongPressEnabled,
+      highlightOnSaveEnabled: appSettings.highlightOnSaveEnabled,
       isThumbnailPanelVisible: isThumbnailPanelVisible,
       isBookmarked: bookmarkedPages.contains(currentPageIndex),
       isFinished: isFinished,
@@ -959,6 +959,7 @@ struct ReaderView: View {
       onToggleThumbnails: { toggleThumbnailPanel() },
       onToggleAutoSave: { appSettings.setAutoSave($0) },
       onToggleLongPress: { appSettings.setReaderLongPress($0) },
+      onToggleHighlightOnSave: { appSettings.setHighlightOnSave($0) },
       onToggleBookmark: { toggleBookmark() },
       onToggleFinished: { toggleFinished() },
       onOpenWordbook: {
@@ -2851,7 +2852,7 @@ struct ReaderView: View {
             onUndoSave: { viewModel.undoSaveFromPopup() },
             onAdjustBox: { startBoxAdjust() },
             onManualEntry: { startManualEntry() },
-            onUpgrade: { showPaywall = true },
+            onUpgrade: { AuthManager.shared.pendingPaywallPresentation = true },
             onShowCandidatePanel: {
               viewModel.expandMeaningCandidatesPanel()
             },

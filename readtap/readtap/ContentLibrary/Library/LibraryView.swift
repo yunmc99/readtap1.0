@@ -163,10 +163,7 @@ struct LibraryView: View {
                                     }
 
                                     LazyVGrid(
-                                        columns: [
-                                            GridItem(.flexible(), spacing: DSLayout.gridCardSpacing),
-                                            GridItem(.flexible(), spacing: DSLayout.gridCardSpacing)
-                                        ],
+                                        columns: libraryGridColumns(for: contentWidth),
                                         spacing: DSLayout.gridCardSpacing
                                     ) {
                                         ForEach(activeBooks) { book in
@@ -181,7 +178,7 @@ struct LibraryView: View {
 
                                     // Completed books grid
                                     if !completedBooks.isEmpty {
-                                        completedBooksGrid
+                                        completedBooksGrid(contentWidth: contentWidth)
                                     }
                                 }
                                 .frame(width: contentWidth)
@@ -999,6 +996,16 @@ struct LibraryView: View {
         return Array(repeating: GridItem(.flexible(), spacing: spacing), count: count)
     }
 
+    private func libraryGridColumns(for contentWidth: CGFloat) -> [GridItem] {
+        let spacing = DSLayout.gridCardSpacing
+        let isRegular = horizontalSizeClass == .regular
+        let minimumWidth: CGFloat = isRegular ? 200 : 150
+        let maxCount = isRegular ? 4 : 3
+        let raw = Int((contentWidth + spacing) / (minimumWidth + spacing))
+        let count = max(2, min(maxCount, raw))
+        return Array(repeating: GridItem(.flexible(), spacing: spacing), count: count)
+    }
+
     private var shelfCoverHeight: CGFloat {
         horizontalSizeClass == .regular ? 250 : 166
     }
@@ -1166,7 +1173,7 @@ struct LibraryView: View {
                 LibraryBookCover(
                     book: book,
                     width: nil,
-                    height: DSLayout.gridCoverHeight,
+                    height: nil,
                     palette: palette(for: book.id)
                 )
                 .overlay(
@@ -1244,7 +1251,7 @@ struct LibraryView: View {
         }
     }
 
-    private var completedBooksGrid: some View {
+    private func completedBooksGrid(contentWidth: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             // Section header
             HStack(spacing: 8) {
@@ -1268,10 +1275,7 @@ struct LibraryView: View {
 
             // Grid card list
             LazyVGrid(
-                columns: [
-                    GridItem(.flexible(), spacing: DSLayout.gridCardSpacing),
-                    GridItem(.flexible(), spacing: DSLayout.gridCardSpacing)
-                ],
+                columns: libraryGridColumns(for: contentWidth),
                 spacing: DSLayout.gridCardSpacing
             ) {
                 ForEach(completedBooks) { book in
@@ -1294,7 +1298,7 @@ struct LibraryView: View {
                 LibraryBookCover(
                     book: book,
                     width: nil,
-                    height: DSLayout.gridCoverHeight,
+                    height: nil,
                     palette: palette(for: book.id)
                 )
                 .overlay(
@@ -1952,10 +1956,31 @@ private enum LibraryBadgeStyle {
 private struct LibraryBookCover: View {
     let book: BookRow
     let width: CGFloat?
-    let height: CGFloat
+    let height: CGFloat?
     let palette: LibraryCoverPalette
 
     var body: some View {
+        coverContent
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .shadow(color: .black.opacity(0.12), radius: 16, x: 0, y: 10)
+    }
+
+    @ViewBuilder
+    private var coverContent: some View {
+        if let height {
+            sizedBody(referenceHeight: height)
+                .frame(maxWidth: width == nil ? .infinity : width, minHeight: height, maxHeight: height)
+                .frame(width: width, height: height)
+        } else {
+            GeometryReader { geo in
+                sizedBody(referenceHeight: geo.size.height)
+            }
+            .aspectRatio(2.0 / 3.0, contentMode: .fit)
+            .frame(maxWidth: width == nil ? .infinity : width)
+        }
+    }
+
+    private func sizedBody(referenceHeight h: CGFloat) -> some View {
         ZStack(alignment: .bottomTrailing) {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(
@@ -1968,8 +1993,8 @@ private struct LibraryBookCover: View {
 
             Circle()
                 .fill(Color.white.opacity(0.10))
-                .frame(width: height * 0.46, height: height * 0.46)
-                .offset(x: height * 0.14, y: height * 0.14)
+                .frame(width: h * 0.46, height: h * 0.46)
+                .offset(x: h * 0.14, y: h * 0.14)
 
             if let path = book.coverImagePath,
                let image = UIImage(contentsOfFile: path) {
@@ -1980,10 +2005,6 @@ private struct LibraryBookCover: View {
                     .clipped()
             }
         }
-        .frame(maxWidth: width == nil ? .infinity : width, minHeight: height, maxHeight: height)
-        .frame(width: width, height: height)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .shadow(color: .black.opacity(0.12), radius: 16, x: 0, y: 10)
     }
 }
 

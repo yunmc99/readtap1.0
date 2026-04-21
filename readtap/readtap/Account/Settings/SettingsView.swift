@@ -16,8 +16,6 @@ private struct MinimalSettingsView: View {
     @ObservedObject private var auth = AuthManager.shared
     @ObservedObject private var subscription = SubscriptionManager.shared
 
-    @State private var showThemePaywall = false
-    @State private var showPaywallFromPromo = false
     @State private var showLoginSheet = false
     @State private var showSignOutConfirm = false
     @State private var isSigningOut = false
@@ -84,10 +82,9 @@ private struct MinimalSettingsView: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
-            .sheet(isPresented: $showThemePaywall) {
-                PaywallView()
-                    .environmentObject(appSettings)
-            }
+            // PaywallView is presented at the WindowGroup level via
+            // AuthManager.pendingPaywallPresentation to avoid sibling
+            // fullScreenCover conflicts across the app.
             .sheet(isPresented: $showLoginSheet) {
                 LoginView()
             }
@@ -245,6 +242,10 @@ private struct MinimalSettingsView: View {
             get: { appSettings.readerLongPressEnabled },
             set: { appSettings.setReaderLongPress($0) }
         )
+        let highlightOnSaveBinding = Binding(
+            get: { appSettings.highlightOnSaveEnabled },
+            set: { appSettings.setHighlightOnSave($0) }
+        )
 
         return VStack(spacing: 0) {
             // Auto-save
@@ -293,21 +294,57 @@ private struct MinimalSettingsView: View {
 
             minimalDivider
 
-            // Highlight color
-            minimalRow(title: AppText.L("Highlight", "하이라이트", "高亮"), trailing: {
-                Circle()
-                    .fill(appSettings.selectedHighlightPreset.displayColor)
-                    .frame(width: DSLayout.isPad ? 24 : 20, height: DSLayout.isPad ? 24 : 20)
-                    .overlay(Circle().stroke(palette.muted.opacity(0.2), lineWidth: 1))
+            // Pronunciation speed
+            minimalRow(title: AppText.L("Pronunciation speed", "발음 속도", "朗读速度"), trailing: {
+                Text(pronunciationSpeedLabel(selectedPronunciationPreset))
+                    .font(.system(size: DSLayout.listCaptionSize, weight: .bold))
+                    .foregroundStyle(palette.muted)
+                    .padding(.horizontal, DSLayout.isPad ? 12 : 10)
+                    .padding(.vertical, DSLayout.isPad ? 6 : 5)
+                    .background(theme.cardSurface.opacity(0.8))
+                    .clipShape(RoundedRectangle(cornerRadius: DSLayout.isPad ? 10 : 8, style: .continuous))
             })
-            // Color presets
+            HStack(spacing: 4) {
+                ForEach(PronunciationSpeedPreset.allCases, id: \.self) { preset in
+                    Button {
+                        appSettings.setPronunciationRate(preset.rate)
+                        PronunciationPlayer.shared.speakPreview(
+                            AppText.L("Hello", "안녕하세요", "你好"),
+                            language: appSettings.language == .korean ? "ko" : appSettings.language == .chinese ? "zh" : "en"
+                        )
+                    } label: {
+                        Text(pronunciationSpeedLabel(preset))
+                            .font(.system(size: DSLayout.listCaptionSize, weight: .bold))
+                            .foregroundStyle(selectedPronunciationPreset == preset ? palette.text : palette.muted)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, DSLayout.isPad ? 8 : 7)
+                            .background(
+                                RoundedRectangle(cornerRadius: DSLayout.isPad ? 10 : 8, style: .continuous)
+                                    .fill(selectedPronunciationPreset == preset ? Color.white : Color.clear)
+                                    .shadow(color: selectedPronunciationPreset == preset ? .black.opacity(0.06) : .clear, radius: 3, x: 0, y: 1)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(3)
+            .background(palette.muted.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: DSLayout.isPad ? 12 : 10, style: .continuous))
+            .padding(.horizontal, DSLayout.listCardPadding + 2)
+            .padding(.bottom, DSLayout.isPad ? 14 : 12)
+
+            minimalDivider
+
+            // Highlight toggle (controls whether new lookups create highlights)
+            minimalToggleRow(title: AppText.L("Highlight", "하이라이트", "高亮"), binding: highlightOnSaveBinding)
+            // Color presets — faded when toggle is off
             HStack(spacing: DSLayout.isPad ? 8 : 6) {
                 ForEach(HighlightColorPreset.allCases) { preset in
                     let isSelected = appSettings.selectedHighlightPreset == preset
                     let isLocked = preset != .themeDefault && !subscription.isEffectivelyPremium
                     Button {
                         if isLocked {
-                            showThemePaywall = true
+                            AuthManager.shared.pendingPaywallPresentation = true
                         } else {
                             appSettings.setCustomHighlightColor(preset.hexValue)
                         }
@@ -339,6 +376,8 @@ private struct MinimalSettingsView: View {
             }
             .padding(.horizontal, DSLayout.listCardPadding + 2)
             .padding(.bottom, DSLayout.listCardPadding)
+            .opacity(appSettings.highlightOnSaveEnabled ? 1 : 0.35)
+            .allowsHitTesting(appSettings.highlightOnSaveEnabled)
 
             // Global synonym/antonym placement default (premium only)
             if subscription.isEffectivelyPremium {
@@ -418,7 +457,7 @@ private struct MinimalSettingsView: View {
 
                     Button {
                         if isLocked {
-                            showThemePaywall = true
+                            AuthManager.shared.pendingPaywallPresentation = true
                         } else {
                             appSettings.setTheme(option)
                         }
@@ -490,7 +529,7 @@ private struct MinimalSettingsView: View {
     private var premiumCard: some View {
         VStack(spacing: 0) {
             Button {
-                showThemePaywall = true
+                AuthManager.shared.pendingPaywallPresentation = true
             } label: {
                 minimalRow(title: AppText.L("Subscription Plan", "구독 플랜", "订阅计划"), trailing: {
                     Image(systemName: "chevron.right")
@@ -617,6 +656,18 @@ private struct MinimalSettingsView: View {
         case .compact: return AppText.t(.popupSizeCompact)
         case .normal: return AppText.t(.popupSizeNormal)
         case .large: return AppText.t(.popupSizeLarge)
+        }
+    }
+
+    private var selectedPronunciationPreset: PronunciationSpeedPreset {
+        PronunciationSpeedPreset.nearest(to: appSettings.pronunciationRate)
+    }
+
+    private func pronunciationSpeedLabel(_ preset: PronunciationSpeedPreset) -> String {
+        switch preset {
+        case .slow:   return AppText.L("Slow",   "느림", "慢")
+        case .normal: return AppText.L("Normal", "보통", "正常")
+        case .fast:   return AppText.L("Fast",   "빠름", "快")
         }
     }
 
@@ -1187,7 +1238,6 @@ private struct SystemDashboardLayout<SyncContent: View>: View {
     @ObservedObject private var auth = AuthManager.shared
     @ObservedObject private var subscription = SubscriptionManager.shared
     @State private var showThemePaywall = false
-    @State private var showPaywallFromPromo = false
     @State private var showLoginSheet = false
     @State private var showSignOutConfirm = false
     @State private var isSigningOut = false
@@ -1306,23 +1356,23 @@ private struct SystemDashboardLayout<SyncContent: View>: View {
             }
         }
         .toolbar(.hidden, for: .navigationBar)
-        .sheet(isPresented: $showThemePaywall) {
+        .adaptivePaywallSheet(isPresented: $showThemePaywall) {
             PremiumComparisonPromoSheet(
                 lookupCount: PromoSessionManager.shared.totalLookupCount,
                 onUpgrade: {
                     showThemePaywall = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        showPaywallFromPromo = true
+                        AuthManager.shared.pendingPaywallPresentation = true
                     }
                 },
                 onDismiss: { showThemePaywall = false }
             )
             .environmentObject(appSettings)
         }
-        .sheet(isPresented: $showPaywallFromPromo) {
-            PaywallView()
-                .environmentObject(appSettings)
-        }
+        // PaywallView is presented at the WindowGroup level via
+        // AuthManager.pendingPaywallPresentation — see AuthManager /
+        // readtapApp.swift — so fullScreenCover doesn't overlap with the
+        // promo sheet above.
         .sheet(isPresented: $showLoginSheet) {
             LoginView()
         }

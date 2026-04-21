@@ -166,6 +166,7 @@ struct WordPopupView: View {
   let onToggleSynonym: ((String, Bool) -> Void)?  // (word, isSynonym)
   var onGuestGate: (() -> Void)?
   @ObservedObject private var subscription = SubscriptionManager.shared
+  @ObservedObject private var pronouncer = PronunciationPlayer.shared
   @EnvironmentObject private var appSettings: AppSettings
   @Environment(\.colorScheme) private var colorScheme
   @Environment(\.calloutAvailableHeight) private var availableHeight
@@ -388,6 +389,19 @@ struct WordPopupView: View {
           .lineLimit(isMultiWord && currentPage == 0 ? 2 : 1)
           .minimumScaleFactor(0.85)
           .multilineTextAlignment(.leading)
+        if currentPage == 0 {
+          Button {
+            pronouncer.speak(popup.word, language: popup.language)
+          } label: {
+            Image(systemName: pronouncer.isSpeaking(popup.word) ? "speaker.wave.2.fill" : "speaker.wave.2")
+              .font(.system(size: 13, weight: .semibold))
+              .foregroundStyle(pronouncer.isSpeaking(popup.word) ? palette.accent : palette.muted.opacity(0.7))
+              .frame(width: 24, height: 24)
+              .contentShape(Rectangle())
+          }
+          .buttonStyle(.plain)
+          .accessibilityLabel(AppText.L("Pronounce word", "발음 듣기", "朗读"))
+        }
         Spacer(minLength: 0)
         // Page dots
         if canShowSynonymPage {

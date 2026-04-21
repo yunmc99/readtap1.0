@@ -44,16 +44,22 @@ struct readtapApp: App {
                 case .signedIn:
                     RootTabView()
                         .environmentObject(AppSettings.shared)
-                        .sheet(isPresented: $authManager.showPostSignupTrialOffer) {
+                        // Post-signup trial offer uses `adaptivePaywallSheet` so
+                        // iPad presents as fullScreenCover; plain .sheet on iPad
+                        // becomes a form sheet (~540×620) and clips the promo's
+                        // comparison card + trial CTA + "No charge" disclosure.
+                        .adaptivePaywallSheet(isPresented: $authManager.showPostSignupTrialOffer) {
                             PostSignupTrialSheet()
                                 .environmentObject(AppSettings.shared)
                         }
-                        // Sibling sheet for the paywall escalation. Lives at the
-                        // same level as PostSignupTrialSheet so it survives the
-                        // trial-offer sheet being dismissed (a chained `.sheet`
+                        // Sibling presentation for the paywall escalation. Lives
+                        // at the same level as PostSignupTrialSheet so it survives
+                        // the trial-offer sheet being dismissed (a chained sheet
                         // attached *inside* PostSignupTrialSheet would unmount
                         // along with that view and never present).
-                        .sheet(isPresented: $authManager.pendingPaywallPresentation) {
+                        // `adaptivePaywallSheet` uses fullScreenCover on iPad and
+                        // a bottom sheet on iPhone — see AdaptivePresentation.swift.
+                        .adaptivePaywallSheet(isPresented: $authManager.pendingPaywallPresentation) {
                             PaywallView()
                                 .environmentObject(AppSettings.shared)
                         }

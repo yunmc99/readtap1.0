@@ -458,6 +458,7 @@ struct PDFKitView: UIViewRepresentable {
         private var pendingInitialInteractionReadiness: Task<Void, Never>?
         private var cachedFitScale: CGFloat = 0
         private var cachedFitToWidthScale: CGFloat = 0
+        private var documentReferenceFit: CGFloat = 0
         private var lastObservedZoomRatio: CGFloat?
         fileprivate var lastDocumentURL: URL?
         private var lastLayoutSignature: LayoutSignature?
@@ -1662,6 +1663,38 @@ struct PDFKitView: UIViewRepresentable {
             return clampedZoomRatio(ratio)
         }
 
+        /// Document-wide fit scale based on the largest page. Keeps min/max zoom stable across page turns even when scanned pages have varying sizes.
+        private func resolvedBoundsFit(pdfView: PDFView, fallback: CGFloat) -> CGFloat {
+            if documentReferenceFit > 0 { return documentReferenceFit }
+            guard let doc = pdfView.document, doc.pageCount > 0 else { return fallback }
+            let viewSize = pdfView.bounds.size
+            guard viewSize.width > 0, viewSize.height > 0 else { return fallback }
+            let displayBox = pdfView.displayBox
+            var maxW: CGFloat = 0
+            var maxH: CGFloat = 0
+            let pageCount = doc.pageCount
+            let step = pageCount > 200 ? max(1, pageCount / 100) : 1
+            var i = 0
+            while i < pageCount {
+                if let page = doc.page(at: i) {
+                    let b = page.bounds(for: displayBox)
+                    if b.width > maxW { maxW = b.width }
+                    if b.height > maxH { maxH = b.height }
+                }
+                i += step
+            }
+            guard maxW > 0, maxH > 0 else { return fallback }
+            let effectiveWidth = pdfView.displayMode == .twoUp ? maxW * 2 : maxW
+            let scaleX = viewSize.width / effectiveWidth
+            let scaleY = viewSize.height / maxH
+            let computed = min(scaleX, scaleY)
+            if computed > 0 {
+                documentReferenceFit = computed
+                return computed
+            }
+            return fallback
+        }
+
         private func clampedZoomRatio(_ raw: CGFloat) -> CGFloat {
             max(minZoomRatio, min(raw, maxZoomRatio))
         }
@@ -1678,9 +1711,11 @@ struct PDFKitView: UIViewRepresentable {
             cachedFitScale = fit
 
             // Keep zoom behavior deterministic by treating zoom as a ratio of the "fit" scale.
+            // min/max bounds are document-wide (largest page) so they don't jump across page turns.
+            let boundsFit = resolvedBoundsFit(pdfView: pdfView, fallback: fit)
             pdfView.autoScales = false
-            pdfView.minScaleFactor = fit * minZoomRatio
-            pdfView.maxScaleFactor = fit * maxZoomRatio
+            pdfView.minScaleFactor = boundsFit * minZoomRatio
+            pdfView.maxScaleFactor = boundsFit * maxZoomRatio
 
             let normalized = normalizedZoomRatio(ratio)
             lastObservedZoomRatio = normalized
@@ -3102,6 +3137,7 @@ struct PDFKitView: UIViewRepresentable {
             let signature = LayoutSignature(size: size, isLandscape: isLandscape)
             guard signature != lastLayoutSignature else { return }
             lastLayoutSignature = signature
+            documentReferenceFit = 0
 
             let desiredDisplayMode: PDFDisplayMode = isLandscape ? .twoUp : .singlePage
             let desiredAsBook = isLandscape
@@ -3151,8 +3187,9 @@ struct PDFKitView: UIViewRepresentable {
                     cachedFitToWidthScale = 0
                 }
 
-                pdfView.minScaleFactor = fit * minZoomRatio
-                pdfView.maxScaleFactor = fit * maxZoomRatio
+                let boundsFit = resolvedBoundsFit(pdfView: pdfView, fallback: fit)
+                pdfView.minScaleFactor = boundsFit * minZoomRatio
+                pdfView.maxScaleFactor = boundsFit * maxZoomRatio
                 if pdfView.autoScales {
                     pdfView.autoScales = false
                 }
@@ -3408,6 +3445,7 @@ struct PDFKitView: UIViewRepresentable {
                 if pdfView.document !== document {
                     pdfView.document = nil
                     pdfView.document = document
+                    self.documentReferenceFit = 0
                 }
                 self.lastDocumentURL = url
                 self.clearDocumentLoadInFlight(for: requestToken)
@@ -3700,8 +3738,9 @@ struct PDFKitView: UIViewRepresentable {
                     clampedRatio = max(1.0, min(resolvedRatio, 6.0))
                 }
                 let targetScale = fit * clampedRatio
-                let targetMinScale = fit
-                let targetMaxScale = fit * 6.0
+                let boundsFit = resolvedBoundsFit(pdfView: pdfView, fallback: fit)
+                let targetMinScale = boundsFit
+                let targetMaxScale = boundsFit * 6.0
                 if pdfView.minScaleFactor != targetMinScale {
                     pdfView.minScaleFactor = targetMinScale
                 }
@@ -4124,6 +4163,7 @@ struct PDFKitView: UIViewRepresentable {
             lastPageBoxSize = nil
             cachedFitScale = 0
             cachedFitToWidthScale = 0
+            documentReferenceFit = 0
             lastDisplayBox = nil
             lastObservedZoomRatio = nil
 
@@ -4305,8 +4345,9 @@ struct PDFKitView: UIViewRepresentable {
                 if fit > 0 {
                     let clampedRatio = max(1.0, min(self.resolvedZoomRatio(using: pdfView, fallback: self.zoomRatio.wrappedValue), 6.0))
                     let targetScale = fit * clampedRatio
-                    let targetMinScale = fit
-                    let targetMaxScale = fit * 6.0
+                    let boundsFit = self.resolvedBoundsFit(pdfView: pdfView, fallback: fit)
+                    let targetMinScale = boundsFit
+                    let targetMaxScale = boundsFit * 6.0
                     if pdfView.minScaleFactor != targetMinScale {
                         pdfView.minScaleFactor = targetMinScale
                     }
@@ -4440,6 +4481,7 @@ struct PDFKitView: UIViewRepresentable {
             pdfView.displayBox = target
             cachedFitScale = 0
             cachedFitToWidthScale = 0
+            documentReferenceFit = 0
         }
 
         private func scheduleRefreshLongPressEnabled(recollect: Bool, delay: TimeInterval) {

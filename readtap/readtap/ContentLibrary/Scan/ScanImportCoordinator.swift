@@ -7,6 +7,7 @@ struct ScanQualityReport: Equatable {
     let pageCount: Int
     let averageConfidence: Float
     let wordsPerPage: [Int]
+    let confidencePerPage: [Float]
 
     /// `true` when the scan looks bad enough to suggest a retake.
     ///
@@ -27,6 +28,13 @@ struct ScanQualityReport: Equatable {
             return sorted[mid]
         } else {
             return (sorted[mid - 1] + sorted[mid]) / 2
+        }
+    }
+
+    /// Zero-indexed pages whose own average confidence is weak enough to suggest re-scanning that page.
+    var lowConfidencePageIndices: [Int] {
+        confidencePerPage.enumerated().compactMap { index, conf in
+            conf < 0.55 ? index : nil
         }
     }
 }
@@ -158,7 +166,8 @@ final class ScanImportCoordinator: ObservableObject {
             let report = ScanQualityReport(
                 pageCount: buildResult.pageCount,
                 averageConfidence: buildResult.averageConfidence,
-                wordsPerPage: buildResult.wordsPerPage
+                wordsPerPage: buildResult.wordsPerPage,
+                confidencePerPage: buildResult.confidencePerPage
             )
 
             lastImportedHandle = handle

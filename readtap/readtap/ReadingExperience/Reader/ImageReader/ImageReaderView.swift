@@ -50,7 +50,6 @@ struct ImageReaderView: View {
   @State private var isAdjustingBox: Bool = false
   @State private var adjustingNormalizedRect: CGRect = .zero
   @State private var isManualEntryPresented: Bool = false
-  @State private var showPaywall: Bool = false
   @State private var showPremiumPromo: Bool = false
   @State private var pendingPromoAfterDismiss: Bool = false
   @State private var pendingGuestLoginAfterDismiss: Bool = false
@@ -169,16 +168,16 @@ struct ImageReaderView: View {
     .sheet(isPresented: $isWordbookPresented) {
       BookVocabularyListView(bookId: bookId, title: bookTitle)
     }
-    .sheet(isPresented: $showPaywall) {
-      PaywallView()
-    }
-    .sheet(isPresented: $showPremiumPromo) {
+    // PaywallView is presented at the WindowGroup level via
+    // AuthManager.pendingPaywallPresentation to avoid sibling fullScreenCover
+    // conflicts with the promo sheet.
+    .adaptivePaywallSheet(isPresented: $showPremiumPromo) {
       PremiumComparisonPromoSheet(
         lookupCount: PromoSessionManager.shared.totalLookupCount,
         onUpgrade: {
           showPremiumPromo = false
           DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            showPaywall = true
+            AuthManager.shared.pendingPaywallPresentation = true
           }
         },
         onDismiss: { showPremiumPromo = false },
@@ -313,9 +312,11 @@ struct ImageReaderView: View {
   @ViewBuilder
   private func highlightLayer(uiImage: UIImage, displayFit: CGRect) -> some View {
     // 1. Draw saved highlights — one row per on-image location (vocabulary entry
-    //    can have N rows; HighlightStore-backed).
+    //    can have N rows; HighlightStore-backed). Rect is tightened vertically at
+    //    render time so yellow doesn't float above/below the glyphs.
     ForEach(viewModel.savedHighlights, id: \.id) { highlight in
-      let highlightRect = mapNormalizedRectToViewRect(highlight.rect, imageSize: uiImage.size, fitRect: displayFit)
+      let tightened = PDFHighlightManager.tightenedRectForRender(highlight.rect)
+      let highlightRect = mapNormalizedRectToViewRect(tightened, imageSize: uiImage.size, fitRect: displayFit)
       RoundedRectangle(cornerRadius: 4, style: .continuous)
         .fill(Color.yellow.opacity(0.40))
         .frame(width: highlightRect.width, height: highlightRect.height)
@@ -324,10 +325,11 @@ struct ImageReaderView: View {
         .transition(.opacity)
     }
 
-    // 2. Draw active popup highlight
+    // 2. Draw active popup highlight (same vertical tightening).
     if viewModel.popup != nil, let highlightBox = viewModel.highlightBoxNormalized {
+      let tightened = PDFHighlightManager.tightenedRectForRender(highlightBox)
       let highlightRect = mapNormalizedRectToViewRect(
-        highlightBox, imageSize: uiImage.size, fitRect: displayFit)
+        tightened, imageSize: uiImage.size, fitRect: displayFit)
       RoundedRectangle(cornerRadius: 4, style: .continuous)
         .fill(palette.goalBadgeSymbol.opacity(0.28))
         .overlay(
@@ -449,7 +451,7 @@ struct ImageReaderView: View {
           onSave: { viewModel.saveFromPopup() },
           onAdjustBox: { startBoxAdjust() },
           onManualEntry: { startManualEntry() },
-          onUpgrade: { showPaywall = true },
+          onUpgrade: { AuthManager.shared.pendingPaywallPresentation = true },
           onSelectMeaningCandidate: { candidate in
             viewModel.applyMeaningCandidate(candidate)
           },
@@ -1390,6 +1392,7 @@ final class ImageReaderViewModel: ObservableObject {
   /// HighlightStore dedups same-location re-taps, so calling this on every
   /// successful lookup is safe.
   private func addHighlight(entryId: Int, rect: CGRect) {
+    guard AppSettings.shared.highlightOnSaveEnabled else { return }
     let colorHex = PDFHighlightManager.shared.currentHighlightColorHex
     guard let row = HighlightStore.shared.add(
       vocabularyId: entryId,

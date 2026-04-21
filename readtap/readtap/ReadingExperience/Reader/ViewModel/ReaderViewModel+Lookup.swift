@@ -3319,6 +3319,12 @@ extension ReaderViewModel {
     page: PDFPage?,
     rectOnPage: CGRect?
   ) {
+    guard AppSettings.shared.highlightOnSaveEnabled else {
+      #if DEBUG
+      print("[highlight] skipped — highlightOnSave disabled")
+      #endif
+      return
+    }
     guard let entryId else {
       #if DEBUG
       print("[highlight] skipped — entryId is nil")

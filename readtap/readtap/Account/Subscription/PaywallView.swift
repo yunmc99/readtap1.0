@@ -56,31 +56,33 @@ struct PaywallView: View {
                     subscriptionDisclosureSection
                     termsSection
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
+                .padding(.horizontal, DSLayout.isPad ? 32 : 20)
+                // Extra top padding on iPad because we present as
+                // fullScreenCover (no drag indicator), so content shouldn't
+                // crowd the status bar / close button.
+                .padding(.top, DSLayout.isPad ? 48 : 16)
                 .padding(.bottom, 30)
                 // Cap the content column at a comfortable reading width so the
                 // paywall doesn't stretch awkwardly on iPhone Pro Max / iPad
-                // form sheets / iPad Pro. Phones at standard widths (≤ 460pt
-                // after horizontal padding) are unaffected. iPad form sheets
-                // get a wider cap (560) so the subscription details block
-                // has enough room to display all required information without
-                // excessive wrapping.
-                .frame(maxWidth: DSLayout.isPad ? 560 : 460)
+                // Pro. Phones at standard widths (≤ 460pt after horizontal
+                // padding) are unaffected. iPad gets a wider cap (580) so the
+                // subscription details block has enough room to display all
+                // required information without excessive wrapping.
+                .frame(maxWidth: DSLayout.isPad ? 580 : 460)
                 .frame(maxWidth: .infinity, alignment: .center)
             }
         }
         .overlay(alignment: .topTrailing) {
             Button { dismiss() } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.title2)
+                    .font(DSLayout.isPad ? .title : .title2)
                     .foregroundStyle(palette.muted.opacity(0.5))
-                    .padding(16)
+                    .padding(DSLayout.isPad ? 20 : 16)
             }
+            .accessibilityLabel(AppText.L("Close", "닫기", "关闭"))
         }
-        // Force the sheet to fill the full screen height on iPhone so the
-        // plan cards, subscription details, and terms are all reachable by
-        // scrolling without the sheet clipping content mid-view.
+        // iPhone bottom-sheet sizing. These are no-ops when PaywallView is
+        // presented as a fullScreenCover on iPad.
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
         .task {
@@ -112,19 +114,56 @@ struct PaywallView: View {
                     .foregroundStyle(palette.accent)
             }
 
+            // Subtitle precedence, top-down:
+            //   1. Active StoreKit subscriber (possibly canceled)
+            //   2. Premium via admin override / trial active (no StoreKit sub)
+            //   3. Trial expired, not a subscriber
+            //   4. Brand-new user (trial not started)
+            //
+            // Why the `isEffectivelyPremium` second tier: the original logic
+            // only checked `isCurrentSubscriber` (= `activeSubscriptionProductId != nil`),
+            // which was briefly `nil` during the StoreKit refresh window right
+            // after app launch and for admin-overridden accounts. During that
+            // window, paying subscribers saw "Your free trial has ended" —
+            // misleading and unprofessional. Using `isEffectivelyPremium` as
+            // a safety net ensures any premium user (subscriber, admin
+            // override, active trial) never sees the trial-ended message.
             if isCurrentSubscriber {
-                Text(AppText.L(
-                    "Change your plan anytime",
-                    "언제든지 플랜을 변경할 수 있어요",
-                    "随时更改您的方案"))
-                    .font(.subheadline)
-                    .foregroundStyle(palette.muted)
+                // If the user has canceled (auto-renewal off), surface the
+                // end date so it's clear they'll revert to free tier, and
+                // nudge them to resubscribe before that happens.
+                if manager.isSubscriptionCanceled, let expiresAt = manager.subscriptionExpiresAt {
+                    let formattedDate = expiresAt.formatted(date: .abbreviated, time: .omitted)
+                    Text(AppText.L(
+                        "Subscription ends on \(formattedDate)",
+                        "\(formattedDate)에 구독이 종료돼요",
+                        "订阅将于 \(formattedDate) 结束"))
+                        .font(.subheadline)
+                        .foregroundStyle(palette.muted)
+                } else {
+                    Text(AppText.L(
+                        "Change your plan anytime",
+                        "언제든지 플랜을 변경할 수 있어요",
+                        "随时更改您的方案"))
+                        .font(.subheadline)
+                        .foregroundStyle(palette.muted)
+                }
             } else if case .active(let days) = manager.trialState {
                 Text(AppText.L(
                     "\(days) \(AppText.t(.premiumTrialDaysLeft))",
                     "무료 체험 \(days)\(AppText.t(.premiumTrialDaysLeft))",
                     "免费试用还剩\(days)天"
                 ))
+                    .font(.subheadline)
+                    .foregroundStyle(palette.accent)
+            } else if manager.isEffectivelyPremium {
+                // Premium via admin override, or StoreKit state still catching
+                // up post-purchase. Treat as a subscriber for copy purposes —
+                // they should never see "trial ended" if they have premium.
+                Text(AppText.L(
+                    "Premium is active",
+                    "프리미엄 이용 중이에요",
+                    "高级版已启用"))
                     .font(.subheadline)
                     .foregroundStyle(palette.accent)
             } else if case .expired = manager.trialState {
@@ -219,29 +258,30 @@ struct PaywallView: View {
                 }
                 .padding(.bottom, 10)
 
-                // Price
-                if isYearly {
-                    Text(yearlyPerMonthFormatted(product))
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundStyle(palette.text)
-                        .minimumScaleFactor(0.7)
-                        .lineLimit(1)
-                } else {
-                    Text(product.displayPrice)
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundStyle(palette.text)
-                }
+                // Price — BILLED amount shown most prominently.
+                // App Store Guideline 3.1.2(c) / Nov 2025 review feedback:
+                // the total billed amount must be the most clear and
+                // conspicuous pricing element. For monthly plans this is the
+                // monthly price; for yearly plans this is the yearly price.
+                // The calculated per-month equivalent on the yearly card is
+                // kept below in a subordinate size.
+                Text(product.displayPrice)
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundStyle(palette.text)
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
 
-                // Unit — explicit "per month" / "월" / "每月" wording
-                // (replacing the previous shorthand "/ mo") to make the
-                // per-unit pricing unambiguous for App Store review.
-                Text(AppText.L("per month", "월", "每月"))
+                // Unit — matches the billed amount above (per year for yearly,
+                // per month for monthly).
+                Text(isYearly
+                    ? AppText.L("per year", "년", "每年")
+                    : AppText.L("per month", "월", "每月"))
                     .font(.system(size: 12))
                     .foregroundStyle(palette.muted)
                     .padding(.top, 2)
 
                 if isYearly {
-                    // Original price struck through
+                    // Compare-vs-monthly strikethrough (subordinate to billed).
                     if let monthly = manager.monthlyProduct {
                         Text(annualEquivalent(monthly))
                             .font(.system(size: 11))
@@ -250,22 +290,25 @@ struct PaywallView: View {
                             .padding(.top, 6)
                     }
 
-                    // Actual yearly price — explicit "per year" wording
-                    Text(product.displayPrice + AppText.L(" / year", " / 년", " / 年"))
-                        .font(.system(size: 12, weight: .medium))
+                    // Calculated per-month equivalent — subordinate in size
+                    // and position to the billed annual price above.
+                    Text(AppText.L(
+                        "\(yearlyPerMonthFormatted(product)) / month equivalent",
+                        "월 \(yearlyPerMonthFormatted(product)) 상당",
+                        "相当于 \(yearlyPerMonthFormatted(product)) / 月"))
+                        .font(.system(size: 11))
                         .foregroundStyle(palette.muted)
                         .padding(.top, 2)
                 } else {
-                    // Mirror the yearly card's two extra slots (strikethrough +
-                    // yearly-price) with invisible placeholders so both cards
-                    // have identical intrinsic heights and content alignment.
+                    // Mirror the yearly card's two extra slots with invisible
+                    // placeholders so both cards share the same intrinsic height.
                     Text(" ")
                         .font(.system(size: 11))
                         .padding(.top, 6)
                         .opacity(0)
                         .accessibilityHidden(true)
                     Text(" ")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(size: 11))
                         .padding(.top, 2)
                         .opacity(0)
                         .accessibilityHidden(true)
@@ -534,6 +577,16 @@ struct PaywallView: View {
                         .foregroundStyle(palette.accent)
                 }
                 .manageSubscriptionsSheet(isPresented: $showManageSubscription)
+                // When the Apple-provided manage-subscription sheet closes,
+                // the user may have canceled or changed plans. Force a
+                // refresh so our UI (willAutoRenew, expiration date, plan id)
+                // reflects the new state immediately rather than at the next
+                // foreground transition.
+                .onChange(of: showManageSubscription) { _, isShown in
+                    if !isShown {
+                        manager.refresh()
+                    }
+                }
                 .padding(.top, 4)
             } else {
                 Button {
