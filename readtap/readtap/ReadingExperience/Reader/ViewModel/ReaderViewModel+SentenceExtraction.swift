@@ -4,10 +4,11 @@
 //
 //  Bridges ReaderViewModel ↔ SentenceExtractor for the PDFReader path.
 //  - `anchoredWords(for:bookId:)` produces reading-order words for the PDFPage
-//    currently owning the selection from the OCR word cache (scanned imports
-//    have accurate per-word rects). Returns [] for native-PDF text when no
-//    OCR cache exists, so callers fall back to `selection.sentence`
-//    (line-level text from PDFKit).
+//    currently owning the selection. For scanned imports it prefers the OCR
+//    word cache (accurate per-word rects). For native publisher PDFs with no
+//    OCR cache, it synthesizes per-word rects from PDFKit's text layer via
+//    `page.characterBounds(at:)` + `NLTokenizer(.word)` so the on-page
+//    sentence highlight overlay can render on native PDFs too.
 //  - `anchorIndex(for:in:)` finds the word closest to the tapped rect so
 //    SentenceExtractor knows which sentence contains the selection.
 //
@@ -16,6 +17,7 @@
 
 import CoreGraphics
 import Foundation
+import NaturalLanguage
 import PDFKit
 
 extension ReaderViewModel {
@@ -26,9 +28,12 @@ extension ReaderViewModel {
   /// Scanned imports have accurate per-word rects here, so the on-page
   /// sentence highlight overlay can render precisely.
   ///
-  /// Priority 2 (native PDFKit text layer): returns [] so the caller falls
-  /// back to `selection.sentence` (line-level text from PDFKit). Rect-accurate
-  /// native-PDF extraction is a v1.1 follow-up (spec §10).
+  /// Priority 2 (native PDFKit text layer): synthesizes per-word rects using
+  /// `page.characterBounds(at:)` + `NLTokenizer(.word)` so the overlay can
+  /// render on native publisher PDFs too. If `characterBounds` returns null
+  /// for every character of a page (rare / malformed PDFs), the resulting
+  /// words carry `.zero` rects and the `anchorIndex` zero-rect guard falls
+  /// the caller back to `selection.sentence`.
   func anchoredWords(
     for page: PDFPage,
     bookId: String
@@ -61,12 +66,28 @@ extension ReaderViewModel {
     }
 
     // Priority 2: Native PDFKit text layer.
-    // In v1, per-word rects aren't cheaply recoverable from page.string, and
-    // running SentenceExtractor on all-zero-rect words would produce a sentence
-    // anchored to a meaningless word index. Return [] so the caller falls back
-    // to selection.sentence (the correct line-level text). Rect-accurate
-    // native-PDF extraction is a v1.1 follow-up (spec §10).
-    return []
+    // Recover per-word rects via page.characterBounds(at:) so the overlay can
+    // render on native PDFs too (not just OCR'd scans).
+    guard let pageText = page.string, !pageText.isEmpty else { return [] }
+    let tokenizer = NLTokenizer(unit: .word)
+    tokenizer.string = pageText
+    var result: [AnchoredWord] = []
+    tokenizer.enumerateTokens(in: pageText.startIndex..<pageText.endIndex) { range, _ in
+      let word = String(pageText[range])
+      let startOffset = pageText.distance(from: pageText.startIndex, to: range.lowerBound)
+      let endOffset = pageText.distance(from: pageText.startIndex, to: range.upperBound)
+      var bounds = CGRect.null
+      if endOffset > startOffset {
+        for i in startOffset..<endOffset {
+          let charRect = page.characterBounds(at: i)
+          guard !charRect.isNull, !charRect.isEmpty else { continue }
+          bounds = bounds.isNull ? charRect : bounds.union(charRect)
+        }
+      }
+      result.append(AnchoredWord(text: word, rect: bounds.isNull ? .zero : bounds))
+      return true
+    }
+    return result
   }
 
   /// Finds the word whose rect center is closest to `tappedRect`'s center.
