@@ -247,6 +247,152 @@ CURATED = [
     ("it", "pronoun", ["그것"]),
     ("we", "pronoun", ["우리"]),
     ("they", "pronoun", ["그들"]),
+
+    # Prepositions. Kaikki seed had multiple of these wrong
+    # (`about → 거꾸로`, `over → 나누기`) — override leads.
+    ("into", "preposition", ["~안으로", "~속으로"]),
+    ("onto", "preposition", ["~위로"]),
+    ("beyond", "preposition", ["~너머", "~을 넘어"]),
+    ("about", "preposition", ["~에 관하여", "~에 대해"]),
+    ("about", "adverb", ["약", "대략"]),
+    ("over", "preposition", ["~위에", "~을 넘어"]),
+    ("over", "adjective", ["끝난"]),
+    ("across", "preposition", ["~을 가로질러", "~건너편에"]),
+    ("toward", "preposition", ["~쪽으로", "~을 향해"]),
+
+    # Conjunctions
+    ("whereas", "conjunction", ["~인 반면", "한편"]),
+    ("though", "conjunction", ["~이지만", "비록 ~이더라도"]),
+    ("nor", "conjunction", ["~도 아니다"]),
+
+    # Common adverbs with wrong/narrow seed senses
+    ("just", "adverb", ["단지", "그냥", "방금", "막"]),
+    ("even", "adverb", ["~조차", "심지어"]),
+    ("even", "adjective", ["평평한"]),
+    ("meanwhile", "adverb", ["한편", "그사이에"]),
+    ("otherwise", "adverb", ["그렇지 않으면", "다르게"]),
+
+    # Modal verbs. Seed has noun/letter senses as top
+    # (can → 깡통/캔, may → 오월, might → 위력).
+    ("can", "verb", ["~할 수 있다", "~해도 된다"]),
+    ("could", "verb", ["~할 수 있었다", "~할 수 있을 것이다"]),
+    ("may", "verb", ["~일지 모른다", "~해도 된다"]),
+    ("might", "verb", ["~일지도 모른다"]),
+    ("would", "verb", ["~일 것이다", "~하곤 했다"]),
+    ("should", "verb", ["~해야 한다", "~하는 것이 좋다"]),
+    ("must", "verb", ["~해야 한다", "~임에 틀림없다"]),
+    ("will", "verb", ["~일 것이다", "~하겠다"]),
+    ("ought", "verb", ["~해야 한다"]),
+
+    # Articles. `the → -을수록` was embarrassing.
+    ("a", "article", ["하나의", "어떤"]),
+    ("an", "article", ["하나의", "어떤"]),
+    ("the", "article", ["그", "해당"]),
+
+    # Numbers — canonical form first
+    ("one", "numeral", ["하나", "일"]),
+    ("two", "numeral", ["둘"]),
+    ("three", "numeral", ["셋"]),
+    ("four", "numeral", ["넷"]),
+    ("five", "numeral", ["다섯"]),
+    ("six", "numeral", ["여섯"]),
+    ("seven", "numeral", ["일곱"]),
+    ("eight", "numeral", ["여덟"]),
+    ("nine", "numeral", ["아홉"]),
+    ("ten", "numeral", ["열"]),
+    ("hundred", "numeral", ["백"]),
+    ("thousand", "numeral", ["천"]),
+    ("million", "numeral", ["백만"]),
+
+    # Days of week (strip -에 locative suffix)
+    ("monday", "noun", ["월요일"]),
+    ("tuesday", "noun", ["화요일"]),
+    ("wednesday", "noun", ["수요일"]),
+    ("thursday", "noun", ["목요일"]),
+    ("friday", "noun", ["금요일"]),
+    ("saturday", "noun", ["토요일"]),
+    ("sunday", "noun", ["일요일"]),
+
+    # Months (march seed had only the verb sense; forced numeric form)
+    ("january", "noun", ["1월"]),
+    ("february", "noun", ["2월"]),
+    ("march", "noun", ["3월"]),
+    ("march", "verb", ["행진하다"]),
+    ("april", "noun", ["4월"]),
+    ("may", "noun", ["5월"]),
+    ("june", "noun", ["6월"]),
+    ("july", "noun", ["7월"]),
+    ("august", "noun", ["8월"]),
+    ("september", "noun", ["9월"]),
+    ("october", "noun", ["10월"]),
+    ("november", "noun", ["11월"]),
+    ("december", "noun", ["12월"]),
+
+    # Colors. Yellow especially had the "cowardly" sense as top — wrong
+    # default for a reading-assist app.
+    ("red", "adjective", ["빨간"]),
+    ("red", "noun", ["빨강"]),
+    ("blue", "adjective", ["파란"]),
+    ("blue", "noun", ["파랑"]),
+    ("green", "adjective", ["초록의"]),
+    ("green", "noun", ["초록"]),
+    ("yellow", "adjective", ["노란"]),
+    ("yellow", "noun", ["노랑"]),
+    ("black", "adjective", ["검은"]),
+    ("black", "noun", ["검정"]),
+    ("white", "adjective", ["흰"]),
+    ("white", "noun", ["하양"]),
+    ("brown", "adjective", ["갈색의"]),
+    ("orange", "noun", ["오렌지"]),
+    ("orange", "adjective", ["주황색의"]),
+    ("purple", "adjective", ["보라색의"]),
+    ("pink", "adjective", ["분홍색의"]),
+    ("gray", "adjective", ["회색의"]),
+
+    # Verbs with wrong narrow senses
+    ("cook", "verb", ["요리하다"]),
+    ("save", "verb", ["저장하다", "절약하다", "구하다"]),
+    ("break", "verb", ["깨다", "부러뜨리다"]),
+    ("break", "noun", ["휴식"]),
+    ("clean", "adjective", ["깨끗한"]),
+    ("clean", "verb", ["청소하다"]),
+    ("phone", "noun", ["전화", "전화기"]),
+
+    # Nature (fix wind = 숨, add moon/sun/cloud canonicals)
+    ("wind", "noun", ["바람"]),
+    ("sun", "noun", ["태양", "해"]),
+    ("moon", "noun", ["달"]),
+    ("cloud", "noun", ["구름"]),
+    ("rain", "noun", ["비"]),
+    ("snow", "noun", ["눈"]),
+
+    # Food (fix 살/젖/커피콩)
+    ("meat", "noun", ["고기"]),
+    ("milk", "noun", ["우유"]),
+    ("coffee", "noun", ["커피"]),
+    ("tea", "noun", ["차"]),
+    ("fish", "noun", ["물고기", "생선"]),
+    ("egg", "noun", ["달걀"]),
+    ("bread", "noun", ["빵"]),
+    ("rice", "noun", ["쌀", "밥"]),
+
+    # Clothing (shoes was missing)
+    ("shoes", "noun", ["신발"]),
+    ("hat", "noun", ["모자"]),
+
+    # Places (office → 의식/예배; store → 창고 only)
+    ("office", "noun", ["사무실", "사무소"]),
+    ("store", "noun", ["가게", "상점"]),
+    ("store", "verb", ["저장하다"]),
+    ("hospital", "noun", ["병원"]),
+    ("park", "noun", ["공원"]),
+    ("room", "noun", ["방", "공간"]),
+
+    # Tech
+    ("computer", "noun", ["컴퓨터"]),
+    ("internet", "noun", ["인터넷"]),
+    ("email", "noun", ["이메일"]),
+    ("message", "noun", ["메시지"]),
 ]
 
 
