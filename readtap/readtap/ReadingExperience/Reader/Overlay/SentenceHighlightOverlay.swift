@@ -29,7 +29,16 @@ struct SentenceHighlightOverlay: View {
     let merged = Self.lineMergedRects(from: rects)
     ZStack(alignment: .topLeading) {
       ForEach(merged.indices, id: \.self) { i in
-        let padded = merged[i].insetBy(dx: -2, dy: -2)
+        let r = merged[i]
+        // Asymmetric vertical padding — the merged rect's bottom sits flush
+        // with descenders while the top misses the visual cap line, so more
+        // padding at the top balances the bar visually around the text.
+        let padded = CGRect(
+          x: r.minX - 2,
+          y: r.minY - 3,
+          width: r.width + 4,
+          height: r.height + 4
+        )
         RoundedRectangle(cornerRadius: 4, style: .continuous)
           .fill(tint.opacity(0.25))
           .frame(width: padded.width, height: padded.height)
