@@ -20,13 +20,18 @@ struct SentenceHighlightOverlay: View {
   let tint: Color
 
   var body: some View {
+    // Each input rect is the tight character-bounds box for one word, so
+    // heights vary wildly between words that have ascenders/descenders
+    // ("boat", "oar.") and those that don't ("an", "no"). Pad the rects so
+    // every word gets a consistent line-height block — otherwise the
+    // highlight looks patchy and under-covers short-letter words.
     ZStack(alignment: .topLeading) {
       ForEach(rects.indices, id: \.self) { i in
-        let r = rects[i]
+        let padded = rects[i].insetBy(dx: -1.5, dy: -3)
         RoundedRectangle(cornerRadius: 3, style: .continuous)
-          .fill(tint.opacity(0.15))
-          .frame(width: r.width, height: r.height)
-          .offset(x: r.minX, y: r.minY)
+          .fill(tint.opacity(0.28))
+          .frame(width: padded.width, height: padded.height)
+          .offset(x: padded.minX, y: padded.minY)
       }
     }
     .allowsHitTesting(false)
