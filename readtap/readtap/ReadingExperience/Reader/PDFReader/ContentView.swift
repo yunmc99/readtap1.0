@@ -1130,9 +1130,14 @@ struct ReaderView: View {
     }
   }
 
-  /// Convert page-local `.pagePoints` rects (stored on `WordPopupState.sentenceHighlightRects`)
-  /// into view-space rects that `SentenceHighlightOverlay` can draw. `overlayTick` is read so
-  /// SwiftUI re-evaluates this on pan/zoom notifications.
+  /// View-space rects from page-local rects. The `tick` parameter is
+  /// intentionally unused inside the function body — it exists only so
+  /// SwiftUI re-evaluates the call site when `overlayTick` bumps, forcing
+  /// the overlay to re-read `pdfView.convert(...)` after scroll/zoom.
+  ///
+  /// Converts page-local `.pagePoints` rects (stored on
+  /// `WordPopupState.sentenceHighlightRects`) into view-space rects that
+  /// `SentenceHighlightOverlay` can draw.
   private func pdfViewRects(
     from pageRects: [CGRect],
     page: PDFPage?,

@@ -194,6 +194,8 @@ final class ReaderViewModel: ObservableObject {
     lastSingleTapChromeAt = .distantPast
     prefetchPassesRemainingThisSession = maxPrefetchPassesPerSession
     lastLookupSelection = nil
+    pendingSentenceHighlightRects = nil
+    pendingSentenceHighlightCoordSpace = nil
   }
 
   func prepareForReaderExit() {
@@ -238,6 +240,8 @@ final class ReaderViewModel: ObservableObject {
     pendingInitialSurroundPrefetchWorkItem = nil
     prefetchPassesRemainingThisSession = maxPrefetchPassesPerSession
     lastLookupSelection = nil
+    pendingSentenceHighlightRects = nil
+    pendingSentenceHighlightCoordSpace = nil
 
     if let pdfView = pdfViewInstance {
       pdfView.clearSelection()

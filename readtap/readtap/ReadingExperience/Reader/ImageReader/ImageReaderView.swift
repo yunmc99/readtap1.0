@@ -373,26 +373,6 @@ struct ImageReaderView: View {
     .allowsHitTesting(false)
   }
 
-  /// Converts normalized (`[0..1]`) rects with a top-left origin to view-space
-  /// rects by scaling against a display size. Provided for completeness per
-  /// the sentence-translation design spec; the ImageReader overlay itself uses
-  /// `mapNormalizedRectToViewRect` instead because ImageReader's normalized
-  /// rects use Vision's bottom-left Y origin and the image is displayed inside
-  /// a letterboxed `displayFit`, not 1:1.
-  private func denormalized(
-    rects: [CGRect],
-    in size: CGSize
-  ) -> [CGRect] {
-    rects.map { r in
-      CGRect(
-        x: r.minX * size.width,
-        y: r.minY * size.height,
-        width: r.width * size.width,
-        height: r.height * size.height
-      )
-    }
-  }
-
   @ViewBuilder
   private var placeholderLayer: some View {
     if viewModel.loadFailed {
@@ -3141,7 +3121,7 @@ final class ImageReaderViewModel: ObservableObject {
     let langCode = LanguageDetector.detectResult(sample).language.code
 
     let isPremium = SubscriptionManager.shared.isEffectivelyPremium
-    let maxWords = isPremium ? 150 : 40
+    let maxWords = isPremium ? 150 : ReaderLookupLimits.maxPopupContextWordCount
 
     guard let extracted = SentenceExtractor.extract(
       words: anchored,
