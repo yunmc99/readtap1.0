@@ -3098,46 +3098,22 @@ final class ImageReaderViewModel: ObservableObject {
   ) -> (sentence: String, rects: [CGRect])? {
     guard words.isEmpty == false else { return nil }
 
-    // Sort into reading order: primary Y (line), secondary X.
-    let lineTolerance = max(0.02, selectedBox.height * 2.5)
-    let sorted = words.sorted { a, b in
-      let ay = a.boundingBox.midY
-      let by = b.boundingBox.midY
-      if abs(ay - by) > lineTolerance { return ay < by }
-      return a.boundingBox.minX < b.boundingBox.minX
-    }
-
-    let anchored: [AnchoredWord] = sorted.map {
-      AnchoredWord(text: $0.text, rect: $0.boundingBox)
-    }
-
-    // Anchor: OCR word whose box midpoint is closest to the tapped midpoint.
-    let tapMid = CGPoint(x: selectedBox.midX, y: selectedBox.midY)
-    guard let anchorIdx = anchored.enumerated().min(by: { a, b in
-      let da = pow(a.element.rect.midX - tapMid.x, 2) + pow(a.element.rect.midY - tapMid.y, 2)
-      let db = pow(b.element.rect.midX - tapMid.x, 2) + pow(b.element.rect.midY - tapMid.y, 2)
-      return da < db
-    })?.offset else { return nil }
-
-    // Language hint from a sample of nearby text.
-    let sample = anchored.prefix(30).map(\.text).joined(separator: " ")
+    let sample = words.prefix(30).map(\.text).joined(separator: " ")
     let langCode = LanguageDetector.detectResult(sample).language.code
 
-    let isPremium = SubscriptionManager.shared.isEffectivelyPremium
-    let maxWords = isPremium ? 150 : ReaderLookupLimits.maxPopupContextWordCount
-
-    guard let extracted = SentenceExtractor.extract(
-      words: anchored,
-      anchorIndex: anchorIdx,
-      language: langCode,
-      maxWords: maxWords
+    let layout = PageLayoutBuilder.build(imageWords: words, languageHint: langCode)
+    let tapMid = CGPoint(x: selectedBox.midX, y: selectedBox.midY)
+    guard let sentence = layout.sentence(
+      containingPoint: tapMid,
+      selectedText: selectedWord
     ) else { return nil }
+    let rects = layout.highlightRects(for: sentence)
 
     #if DEBUG
-    print("[ImageContext] wordLen=\(selectedWord.count) totalWords=\(anchored.count) anchorIdx=\(anchorIdx) lang=\(langCode) sentenceLen=\(extracted.text.count) rects=\(extracted.rects.count)")
+    print("[ImageContext] wordLen=\(selectedWord.count) totalWords=\(words.count) lang=\(langCode) sentenceLen=\(sentence.text.count) rects=\(rects.count)")
     #endif
 
-    return (extracted.text, extracted.rects)
+    return (sentence.text, rects)
   }
 
   private func performOCR(

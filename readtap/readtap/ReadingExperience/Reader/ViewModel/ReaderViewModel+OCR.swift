@@ -658,50 +658,12 @@ extension ReaderViewModel {
       let rectOnView = picked.rect
       let line = lineText(near: rectOnView, in: mapped)
       let anchor = CGPoint(x: rectOnView.midX, y: max(rectOnView.minY - 8, 24))
-      // Reset any lingering transient highlight rects from a prior OCR lookup
-      // so stale values don't leak into the next popup if this branch fails to
-      // produce a SentenceExtractor hit.
-      self.pendingSentenceHighlightRects = nil
-      self.pendingSentenceHighlightCoordSpace = nil
-      // Prefer SentenceExtractor over the OCR word list. Falls back to the
-      // per-line text when extraction fails (e.g. anchor rect can't be matched
-      // against `mapped`, extractor returns nil).
-      let sentence: String = {
-        let allWords: [AnchoredWord] = mapped.map {
-          AnchoredWord(text: $0.value.text, rect: $0.value.pageRect)
-        }
-        guard let anchorIdx = Self.anchorIndex(
-          for: picked.value.pageRect,
-          selectedText: picked.value.text,
-          in: allWords
-        ) else {
-          #if DEBUG
-          print("[SentenceExtract] OCR path fallback (no anchor) wordLen=\(boundedWord.count) lineLen=\(line.count)")
-          #endif
-          return line
-        }
-        let maxWords = SubscriptionManager.shared.isEffectivelyPremium
-          ? 150
-          : ReaderLookupLimits.maxPopupContextWordCount
-        let languageCode = LanguageDetector.detectResult(boundedWord).language.code
-        guard let extracted = SentenceExtractor.extract(
-          words: allWords,
-          anchorIndex: anchorIdx,
-          language: languageCode,
-          maxWords: maxWords
-        ) else {
-          #if DEBUG
-          print("[SentenceExtract] OCR path fallback (extractor nil) wordLen=\(boundedWord.count) lineLen=\(line.count)")
-          #endif
-          return line
-        }
-        #if DEBUG
-        print("[SentenceExtract] OCR path SentenceExtractor OK wordLen=\(boundedWord.count) sentenceLen=\(extracted.text.count) rects=\(extracted.rects.count)")
-        #endif
-        self.pendingSentenceHighlightRects = extracted.rects
-        self.pendingSentenceHighlightCoordSpace = .pagePoints
-        return extracted.text
-      }()
+
+      // Fallback sentence = the line the tap landed on. The canonical
+      // sentence (and its highlight rects) are computed downstream by
+      // `handleSelection` via `pageLayout(for:)`, which shares the same
+      // OCR word cache this path is reading from. No cross-wire needed.
+      let sentence = line
       return WordSelection(
         text: boundedWord,
         sentence: sentence,

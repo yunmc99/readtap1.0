@@ -76,14 +76,13 @@ final class ReaderViewModel: ObservableObject {
   /// when a new lookup starts or the popup is dismissed.
   var premiumLookupTask: Task<Void, Never>?
   var lastLookupSelection: WordSelection? = nil
-  /// Transient: populated during the OCR-fallback lookup path
-  /// (`ocrSelection(at:in:)`) when SentenceExtractor succeeds on the OCR
-  /// word list. Drained into the final `WordPopupState` by the constructing
-  /// call site in `handleSelection`. The OCR path has accurate per-word
-  /// rects (scanned imports) so these override the native-PDF fallback
-  /// (which yields empty rects) when both are available.
-  var pendingSentenceHighlightRects: [CGRect]? = nil
-  var pendingSentenceHighlightCoordSpace: HighlightCoordinateSpace? = nil
+  /// Per-page layout cache. `PageLayoutBuilder.build` is idempotent for a
+  /// given page but non-trivial (iterates selectionsByLine + NLTokenizer per
+  /// paragraph), so we cache one layout per `PDFPage` pointer. Cleared on
+  /// session boundaries (`beginReaderSession`, `prepareForReaderExit`) and
+  /// invalidated per-page when OCR finishes running for that page (fresh
+  /// OCR words give a better layout than the PDFKit-only fallback).
+  var pageLayoutCache: [ObjectIdentifier: PageLayout] = [:]
   let lookupDebounceInterval: TimeInterval = 0.25
   /// When the current lookup popup first became visible. Used to enforce a
   /// minimum loading-spinner display duration so instant lookups don't flash
@@ -194,8 +193,7 @@ final class ReaderViewModel: ObservableObject {
     lastSingleTapChromeAt = .distantPast
     prefetchPassesRemainingThisSession = maxPrefetchPassesPerSession
     lastLookupSelection = nil
-    pendingSentenceHighlightRects = nil
-    pendingSentenceHighlightCoordSpace = nil
+    pageLayoutCache.removeAll()
   }
 
   func prepareForReaderExit() {
@@ -240,8 +238,7 @@ final class ReaderViewModel: ObservableObject {
     pendingInitialSurroundPrefetchWorkItem = nil
     prefetchPassesRemainingThisSession = maxPrefetchPassesPerSession
     lastLookupSelection = nil
-    pendingSentenceHighlightRects = nil
-    pendingSentenceHighlightCoordSpace = nil
+    pageLayoutCache.removeAll()
 
     if let pdfView = pdfViewInstance {
       pdfView.clearSelection()

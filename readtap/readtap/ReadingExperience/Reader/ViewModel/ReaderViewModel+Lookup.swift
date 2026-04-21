@@ -484,12 +484,10 @@ extension ReaderViewModel {
     let effectiveAnchor = effectiveRectOnView.map { rect in
       CGPoint(x: rect.midX, y: max(rect.minY - 8, 24))
     } ?? selection.anchor
-    // The legacy pre-enrichment pass (previously: extractSentenceAroundWord
-    // when `selection.sentence` was empty or equal to the word) was replaced
-    // by the unified SentenceExtractor call below — see `extractedSentence`
-    // and `sentenceForContext`. When the new extractor fails (missing page/
-    // rect), the fallback simply uses `selection.sentence` as provided by the
-    // caller.
+    // Sentence context is computed by `PageLayout.sentence(containingPoint:)`
+    // below — see `layoutLookup` and `sentenceForContext`. When the layout
+    // lookup fails (missing page/rect), the fallback uses `selection.sentence`
+    // as provided by the caller.
     // Clip highlight rect when the lookup text is shorter than the full
     // text that the rect covers (e.g. 8-word limit truncated a longer selection).
     let (clippedRectOnView, clippedRectOnPage, selectionWasLimited): (CGRect?, CGRect?, Bool) = {
@@ -576,79 +574,41 @@ extension ReaderViewModel {
     // missing (e.g. synthesized WordSelection without PDFKit geometry).
     //
     // Language hint uses quick script detection on the selected token; the
-    // SentenceExtractor tokenizer falls back to `.undetermined` for unknowns,
-    // so "best-effort" is fine here — cross-language mislabels still produce
-    // reasonable sentence boundaries for Latin scripts.
-    let isPremium = SubscriptionManager.shared.isEffectivelyPremium
-    let maxSentenceWords = isPremium
-      ? 150
-      : ReaderLookupLimits.maxPopupContextWordCount
+    // NLTokenizer inside PageLayoutBuilder falls back to `.undetermined` for
+    // unknowns, so "best-effort" is fine here — cross-language mislabels
+    // still produce reasonable sentence boundaries for Latin scripts.
     let initialLanguageHint = LanguageDetector.detectResult(selection.text).language.code
-    // Compute shared inputs once so sentence extraction and rect calibration
-    // both see the same anchored word list + anchor index.
-    let pageWordsBundle: (page: PDFPage, rectOnPage: CGRect, words: [AnchoredWord], anchor: Int)? = {
+
+    // Drift-free sentence extraction via PageLayout. A single builder pass
+    // groups lines (via `PDFSelection.selectionsByLine` — the same authority
+    // that produces `selection.rectOnPage`, so rects are drift-free),
+    // assigns paragraph IDs by Y-gap clustering, and runs NLTokenizer per
+    // paragraph so headings can't absorb the next body sentence.
+    let layoutLookup: (sentence: String, rects: [CGRect], pageIndex: Int?)? = {
       guard let page = selection.page,
             let rectOnPage = selection.rectOnPage,
             !rectOnPage.isNull
       else { return nil }
-      let allWords = self.anchoredWords(for: page, bookId: bookId)
-      guard let anchor = Self.anchorIndex(
-        for: rectOnPage,
-        selectedText: selection.text,
-        in: allWords
-      ) else { return nil }
-      return (page, rectOnPage, allWords, anchor)
-    }()
-
-    let extractedSentence: ExtractedSentence? = {
-      guard let bundle = pageWordsBundle else { return nil }
-      return SentenceExtractor.extract(
-        words: bundle.words,
-        anchorIndex: bundle.anchor,
-        language: initialLanguageHint,
-        maxWords: maxSentenceWords
+      let layout = self.pageLayout(
+        for: page,
+        bookId: bookId,
+        languageHint: initialLanguageHint
       )
+      let tapPoint = CGPoint(x: rectOnPage.midX, y: rectOnPage.midY)
+      guard let sentence = layout.sentence(
+        containingPoint: tapPoint,
+        selectedText: selection.text
+      ) else { return nil }
+      let rects = layout.highlightRects(for: sentence)
+      let pageIdx = page.document?.index(for: page)
+      #if DEBUG
+      print("[PL-v1] sentenceLen=\(sentence.text.count) rects=\(rects.count) tapY=\(Int(tapPoint.y)) pageIdx=\(pageIdx ?? -1) conf=\(sentence.confidence)")
+      #endif
+      return (sentence.text, rects, pageIdx)
     }()
 
-    // PDFKit's `page.string` logical order does not always match
-    // `characterBounds(at:)` visual indexing for PDFs with italic / reflowed
-    // text runs. That mismatch leaves extractor rects at the right line but
-    // shifted horizontally by a page-specific offset. Use the tap rect from
-    // `PDFSelection` (the source of truth for where the user actually tapped)
-    // as a calibration anchor: compute the delta between the anchor word's
-    // characterBounds rect and the tap rect, then apply it to every
-    // extracted rect so the highlight aligns with the visible text.
-    let calibratedHighlightRects: [CGRect] = {
-      guard let extracted = extractedSentence,
-            extracted.rects.isEmpty == false,
-            let bundle = pageWordsBundle,
-            bundle.anchor < bundle.words.count
-      else { return extractedSentence?.rects ?? [] }
-      let anchorRect = bundle.words[bundle.anchor].rect
-      guard !anchorRect.isEmpty else { return extracted.rects }
-      let dx = bundle.rectOnPage.midX - anchorRect.midX
-      let dy = bundle.rectOnPage.midY - anchorRect.midY
-      // Skip the shift if already aligned — avoids sub-pixel jitter.
-      if abs(dx) < 2, abs(dy) < 2 { return extracted.rects }
-      return extracted.rects.map { $0.offsetBy(dx: dx, dy: dy) }
-    }()
-
-    let sentenceForContext: String = extractedSentence?.text ?? selection.sentence
-    // Drain the OCR-fallback path's pending highlight rects here so both
-    // call sites (native PDFKit selection + `ocrSelection(at:in:)`) converge
-    // on the same `sentenceHighlightRects` below. The OCR path sets these
-    // when `SentenceExtractor` succeeds over the in-memory `mapped` words —
-    // useful when Part A's `anchoredWords(for:bookId:)` missed (e.g. OCR
-    // cache write is still in-flight at long-press time). Prefer the newly
-    // extracted rects from Part A when we have them; otherwise use the
-    // OCR-path rects.
-    let pendingOCRRects = self.pendingSentenceHighlightRects
-    self.pendingSentenceHighlightRects = nil
-    self.pendingSentenceHighlightCoordSpace = nil
-    let sentenceHighlightRects: [CGRect] = {
-      if calibratedHighlightRects.isEmpty == false { return calibratedHighlightRects }
-      return pendingOCRRects ?? []
-    }()
+    let sentenceForContext: String = layoutLookup?.sentence ?? selection.sentence
+    let sentenceHighlightRects: [CGRect] = layoutLookup?.rects ?? []
 
     // Instantly set up the "Loading" popup so it renders on the next frame.
     self.popupShownAt = Date()
@@ -701,8 +661,8 @@ extension ReaderViewModel {
       }
       
       let tokenForScript = taskRawToken.trimmingCharacters(in: CharacterSet.punctuationCharacters.union(.symbols))
-      // `sentenceForContext` was computed synchronously above by SentenceExtractor
-      // (or the legacy `selection.sentence` fallback). If extraction produced an
+      // `sentenceForContext` was computed synchronously above via PageLayout
+      // (or the `selection.sentence` fallback). If extraction produced an
       // empty string fall back to the raw token so downstream detection doesn't
       // trip on an empty context.
       let safeSentence = sentenceForContext.isEmpty ? taskRawToken : sentenceForContext
@@ -1905,26 +1865,23 @@ extension ReaderViewModel {
     let baseWord = popup.word.trimmingCharacters(in: .whitespacesAndNewlines)
     guard baseWord.isEmpty == false else { return }
 
-    // Prefer SentenceExtractor (unified boundary detection, abbreviation fusion,
-    // symmetric maxWord clamp). Falls back to legacy `boundedLookupText` when
-    // we can't recover the PDFPage / rectOnPage (e.g. stale ViewModel state).
-    let isPremium = SubscriptionManager.shared.isEffectivelyPremium
-    let maxSentenceWords = isPremium ? 150 : ReaderLookupLimits.maxPopupContextWordCount
-    let extractedSentence: ExtractedSentence? = {
+    // Prefer the PageLayout-derived sentence (unified boundary detection,
+    // drift-free rects, paragraph-scoped tokenizer). Falls back to legacy
+    // `boundedLookupText` when we can't recover the PDFPage / rectOnPage.
+    let extractedSentence: String? = {
       guard let page = self.lastLookupPage,
             let rectOnPage = self.lastLookupRectOnPage else { return nil }
-      let allWords = self.anchoredWords(for: page, bookId: popup.bookId)
-      guard let anchor = Self.anchorIndex(
-        for: rectOnPage,
-        selectedText: baseWord,
-        in: allWords
-      ) else { return nil }
-      return SentenceExtractor.extract(
-        words: allWords,
-        anchorIndex: anchor,
-        language: popup.language,
-        maxWords: maxSentenceWords
+      let layout = self.pageLayout(
+        for: page,
+        bookId: popup.bookId,
+        languageHint: popup.language
       )
+      let tapPoint = CGPoint(x: rectOnPage.midX, y: rectOnPage.midY)
+      guard let sentence = layout.sentence(
+        containingPoint: tapPoint,
+        selectedText: baseWord
+      ) else { return nil }
+      return sentence.text
     }()
 
     // Preserve legacy bounded-sentence behavior as the fallback and as the
@@ -1935,7 +1892,7 @@ extension ReaderViewModel {
       popup.sentence,
       maxWordCount: ReaderLookupLimits.maxPopupContextWordCount
     ).text
-    let boundedSentence = extractedSentence?.text ?? legacyBoundedSentence
+    let boundedSentence = extractedSentence ?? legacyBoundedSentence
     let sentenceForContext = normalizeContextForTranslationCandidate(boundedSentence)
     let normalization = LookupNormalizer.normalizeForLookup(
       text: baseWord,

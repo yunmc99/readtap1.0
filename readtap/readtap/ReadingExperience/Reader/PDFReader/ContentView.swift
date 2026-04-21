@@ -2384,13 +2384,12 @@ struct ReaderView: View {
     }()
 
     let anchor = CGPoint(x: effectiveRectOnView.midX, y: max(effectiveRectOnView.minY - 8, 24))
-    // Selection sentence is a best-effort fallback — the unified
-    // `SentenceExtractor` in `ReaderViewModel+Lookup.handleSelection` re-derives
-    // the popup sentence from `selection.page` + `selection.rectOnPage` whenever
-    // both are set (which they always are on this path). We only use the
-    // line-level selection here so the `selection.sentence` field has a
-    // non-empty value if SentenceExtractor ever can't anchor (e.g. page has no
-    // indexable words).
+    // Selection sentence is a best-effort fallback — `PageLayout` in
+    // `ReaderViewModel+Lookup.handleSelection` re-derives the popup sentence
+    // from `selection.page` + `selection.rectOnPage` whenever both are set
+    // (which they always are on this path). We only use the line-level
+    // selection here so `selection.sentence` has a non-empty value if
+    // PageLayout ever can't map the tap point (e.g. page has no indexable text).
     let sentence: String = {
       if let lineSelection = page.selectionForLine(at: pointOnPage),
         let rawLine = lineSelection.string
