@@ -1149,6 +1149,20 @@ struct ReaderView: View {
     return pageRects.map { pdfView.convert($0, from: page) }
   }
 
+  /// Returns the PDF page the current popup's sentence-highlight rects
+  /// belong to. Prefers the page index stored on the popup at tap time —
+  /// `pdfView.currentPage` can advance to a neighboring page during
+  /// continuous scroll and shift the converted rects by a page height,
+  /// placing the highlight on the wrong part of the view.
+  private func sentenceHighlightPage() -> PDFPage? {
+    if let idx = viewModel.popup?.sentenceHighlightPageIndex,
+       let doc = pdfViewRef?.document,
+       idx >= 0, idx < doc.pageCount {
+      return doc.page(at: idx)
+    }
+    return pdfViewRef?.currentPage
+  }
+
   private var readerStack: some View {
     ZStack {
       readerCanvasBackground
@@ -1158,7 +1172,7 @@ struct ReaderView: View {
           SentenceHighlightOverlay(
             rects: pdfViewRects(
               from: viewModel.popup?.sentenceHighlightRects ?? [],
-              page: pdfViewRef?.currentPage,
+              page: sentenceHighlightPage(),
               pdfView: pdfViewRef,
               tick: overlayTick
             ),

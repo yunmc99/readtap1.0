@@ -86,6 +86,13 @@ struct WordPopupState: Equatable {
   /// Which coordinate space the rects above are in.
   var sentenceHighlightCoordSpace: HighlightCoordinateSpace = .pagePoints
 
+  /// Index of the PDF page the rects belong to. The overlay uses this page
+  /// (not `pdfView.currentPage`) when converting page-local rects to view
+  /// coordinates, because `currentPage` can advance to a neighboring page
+  /// during continuous scroll, which shifts the converted Y by roughly one
+  /// page height and moves the highlight into the wrong page's area.
+  var sentenceHighlightPageIndex: Int? = nil
+
   /// Subword suggestions when the full word has no dictionary match (compound word splitting).
   var suggestedWords: [SuggestedWord] = []
 

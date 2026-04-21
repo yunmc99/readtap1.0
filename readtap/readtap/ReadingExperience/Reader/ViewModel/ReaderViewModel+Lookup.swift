@@ -639,6 +639,9 @@ extension ReaderViewModel {
     )
     initialPopup.sentenceHighlightRects = sentenceHighlightRects
     initialPopup.sentenceHighlightCoordSpace = .pagePoints
+    if let selPage = selection.page, let doc = selPage.document {
+      initialPopup.sentenceHighlightPageIndex = doc.index(for: selPage)
+    }
     self.popup = initialPopup
 
     lookupTask?.cancel()
