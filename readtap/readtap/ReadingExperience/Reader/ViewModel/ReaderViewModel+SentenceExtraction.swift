@@ -73,7 +73,18 @@ extension ReaderViewModel {
     tokenizer.string = pageText
     var result: [AnchoredWord] = []
     tokenizer.enumerateTokens(in: pageText.startIndex..<pageText.endIndex) { range, _ in
-      let word = String(pageText[range])
+      // NLTokenizer(.word) skips trailing punctuation (periods, commas, em-dashes).
+      // SentenceExtractor later re-joins these words with spaces and runs
+      // NLTokenizer(.sentence) on the result — without punctuation that
+      // tokenizer cannot detect sentence boundaries and treats the entire
+      // page as one sentence. Extend each word's text up to the next
+      // whitespace so attached punctuation is preserved for the sentence
+      // tokenizer. Rect geometry still uses the original word range.
+      var textEnd = range.upperBound
+      while textEnd < pageText.endIndex, !pageText[textEnd].isWhitespace {
+        textEnd = pageText.index(after: textEnd)
+      }
+      let word = String(pageText[range.lowerBound..<textEnd])
       // PDFKit's characterBounds(at:) expects UTF-16 (NSString) indices, NOT
       // Swift Character offsets. For any page with non-ASCII runs, the wrong
       // characters get queried and rects drift far from the actual word.

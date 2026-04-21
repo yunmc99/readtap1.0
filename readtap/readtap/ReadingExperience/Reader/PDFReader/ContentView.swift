@@ -1154,20 +1154,21 @@ struct ReaderView: View {
       readerCanvasBackground
         .ignoresSafeArea()
       pdfContent
-      SentenceHighlightOverlay(
-        rects: pdfViewRects(
-          from: viewModel.popup?.sentenceHighlightRects ?? [],
-          page: pdfViewRef?.currentPage,
-          pdfView: pdfViewRef,
-          tick: overlayTick
-        ),
-        isVisible: pdfSentenceHighlightVisible
-          && (viewModel.popup?.sentenceHighlightRects.isEmpty == false),
-        tint: palette.accent
-      )
-      .frame(maxWidth: .infinity, maxHeight: .infinity)
-      .allowsHitTesting(false)
-      .zIndex(1)
+        .overlay(
+          SentenceHighlightOverlay(
+            rects: pdfViewRects(
+              from: viewModel.popup?.sentenceHighlightRects ?? [],
+              page: pdfViewRef?.currentPage,
+              pdfView: pdfViewRef,
+              tick: overlayTick
+            ),
+            isVisible: pdfSentenceHighlightVisible
+              && (viewModel.popup?.sentenceHighlightRects.isEmpty == false),
+            tint: palette.accent
+          )
+          .allowsHitTesting(false)
+        )
+        .zIndex(1)
       cachedThumbnailOverlay
       loadingOverlay
       popupOverlay
