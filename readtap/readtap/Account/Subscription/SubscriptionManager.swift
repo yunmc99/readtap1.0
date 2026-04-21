@@ -89,6 +89,17 @@ final class SubscriptionManager: ObservableObject {
     /// True while `loadProducts()` is actively fetching from StoreKit (including
     /// retry attempts). UI can use this to show a ProgressView.
     @Published private(set) var isLoadingProducts: Bool = false
+    /// Whether this device's Apple ID has *ever* had an auto-renewable subscription
+    /// to the app. Used to suppress the "Start 7-Day Free Trial" offer and the
+    /// promo sheet for returning users who canceled — offering a trial to someone
+    /// who's already been a paying subscriber is misleading UX and a soft App
+    /// Store Guideline 3.1.1 issue ("fraudulent trial practices").
+    ///
+    /// Persisted in UserDefaults (`hasEverSubscribedKey`) so the decision survives
+    /// app restarts before StoreKit's async `Transaction.all` scan completes.
+    /// Also re-validated against `Transaction.all` on every refresh so the flag
+    /// turns on for users whose purchase happened on a different install.
+    @Published private(set) var hasEverSubscribed: Bool = UserDefaults.standard.bool(forKey: "readtap_has_ever_subscribed")
 
     enum TrialState: Equatable {
         case notStarted
@@ -107,6 +118,11 @@ final class SubscriptionManager: ObservableObject {
     private let defaults: UserDefaults
     private static let trialStartKey = "readtap_trial_start_date"
     private static let trialDurationDays = 7
+    /// Persists `hasEverSubscribed` across app launches. Intentionally NOT cleared
+    /// on sign-out (`resetForSignOut`) because it reflects device-level Apple ID
+    /// history, not a per-user claim — a different in-app user on the same device
+    /// shouldn't get a fresh trial offer either.
+    static let hasEverSubscribedKey = "readtap_has_ever_subscribed"
     /// Per-user claim of the device's StoreKit subscription. Stored as
     /// `<prefix><userId> = true`. StoreKit entitlements live on the Apple ID,
     /// not on our in-app account; this flag binds an entitlement to a specific
@@ -237,7 +253,17 @@ final class SubscriptionManager: ObservableObject {
                 let transaction = try checkVerified(verification)
                 await transaction.finish()
                 // Bind this StoreKit subscription to the current in-app user.
-                await MainActor.run { markCurrentUserAsSubscriptionOwner() }
+                // Also eagerly set `hasEverSubscribed` so the promo sheet stops
+                // offering trials to this user from now on, even if the async
+                // `refreshSubscriptionStatus` below hasn't finished scanning
+                // `Transaction.all` yet.
+                await MainActor.run {
+                    markCurrentUserAsSubscriptionOwner()
+                    if !hasEverSubscribed {
+                        hasEverSubscribed = true
+                        defaults.set(true, forKey: Self.hasEverSubscribedKey)
+                    }
+                }
                 let gen = signInGeneration
                 await refreshSubscriptionStatus(generation: gen)
                 await MainActor.run { purchaseState = .purchased }
@@ -518,9 +544,29 @@ final class SubscriptionManager: ObservableObject {
         let activeProductId = activeTransaction?.productID
         let expiresAt = activeTransaction?.expirationDate
 
+        // Scan ALL past transactions (including expired / canceled) so returning
+        // subscribers don't see a "Start 7-Day Free Trial" offer they're no
+        // longer eligible for. `Transaction.all` survives app reinstall on the
+        // same Apple ID. We only care about auto-renewable subscriptions here —
+        // ignore the rest.
+        var foundHistoricalSubscription = false
+        for await result in Transaction.all {
+            guard let transaction = try? checkVerified(result) else { continue }
+            if transaction.productType == .autoRenewable,
+               Self.allProductIds.contains(transaction.productID) {
+                foundHistoricalSubscription = true
+                break
+            }
+        }
+
         await MainActor.run {
             // Discard stale results from a previous sign-in session.
             guard self.signInGeneration == generation else { return }
+
+            if foundHistoricalSubscription && !self.hasEverSubscribed {
+                self.hasEverSubscribed = true
+                self.defaults.set(true, forKey: Self.hasEverSubscribedKey)
+            }
 
             // Per-user claim gate: a StoreKit entitlement is only honored when
             // the current in-app user has explicitly claimed it. This prevents

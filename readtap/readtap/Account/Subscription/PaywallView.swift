@@ -30,6 +30,22 @@ struct PaywallView: View {
         return false
     }
 
+    /// Whether this user is eligible to be offered the 7-day free trial.
+    /// Guards against four independent disqualifiers:
+    ///   1. Current active subscriber (already paying — don't downgrade UX).
+    ///   2. Trial already started / expired locally.
+    ///   3. Server-side trial kill switch on.
+    ///   4. This Apple ID has *ever* had an auto-renewable subscription —
+    ///      returning users who canceled shouldn't be re-offered a trial
+    ///      they're no longer eligible for (misleading, soft App Store
+    ///      Guideline 3.1.1 issue).
+    private var canOfferTrial: Bool {
+        !isCurrentSubscriber
+            && isTrialNotStarted
+            && !manager.isTrialOfferDisabled
+            && !manager.hasEverSubscribed
+    }
+
     /// Whether the user already has an active StoreKit subscription.
     private var isCurrentSubscriber: Bool {
         manager.activeSubscriptionProductId != nil

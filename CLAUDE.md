@@ -111,8 +111,29 @@ Rate: three presets (Slow 0.38 / Normal 0.45 / Fast 0.52) stored as `Double` und
 **Subscription & paywall** (`Account/Subscription/`):
 - `SubscriptionManager.swift` — `@MainActor ObservableObject`, StoreKit-backed. Tracks premium entitlements and `isBanned` state. Refreshed on every foreground scene transition.
 - `PaywallView.swift` — upgrade UI, presented as a sibling sheet at the `WindowGroup` level (see `readtapApp.pendingPaywallPresentation`) so it survives the trial-offer sheet being dismissed.
+- `PremiumComparisonPromoSheet.swift` — swipe-reveal comparison promo shown at lookup milestones and as the first-login trial offer. Not the final purchase surface — its Upgrade button escalates to `PaywallView` via `AuthManager.pendingPaywallPresentation`.
 - `Products.storekit` — StoreKit configuration. Must be linked in Xcode scheme → Run → Options → StoreKit Configuration. If the dropdown reads "None" after pulling a branch, re-select the file at its new path.
 - Premium gating is applied to specific features (Settings profile hero card, popup premium content, theme lock). Scanner/photo-library import are **free** for all users.
+
+### Paywall presentation rules (2026-04-21)
+
+**`PaywallView` is attached ONCE, at the `WindowGroup` level in `readtapApp.swift`**, bound to `AuthManager.shared.pendingPaywallPresentation`. Every upgrade trigger across the app writes to this one flag:
+
+```swift
+AuthManager.shared.pendingPaywallPresentation = true
+```
+
+Call sites: Reader `PromoSheet.onUpgrade` (PDF + Image), Reader `WordPopupView.onUpgrade`, `SettingsView` locked-highlight / locked-theme / premiumCard taps, `SystemDashboardLayout` PromoSheet.onUpgrade, `LibraryThemePickerView` locked theme taps / `ThemePreviewSheet.onPaywall`.
+
+**Do NOT add a new `.adaptivePaywallSheet { PaywallView() }` to any view.** Sibling `fullScreenCover` attachments on the same view conflict on iPad — during transitions, a form-sheet-sized PaywallView briefly flashes before the promo sheet settles. This was a real user-reported flicker bug.
+
+**`PremiumComparisonPromoSheet`** stays per-view via `.adaptivePaywallSheet` because it's context-local (different copy / analytics per trigger point). Its Upgrade button escalates to the app-level `PaywallView` via the rule above.
+
+**`adaptivePaywallSheet`** (see `Platform/DesignSystem/AdaptivePresentation.swift`) picks `fullScreenCover` on iPad (regular size class) and `.sheet` on iPhone. iPad form sheet (540×620 fixed) clips subscription disclosures and triggers App Review Guideline 3.1.2(c) rejections. Both `PaywallView` and `PremiumComparisonPromoSheet` render their own top-trailing `xmark.circle.fill` close button because `fullScreenCover` has no drag-to-dismiss.
+
+**Guest mode**: `pendingPaywallPresentation` is only attached in the `.signedIn` case of `readtapApp.body`. Guest users never see `PaywallView` directly — the relevant call site should fall back to `AuthManager.shared.guestGateReason = .subscribe` to prompt login instead. (Currently most locked-tap sites don't branch on guest; a guest tapping a locked theme sees no response. If this becomes a real UX regression, add a guest check at each call site or attach a second `adaptivePaywallSheet` to the guest-mode `RootTabView`.)
+
+**Subscriber-detection cascade in `PaywallView.headerSection`**: the subtitle uses a 4-tier cascade — active StoreKit subscriber → `isEffectivelyPremium` (covers admin override + post-launch StoreKit refresh window + active trial without a subscription) → trial expired → trial not started. Do NOT rely on `isCurrentSubscriber` alone; it's briefly `nil` right after app launch before `refreshSubscriptionStatus` completes, and that made paying subscribers see "Your free trial has ended" in the paywall subtitle.
 
 **Ordering**: `ContentLibrary/Books/OrderKey.swift` implements LexoRank-lite (base-36 fractional indexing) for drag-and-drop reorder of books/folders. Only the dragged item's `orderKey` is updated — no full-list renumbering.
 
