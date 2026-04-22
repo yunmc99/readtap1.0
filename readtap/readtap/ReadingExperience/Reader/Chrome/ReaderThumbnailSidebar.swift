@@ -533,7 +533,7 @@ struct PDFThumbnailSidebar: View {
     private let renderLookAheadWindow: Int = 4
     @State private var renderedPageCount: Int = 0
     @State private var scheduledWindowExpansion: DispatchWorkItem? = nil
-    @State private var showBookmarksOnly: Bool = false
+    @AppStorage("pdfThumbnailSidebar.showBookmarksOnly") private var showBookmarksOnly: Bool = false
     @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var appSettings: AppSettings
     private var theme: LibraryTheme { appSettings.theme }
@@ -574,91 +574,97 @@ struct PDFThumbnailSidebar: View {
             : allIndexes
 
         ScrollViewReader { proxy in
-            ScrollView(.vertical, showsIndicators: true) {
-                VStack(alignment: .leading, spacing: 12) {
-                    // Filter chips: All | Bookmarks
-                    HStack(spacing: 4) {
-                        thumbnailFilterChip(
-                            title: AppText.L("All", "전체", "全部"),
-                            isActive: !showBookmarksOnly
-                        ) {
-                            withAnimation(.easeInOut(duration: 0.18)) { showBookmarksOnly = false }
-                        }
-                        thumbnailFilterChip(
-                            title: AppText.L("Bookmarks", "북마크", "书签"),
-                            isActive: showBookmarksOnly,
-                            count: bookmarkedPages.count
-                        ) {
-                            withAnimation(.easeInOut(duration: 0.18)) { showBookmarksOnly = true }
-                        }
+            VStack(alignment: .leading, spacing: 0) {
+                // Filter chips: All | Bookmarks — pinned above the ScrollView so they
+                // stay visible regardless of thumbnail-list scroll position.
+                HStack(spacing: 4) {
+                    thumbnailFilterChip(
+                        title: AppText.L("All", "전체", "全部"),
+                        isActive: !showBookmarksOnly
+                    ) {
+                        withAnimation(.easeInOut(duration: 0.18)) { showBookmarksOnly = false }
                     }
-                    .padding(.horizontal, 2)
+                    thumbnailFilterChip(
+                        title: AppText.L("Bookmarks", "북마크", "书签"),
+                        isActive: showBookmarksOnly,
+                        count: bookmarkedPages.count
+                    ) {
+                        withAnimation(.easeInOut(duration: 0.18)) { showBookmarksOnly = true }
+                    }
+                }
+                .padding(.horizontal, 2)
+                .padding(.top, 8)
+                .padding(.bottom, 12)
+                .padding(.horizontal, 10)
 
-                    if document.pageCount <= 0 {
-                        VStack(spacing: 6) {
-                            ProgressView()
-                                .progressViewStyle(.circular)
-                                .tint(.secondary)
-                            Text("Loading pages…")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity, minHeight: 180)
-                        .padding(.top, 20)
-                    } else if hasAnyPage == false {
-                        VStack(spacing: 6) {
-                            Image(systemName: "doc.text")
-                                .font(.title2)
-                                .foregroundStyle(.secondary)
-                            Text("Thumbnails unavailable")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity, minHeight: 180)
-                        .padding(.top, 20)
-                    } else if showBookmarksOnly && visibleIndexes.isEmpty {
-                        VStack(spacing: 8) {
-                            Image(systemName: "bookmark")
-                                .font(.title2)
-                                .foregroundStyle(styleMode.isRefined ? ReaderRefinedPalette.inkMuted : theme.calendarPalette(for: colorScheme).muted)
-                            Text(AppText.L("No bookmarked pages", "북마크된 페이지가 없습니다", "没有书签页面"))
-                                .font(.caption)
-                                .foregroundStyle(styleMode.isRefined ? ReaderRefinedPalette.inkMuted : theme.calendarPalette(for: colorScheme).muted)
-                                .multilineTextAlignment(.center)
-                        }
-                        .frame(maxWidth: .infinity, minHeight: 120)
-                        .padding(.top, 20)
-                    } else {
-                        LazyVStack(spacing: 12) {
-                            ForEach(visibleIndexes, id: \.self) { index in
-                                let isCurrent = index == currentPageIndex
-                                ReaderThumbnailCell(
-                                    documentURL: documentURL,
-                                    document: document,
-                                    pageIndex: index,
-                                    thumbWidth: thumbWidth,
-                                    thumbHeight: thumbHeight,
-                                    isCurrent: isCurrent,
-                                    isBookmarked: bookmarkedPages.contains(index),
-                                    cardSurface: cardSurface,
-                                    schemeIsDark: colorScheme == .dark,
-                                    theme: theme,
-                                    onSelect: {
-                                        ensureRenderedThrough(pageIndex: index, totalPages: pageCount)
-                                        onSelect(index)
-                                    },
-                                    cache: cache
-                                )
-                                .id(index)
-                                .onAppear {
-                                    maybeExpandWindow(around: index, totalPages: pageCount)
+                ScrollView(.vertical, showsIndicators: true) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        if document.pageCount <= 0 {
+                            VStack(spacing: 6) {
+                                ProgressView()
+                                    .progressViewStyle(.circular)
+                                    .tint(.secondary)
+                                Text("Loading pages…")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 180)
+                            .padding(.top, 20)
+                        } else if hasAnyPage == false {
+                            VStack(spacing: 6) {
+                                Image(systemName: "doc.text")
+                                    .font(.title2)
+                                    .foregroundStyle(.secondary)
+                                Text("Thumbnails unavailable")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 180)
+                            .padding(.top, 20)
+                        } else if showBookmarksOnly && visibleIndexes.isEmpty {
+                            VStack(spacing: 8) {
+                                Image(systemName: "bookmark")
+                                    .font(.title2)
+                                    .foregroundStyle(styleMode.isRefined ? ReaderRefinedPalette.inkMuted : theme.calendarPalette(for: colorScheme).muted)
+                                Text(AppText.L("No bookmarked pages", "북마크된 페이지가 없습니다", "没有书签页面"))
+                                    .font(.caption)
+                                    .foregroundStyle(styleMode.isRefined ? ReaderRefinedPalette.inkMuted : theme.calendarPalette(for: colorScheme).muted)
+                                    .multilineTextAlignment(.center)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 120)
+                            .padding(.top, 20)
+                        } else {
+                            LazyVStack(spacing: 12) {
+                                ForEach(visibleIndexes, id: \.self) { index in
+                                    let isCurrent = index == currentPageIndex
+                                    ReaderThumbnailCell(
+                                        documentURL: documentURL,
+                                        document: document,
+                                        pageIndex: index,
+                                        thumbWidth: thumbWidth,
+                                        thumbHeight: thumbHeight,
+                                        isCurrent: isCurrent,
+                                        isBookmarked: bookmarkedPages.contains(index),
+                                        cardSurface: cardSurface,
+                                        schemeIsDark: colorScheme == .dark,
+                                        theme: theme,
+                                        onSelect: {
+                                            ensureRenderedThrough(pageIndex: index, totalPages: pageCount)
+                                            onSelect(index)
+                                        },
+                                        cache: cache
+                                    )
+                                    .id(index)
+                                    .onAppear {
+                                        maybeExpandWindow(around: index, totalPages: pageCount)
+                                    }
                                 }
                             }
                         }
                     }
+                    .padding(.bottom, 8)
+                    .padding(.horizontal, 10)
                 }
-                .padding(.vertical, 8)
-                .padding(.horizontal, 10)
             }
             .frame(maxHeight: .infinity)
             .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
