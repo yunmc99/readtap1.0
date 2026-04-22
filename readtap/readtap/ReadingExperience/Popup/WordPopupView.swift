@@ -349,6 +349,20 @@ struct WordPopupView: View {
     return !popup.isPlaceholderMeaning && !popup.meaning.isEmpty
   }
 
+  /// Whether the sentence translation disclosure (swipe down to open /
+  /// swipe up to close) is available on the current popup. Matches the
+  /// conditions that gate the disclosure button visibility.
+  private var canToggleSentenceTranslation: Bool {
+    guard isPremium,
+          popup.isLoading == false,
+          popup.isPremiumContentLoading == false,
+          let sentenceTranslation = popup.sentenceTranslationKo,
+          !sentenceTranslation.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+          !isSameLanguagePair(source: popup.language, target: popup.targetLanguage)
+    else { return false }
+    return true
+  }
+
   // MARK: - Free-tier dictionary UI (spec: 2026-04-17 §10)
 
   private var shouldShowTranslationFallbackBadge: Bool {
@@ -477,29 +491,40 @@ struct WordPopupView: View {
     .frame(maxWidth: maxPopupWidth, maxHeight: maxPopupHeight, alignment: .leading)
     .fixedSize(horizontal: false, vertical: false)
     .gesture(
-      canShowSynonymPage
-        ? DragGesture(minimumDistance: 30, coordinateSpace: .local)
-            .onEnded { value in
-              let horizontal = value.translation.width
-              let vertical = abs(value.translation.height)
-              // Only handle horizontal swipes (not vertical scroll)
-              guard abs(horizontal) > vertical else { return }
-              if horizontal < -30 && currentPage == 0 {
-                // Swipe left → page 1 (synonym/antonym)
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
-                  currentPage = 1
-                }
-                if !popup.isSynonymAntonymLoaded && !popup.isSynonymAntonymLoading {
-                  onRequestSynonymAntonym?()
-                }
-              } else if horizontal > 30 && currentPage == 1 {
-                // Swipe right → page 0 (meaning)
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
-                  currentPage = 0
-                }
+      DragGesture(minimumDistance: 30, coordinateSpace: .local)
+        .onEnded { value in
+          let horizontal = value.translation.width
+          let vertical = value.translation.height
+          if abs(horizontal) > abs(vertical) {
+            // Horizontal swipe → synonym/antonym page switch.
+            guard canShowSynonymPage else { return }
+            if horizontal < -30 && currentPage == 0 {
+              withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                currentPage = 1
+              }
+              if !popup.isSynonymAntonymLoaded && !popup.isSynonymAntonymLoading {
+                onRequestSynonymAntonym?()
+              }
+            } else if horizontal > 30 && currentPage == 1 {
+              withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                currentPage = 0
               }
             }
-        : nil
+          } else {
+            // Vertical swipe → sentence translation disclosure.
+            // Down (positive height) = open. Up (negative) = close.
+            guard canToggleSentenceTranslation else { return }
+            if vertical > 30, !sentenceHighlightVisible {
+              withAnimation(.easeInOut(duration: 0.2)) {
+                sentenceHighlightVisible = true
+              }
+            } else if vertical < -30, sentenceHighlightVisible {
+              withAnimation(.easeInOut(duration: 0.2)) {
+                sentenceHighlightVisible = false
+              }
+            }
+          }
+        }
     )
     .sheet(isPresented: $feedbackSheetVisible) {
       FeedbackSheet(
@@ -750,23 +775,18 @@ struct WordPopupView: View {
          !isSameLanguagePair(source: popup.language, target: popup.targetLanguage)
       {
         VStack(alignment: .leading, spacing: 0) {
-          Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
-              sentenceHighlightVisible.toggle()
-            }
-          } label: {
-            HStack(spacing: 4) {
-              Text(sentenceHighlightVisible
-                ? AppText.L("Hide translation", "문장 해석 접기", "收起句子翻译")
-                : AppText.L("Show translation", "문장 해석 보기", "查看句子翻译"))
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(palette.accent)
-              Image(systemName: sentenceHighlightVisible ? "chevron.up" : "chevron.down")
-                .font(.system(size: 7, weight: .bold))
-                .foregroundStyle(palette.accent)
-            }
+          // Swipe affordance (non-tappable) — swipe down on the popup to
+          // open the sentence translation, swipe up to close.
+          HStack {
+            Spacer()
+            Image(systemName: sentenceHighlightVisible ? "chevron.up" : "chevron.down")
+              .font(.system(size: 8, weight: .bold))
+              .foregroundStyle(palette.accent.opacity(0.55))
+            Spacer()
           }
-          .buttonStyle(.plain)
+          .padding(.vertical, 2)
+          .contentShape(Rectangle())
+          .allowsHitTesting(false)
 
           if sentenceHighlightVisible {
             VStack(alignment: .leading, spacing: 3) {
@@ -840,38 +860,38 @@ struct WordPopupView: View {
   /// - If markers are for a different word → strip and re-apply for current word.
   /// - If no markers exist → try to add for current word.
   private func ensureHighlight(in sentence: String) -> String {
-    let stems = currentMeaningStems()
-
-    // 1. Check if server's existing ** markers already match current word
-    let markerPattern = "\\*\\*(.+?)\\*\\*"
-    if let regex = try? NSRegularExpression(pattern: markerPattern),
-       let match = regex.firstMatch(in: sentence, range: NSRange(location: 0, length: (sentence as NSString).length)) {
-      let highlightedText = (sentence as NSString).substring(with: match.range(at: 1))
-      // Check if any stem from current meanings appears in the highlighted text
-      for stem in stems where stem.count >= 2 {
-        if highlightedText.range(of: stem, options: .caseInsensitive) != nil {
-          // Server markers match current word → keep original
-          return sentence
-        }
-      }
-      // Server markers are for a different word → strip and re-apply below
+    // 1. Server's LLM is prompted to wrap the looked-up word's translation
+    //    with `**...**`. The server has the full translation context and
+    //    picks the correct synonym even when it differs from the dictionary
+    //    lemma (e.g. "while" → "지라도" in this sentence even though the
+    //    dictionary headword is "동안"). Trust the server's marker when
+    //    present — the client can't beat the LLM on synonym selection.
+    if sentence.contains("**") {
+      #if DEBUG
+      print("[BOLD-v1] word='\(popup.word)' KEEP server marker")
+      #endif
+      return sentence
     }
 
-    // 2. Strip all existing ** markers
-    let stripped = sentence.replacingOccurrences(of: "**", with: "")
-    guard !stripped.isEmpty else { return sentence }
-
-    // 3. Try to find current word's meaning in the sentence
+    // 2. No server marker (cache miss / LLM failure / dictionary fallback).
+    //    Try client-side stem match as a safety net.
+    let stems = currentMeaningStems()
     for stem in stems where stem.count >= 2 {
-      if let range = stripped.range(of: stem, options: .caseInsensitive) {
-        var result = stripped
-        result.replaceSubrange(range, with: "**\(stripped[range])**")
+      if let range = sentence.range(of: stem, options: .caseInsensitive) {
+        var result = sentence
+        result.replaceSubrange(range, with: "**\(sentence[range])**")
+        #if DEBUG
+        print("[BOLD-v1] word='\(popup.word)' CLIENT-MATCH stem='\(stem)'")
+        #endif
         return result
       }
     }
 
-    // 4. No match — return without markers (don't show wrong highlight)
-    return stripped
+    // 3. No server marker AND no stem match — return as-is.
+    #if DEBUG
+    print("[BOLD-v1] word='\(popup.word)' NO-MATCH stems=\(stems) sentence='\(sentence.prefix(80))...'")
+    #endif
+    return sentence
   }
 
   /// Extracts searchable stems from a Korean meaning string.
